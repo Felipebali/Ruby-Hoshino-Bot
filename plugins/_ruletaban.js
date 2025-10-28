@@ -55,7 +55,6 @@ let handler = async (m, { conn, groupMetadata, isAdmin, isOwner }) => {
 
 handler.customPrefix = /^\s*f\s*$/i;
 handler.command = [''];
-handler.register = true;
 handler.group = true;
 
 export default handler;
