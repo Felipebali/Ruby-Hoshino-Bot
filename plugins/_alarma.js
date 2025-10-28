@@ -1,29 +1,15 @@
 // plugins/alarmaA.js
-// Activador: letra "A" o "a" (sin prefijo)
-// Solo OWNER puede activarlo.
-// Envía una frase aleatoria de susto/terror con mención oculta a todos.
-
 let handler = async (m, { conn, groupMetadata, isOwner }) => {
   try {
-    if (!m || !m.isGroup) return; // solo grupos
+    if (!m?.isGroup) return; // solo grupos
+    if (!isOwner) return;    // solo owner
 
-    // --- SOLO OWNER ---
-    if (!isOwner) return; // si no es owner, no hace nada
+    const text = (m.text || '').trim();
+    if (!text || text.toLowerCase() !== 'a') return;
 
-    const text = (m.text || '').toString().trim();
-    if (!text) return;
-    if (text.toLowerCase() !== 'a') return; // activador exacto
+    const participantes = (groupMetadata?.participants || []).map(p => p.id).filter(Boolean);
+    if (!participantes.length) return conn.sendMessage(m.chat, { text: '👻 No se detectaron participantes...' });
 
-    // participantes del grupo
-    const participantes = (groupMetadata?.participants || []);
-    const mencionados = participantes
-      .map(p => p.id ? (conn.decodeJid ? conn.decodeJid(p.id) : p.id) : null)
-      .filter(Boolean);
-
-    if (!mencionados.length)
-      return conn.sendMessage(m.chat, { text: '👻 No se detectaron participantes...' });
-
-    // --- Frases de terror/susto grupal ---
     const mensajes = [
       '👁️ Alguien más está aquí… pero no debería estarlo.',
       '💀 Silencio... Escucharon eso detrás de ustedes?',
@@ -51,13 +37,11 @@ let handler = async (m, { conn, groupMetadata, isOwner }) => {
       '🪦 Hoy alguien del grupo no va a despertar.'
     ];
 
-    // Elegir una frase aleatoria
     const elegido = mensajes[Math.floor(Math.random() * mensajes.length)];
 
-    // Enviar visible con mención oculta a todos
     await conn.sendMessage(m.chat, {
       text: elegido,
-      contextInfo: { mentionedJid: mencionados }
+      contextInfo: { mentionedJid: participantes }
     });
 
   } catch (err) {
@@ -70,8 +54,7 @@ let handler = async (m, { conn, groupMetadata, isOwner }) => {
 
 // Activador sin prefijo — detecta “A” o “a” sola
 handler.customPrefix = /^\s*a\s*$/i;
-handler.command = [''];
-handler.register = true;
+handler.command = [];
 handler.group = true;
 
 export default handler;
