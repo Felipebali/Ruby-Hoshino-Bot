@@ -32,6 +32,7 @@ m = smsg(this, m) || m
 if (!m)
 return
 
+
 if (m.isGroup) {
 const chat = global.db.data.chats[m.chat];
 if (chat?.primaryBot) {
@@ -52,7 +53,7 @@ const participants_lid = ((m.isGroup ? groupMetadata_lid.participants : []) || [
 if (m.isGroup && sender.endsWith('@lid')) {
 const participantInfo = participants_lid.find(p => p.lid === sender);
 if (participantInfo && participantInfo.jid) {
-sender = participantInfo.jid;
+sender = participantInfo.jid; 
 }
 }
 
@@ -68,13 +69,13 @@ coin: isNumber(user.coin) ? user.coin : 10,
 bank: isNumber(user.bank) ? user.bank : 0,
 joincount: isNumber(user.joincount) ? user.joincount : 1,
 diamond: isNumber(user.diamond) ? user.diamond : 3,
-emerald: isNumber(user.emerald) ? user.emerald : 0,
-iron: isNumber(user.iron) ? user.iron : 0,
-gold: isNumber(user.gold) ? user.gold : 0,
-coal: isNumber(user.coal) ? user.coal : 0,
-stone: isNumber(user.stone) ? user.stone : 0,
-candies: isNumber(user.candies) ? user.candies : 0,
-gifts: isNumber(user.gifts) ? user.gifts : 0,
+emerald: isNumber(user.emerald) ? user.emerald : 0, 
+iron: isNumber(user.iron) ? user.iron : 0, 
+gold: isNumber(user.gold) ? user.gold : 0, 
+coal: isNumber(user.coal) ? user.coal : 0, 
+stone: isNumber(user.stone) ? user.stone : 0, 
+candies: isNumber(user.candies) ? user.candies : 0, 
+gifts: isNumber(user.gifts) ? user.gifts : 0, 
 lastadventure: isNumber(user.lastadventure) ? user.lastadventure : 0,
 lastclaim: isNumber(user.lastclaim) ? user.lastclaim : 0,
 health: isNumber(user.health) ? user.health : 100,
@@ -206,8 +207,8 @@ if (opts['swonly' && m.chat !== 'status@broadcast']) return
 if (typeof m.text !== 'string')
 m.text = ''
 
-const user = global.db.data.users[sender]
-const groupMetadata = m.isGroup ? { ...(this.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch( => null) || {}), ...(((this.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}).participants) && { participants: ((this.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}).participants || []).map(p => ({ ...p, id: p.jid, jid: p.jid, lid: p.lid })) }) } : {}
+const _user = global.db.data.users[sender]
+const groupMetadata = m.isGroup ? { ...(this.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}), ...(((this.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}).participants) && { participants: ((this.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}).participants || []).map(p => ({ ...p, id: p.jid, jid: p.jid, lid: p.lid })) }) } : {}
 const participants = ((m.isGroup ? groupMetadata.participants : []) || []).map(participant => ({ id: participant.jid, jid: participant.jid, lid: participant.lid, admin: participant.admin }))
 const userGroup = (m.isGroup ? participants.find((u) => this.decodeJid(u.jid) === sender) : {}) || {}
 const botGroup = (m.isGroup ? participants.find((u) => this.decodeJid(u.jid) == this.user.jid) : {}) || {}
@@ -250,7 +251,7 @@ __filename
 }
 if (!opts['restrict'])
 if (plugin.tags && plugin.tags.includes('admin')) { continue }
-const str2Regex = str => str.replace(/[|\{}()[]^$+*?.]/g, '\$&')
+const str2Regex = str => str.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&')
 let _prefix = plugin.customPrefix ? plugin.customPrefix : this.prefix ? this.prefix : global.prefix
 let match = (_prefix instanceof RegExp ? [[_prefix.exec(m.text), _prefix]] :
 Array.isArray(_prefix) ?
@@ -270,10 +271,10 @@ if (typeof plugin !== 'function') continue
 if ((usedPrefix = (match[0] || '')[0])) {
 
 let noPrefix = m.text.replace(usedPrefix, '')
-let [command, ...args] = noPrefix.trim().split .filter(v => v)
+let [command, ...args] = noPrefix.trim().split` `.filter(v => v)
 args = args || []
-let _args = noPrefix.trim().split .slice(1)
-let text = _args.join 
+let _args = noPrefix.trim().split` `.slice(1)
+let text = _args.join` `
 command = (command || '').toLowerCase()
 let fail = plugin.fail || global.dfail
 let isAccept = plugin.command instanceof RegExp ? plugin.command.test(command) :
@@ -300,7 +301,7 @@ if (!['grupo-unbanchat.js'].includes(name) && chat && chat.isBanned && !isROwner
 if (name != 'grupo-unbanchat.js' && name != 'owner-exec.js' && name != 'owner-exec2.js' && name != 'grupo-delete.js' && chat?.isBanned && !isROwner) return
 if (user.antispam > 2) return
 if (m.text && user.banned && !isROwner) {
-m.reply(《✦》Estas baneado/a, no puedes usar comandos en este bot!\n\n${user.bannedReason ? ✰ Motivo: ${user.bannedReason} : '✰ *Motivo:* Sin Especificar'}\n\n> ✧ Si este Bot es cuenta oficial y tiene evidencia que respalde que este mensaje es un error, puedes exponer tu caso con un moderador.)
+m.reply(`《✦》Estas baneado/a, no puedes usar comandos en este bot!\n\n${user.bannedReason ? `✰ *Motivo:* ${user.bannedReason}` : '✰ *Motivo:* Sin Especificar'}\n\n> ✧ Si este Bot es cuenta oficial y tiene evidencia que respalde que este mensaje es un error, puedes exponer tu caso con un moderador.`)
 user.antispam++
 return
 }
@@ -351,20 +352,20 @@ if (plugin.group && !m.isGroup) {
 fail('group', m, this)
 continue
 }
-if (plugin.register == true && user?.registered == false) {
+if (plugin.register == true && _user?.registered == false) {
 fail('unreg', m, this)
 continue
 }
 m.isCommand = true
 let xp = 'exp' in plugin ? parseInt(plugin.exp) : 17
-if (xp > 200) m.reply('chirrido --')
+if (xp > 200) m.reply('chirrido -_-')
 else m.exp += xp
 if (!isPrems && plugin.coin && global.db.data.users[sender].coin < plugin.coin * 1) {
-this.reply(m.chat, ❮✦❯ Se agotaron tus ${m.moneda}, m)
+this.reply(m.chat, `❮✦❯ Se agotaron tus ${m.moneda}`, m)
 continue
 }
 if (plugin.level > _user.level) {
-this.reply(m.chat, ❮✦❯ Se requiere el nivel: *${plugin.level}*\n\n• Tu nivel actual es: *${_user.level}*\n\n• Usa este comando para subir de nivel:\n*${usedPrefix}levelup*, m)
+this.reply(m.chat, `❮✦❯ Se requiere el nivel: *${plugin.level}*\n\n• Tu nivel actual es: *${_user.level}*\n\n• Usa este comando para subir de nivel:\n*${usedPrefix}levelup*`, m)
 continue
 }
 let extra = {
@@ -388,7 +389,7 @@ try {
 await plugin.after.call(this, m, extra)
 } catch (e) { console.error(e) }
 }
-if (m.coin) this.reply(m.chat, ❮✦❯ Utilizaste ${+m.coin} ${m.moneda}, m)
+if (m.coin) this.reply(m.chat, `❮✦❯ Utilizaste ${+m.coin} ${m.moneda}`, m)
 }
 break
 }
@@ -431,10 +432,10 @@ stat.lastSuccess = now
 }
 }
 try {
-if (!opts['noprint']) await (await import(./lib/print.js)).default(m, this)
+if (!opts['noprint']) await (await import(`./lib/print.js`)).default(m, this)
 } catch (e) { console.log(m, m.quoted, e) }
 let settingsREAD = global.db.data.settings[this.user.jid] || {}
-// if (settingsREAD.autoread) await this.readMessages([m.key])
+// if (settingsREAD.autoread) await this.readMessages([m.key]) 
 
 }
 }
