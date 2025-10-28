@@ -2,11 +2,19 @@ const handler = async (m, { conn, isAdmin }) => {
   const emoji = '🔪';
   const sender = m.sender.replace(/\D/g, '');
 
-  const groupInfo = await conn.groupMetadata(m.chat);
+  const ownersBot = ['59898719147', '59896026646']; // dueños del bot
+
+  // Obtener info del grupo
+  let groupInfo;
+  try {
+    groupInfo = await conn.groupMetadata(m.chat);
+  } catch {
+    return conn.reply(m.chat, '❌ No se pudo obtener información del grupo.', m);
+  }
+
   const ownerGroup = groupInfo.owner ? groupInfo.owner.replace(/\D/g, '') : null;
   const botJid = conn.user.jid.replace(/\D/g, '');
-
-  const ownersBot = ['59898719147', '59896026646']; // dueños del bot
+  const protectedList = [...ownersBot, botJid, ownerGroup].filter(Boolean);
 
   // ---------- PERMISO ----------
   if (!isAdmin && !ownersBot.includes(sender) && sender !== ownerGroup) {
@@ -24,13 +32,10 @@ const handler = async (m, { conn, isAdmin }) => {
   const normalize = jid => String(jid || '').replace(/\D/g, '');
   const userNorm = normalize(user);
 
-  const protectedList = [...ownersBot, botJid, ownerGroup].filter(Boolean);
-
   // ---------- INTENTO DE EXPULSAR AL DUEÑO DEL GRUPO ----------
   if (userNorm === ownerGroup && sender !== ownerGroup && !ownersBot.includes(sender)) {
-    const userName = '@' + user.split('@')[0];
     return conn.sendMessage(m.chat, {
-      text: `😏 Tranquilo campeón... ${userName} es el dueño del grupo.\nNi los dioses del código pueden echarlo.`,
+      text: `😏 Tranquilo campeón... @${user.split('@')[0]} es el dueño del grupo.\nNi los dioses del código pueden echarlo.`,
       mentions: [user]
     });
   }
@@ -42,16 +47,14 @@ const handler = async (m, { conn, isAdmin }) => {
 
   // ---------- EXPULSAR ----------
   try {
-    // Expulsar al usuario
     await conn.groupParticipantsUpdate(m.chat, [user], 'remove');
 
     // Reacción
     try { await m.react(emoji); } catch {}
 
     // Mensaje de aviso
-    const userName = '@' + user.split('@')[0];
     await conn.sendMessage(m.chat, {
-      text: `🚫 ${userName} fue expulsado del grupo.`,
+      text: `🚫 @${user.split('@')[0]} fue expulsado del grupo.`,
       mentions: [user]
     });
 
