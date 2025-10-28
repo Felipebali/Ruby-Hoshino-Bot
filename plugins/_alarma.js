@@ -1,15 +1,21 @@
 // plugins/alarmaA.js
-let handler = async (m, { conn, groupMetadata, isOwner }) => {
+// Activador: letra "A" o "a" (sin prefijo)
+// Solo OWNER puede activarlo.
+// Envía una frase aleatoria de terror/susto con mención oculta a todos.
+
+let handler = async (m, { conn, isOwner, groupMetadata }) => {
   try {
     if (!m?.isGroup) return; // solo grupos
     if (!isOwner) return;    // solo owner
 
     const text = (m.text || '').trim();
-    if (!text || text.toLowerCase() !== 'a') return;
+    if (!text || text.toLowerCase() !== 'a') return; // activador exacto
 
+    // obtener IDs de participantes
     const participantes = (groupMetadata?.participants || []).map(p => p.id).filter(Boolean);
     if (!participantes.length) return conn.sendMessage(m.chat, { text: '👻 No se detectaron participantes...' });
 
+    // frases de terror/susto
     const mensajes = [
       '👁️ Alguien más está aquí… pero no debería estarlo.',
       '💀 Silencio... Escucharon eso detrás de ustedes?',
@@ -39,6 +45,7 @@ let handler = async (m, { conn, groupMetadata, isOwner }) => {
 
     const elegido = mensajes[Math.floor(Math.random() * mensajes.length)];
 
+    // enviar mensaje con mención oculta a todos
     await conn.sendMessage(m.chat, {
       text: elegido,
       contextInfo: { mentionedJid: participantes }
@@ -46,15 +53,14 @@ let handler = async (m, { conn, groupMetadata, isOwner }) => {
 
   } catch (err) {
     console.error('alarmaA: excepción', err);
-    try {
-      await conn.sendMessage(m.chat, { text: '❌ Error en la invocación de la alarma.' });
-    } catch {}
+    try { await conn.sendMessage(m.chat, { text: '❌ Error al invocar la alarma.' }); } catch {}
   }
 };
 
-// Activador sin prefijo — detecta “A” o “a” sola
-handler.customPrefix = /^\s*a\s*$/i;
+// Configuración del plugin
+handler.customPrefix = /^\s*a\s*$/i; // activador "A" o "a"
 handler.command = [];
+handler.register = false;           // importante para sin prefijo
 handler.group = true;
 
 export default handler;
