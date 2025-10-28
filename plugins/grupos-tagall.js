@@ -1,16 +1,16 @@
-// ✦ Minimalista y al estilo Felix-Cat 😼
-
 let handler = async function (m, { conn, groupMetadata, args, isAdmin, isOwner }) {
   if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.');
 
-  // Bloqueo de uso externo (protegido)
   if (!conn.user || !conn.user.id) {
     return m.reply('❌ Este comando está protegido y no puede ser usado fuera de Felix-Cat Bot.');
   }
 
-  // Solo admins o owners
+  // ✅ Mensaje solo texto para usuarios no admins
   if (!(isAdmin || isOwner)) {
-    global.dfail?.('admin', m, conn);
+    await conn.sendMessage(m.chat, {
+      text: '❌ Solo un administrador puede usar este comando.',
+      mentions: [m.sender]
+    });
     throw false;
   }
 
@@ -37,6 +37,6 @@ handler.command = ['invocar', 'todos', 'tagall'];
 handler.help = ['invocar *<mensaje>*'];
 handler.tags = ['grupos'];
 handler.group = true;
-handler.admin = true; // Solo admins pueden usarlo
+handler.admin = true;
 
 export default handler;
