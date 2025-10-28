@@ -1,63 +1,59 @@
 // plugins/t.js
-import { randomInt } from 'crypto';
+import { randomInt } from 'crypto'
 
-// Lista completa de mensajes sorpresa
 let mensajesDivertidos = [
-    "🎉 ¡Hey! Todos deberían leer esto 😏",
-    "👀 Atención, atención… algo raro está pasando",
-    "😈 No puedo decir mucho, pero todos tienen que verlo",
-    "🔥 Sorpresa misteriosa para todos ustedes",
-    "🤖 El bot dice: ¡Hola a todos sin que lo sepan!",
-    "😜 Alguien tiene que reaccionar primero…",
-    "👹 Esto es un mensaje secreto solo para ustedes",
-    "😏 ¿Quién se atreve a contestar primero?",
-    "⚡ Algo está por pasar… atentos todos",
-    "🎭 Veamos quién está prestando atención…",
-    "🩸 Nadie se lo espera, pero todos lo recibirán",
-    "💀 Cuidado, esto podría cambiar el juego",
-    "👁️ Todos están siendo observados…",
-    "🔥 Esto es solo el comienzo de la diversión",
-    "🤫 Misterio activado, lean con cuidado"
-];
+  "🎉 ¡Hey! Todos deberían leer esto 😏",
+  "👀 Atención, atención… algo raro está pasando",
+  "😈 No puedo decir mucho, pero todos tienen que verlo",
+  "🔥 Sorpresa misteriosa para todos ustedes",
+  "🤖 El bot dice: ¡Hola a todos sin que lo sepan!",
+  "😜 Alguien tiene que reaccionar primero…",
+  "👹 Esto es un mensaje secreto solo para ustedes",
+  "😏 ¿Quién se atreve a contestar primero?",
+  "⚡ Algo está por pasar… atentos todos",
+  "🎭 Veamos quién está prestando atención…",
+  "🩸 Nadie se lo espera, pero todos lo recibirán",
+  "💀 Cuidado, esto podría cambiar el juego",
+  "👁️ Todos están siendo observados…",
+  "🔥 Esto es solo el comienzo de la diversión",
+  "🤫 Misterio activado, lean con cuidado"
+]
 
-// Guardar historial por chat para evitar repetidos
-let historialMensajes = {};
+let historialMensajes = {}
 
 let handler = async (m, { conn, participants, isOwner }) => {
-    if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.');
-    if (!isOwner) return m.reply('❌ Solo los dueños del bot pueden usar este comando.');
+  // Solo en grupos
+  if (!m.isGroup) return conn.reply(m.chat, '❌ Este comando solo funciona en grupos.', m)
 
-    // Inicializar historial del chat si no existe
-    if (!historialMensajes[m.chat]) historialMensajes[m.chat] = [];
+  // Solo dueños del bot
+  const owners = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net']
+  if (!owners.includes(m.sender)) return conn.reply(m.chat, '❌ Solo los dueños del bot pueden usar este comando.', m)
 
-    // Filtrar mensajes que ya se usaron
-    let disponibles = mensajesDivertidos.filter(msg => !historialMensajes[m.chat].includes(msg));
+  // Inicializa historial si no existe
+  if (!historialMensajes[m.chat]) historialMensajes[m.chat] = []
 
-    // Si se acabaron los mensajes, resetear historial
-    if (disponibles.length === 0) {
-        historialMensajes[m.chat] = [];
-        disponibles = [...mensajesDivertidos];
-    }
+  // Filtra los que ya se usaron
+  let disponibles = mensajesDivertidos.filter(msg => !historialMensajes[m.chat].includes(msg))
+  if (disponibles.length === 0) {
+    historialMensajes[m.chat] = []
+    disponibles = [...mensajesDivertidos]
+  }
 
-    // Elegir mensaje aleatorio de los disponibles
-    let index = randomInt(0, disponibles.length);
-    let mensaje = disponibles[index];
+  // Selección aleatoria
+  let mensaje = disponibles[randomInt(0, disponibles.length)]
+  historialMensajes[m.chat].push(mensaje)
 
-    // Guardar en historial para no repetir
-    historialMensajes[m.chat].push(mensaje);
+  // Menciones ocultas
+  let mentions = participants.map(u => u.id)
 
-    // Generar mentions ocultas
-    let mentions = participants.map(u => u.id);
+  await conn.sendMessage(m.chat, { text: mensaje, mentions })
+}
 
-    // Enviar mensaje con mención oculta
-    await conn.sendMessage(m.chat, {
-        text: mensaje,
-        mentions: mentions
-    });
-};
+// Metadatos para el bot
+handler.help = ['u']
+handler.tags = ['fun', 'grupo']
+handler.command = ['u', 'hola']
+handler.group = true
+handler.register = false // ⚡ No requiere registro
 
-handler.help = ['u'];
-handler.tags = ['fun', 'grupo'];
-handler.command = ['u', 'hola']; // Comando .t
-
-export default handler;
+export default handler
