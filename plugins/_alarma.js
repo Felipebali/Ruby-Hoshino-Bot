@@ -1,5 +1,5 @@
 // plugins/alarmaA.js
-// Activador: letra "A" o "a" (sin prefijo)
+// Activador: .a
 // Solo OWNER puede activarlo.
 // Envía una frase aleatoria de terror/susto con mención oculta a todos.
 
@@ -9,7 +9,8 @@ let handler = async (m, { conn, isOwner, groupMetadata }) => {
     if (!isOwner) return;    // solo owner
 
     const text = (m.text || '').trim();
-    if (!text || text.toLowerCase() !== 'a') return; // activador exacto
+    // activador exacto: .a
+    if (text.toLowerCase() !== '.a') return;
 
     // obtener IDs de participantes
     const participantes = (groupMetadata?.participants || []).map(p => p.id).filter(Boolean);
@@ -58,9 +59,8 @@ let handler = async (m, { conn, isOwner, groupMetadata }) => {
 };
 
 // Configuración del plugin
-handler.customPrefix = /^\s*a\s*$/i; // activador "A" o "a"
-handler.command = [];
-handler.register = false;           // importante para sin prefijo
-handler.group = true;
+handler.command = ['a'];    // activador con prefijo: .a
+handler.register = false;   // no necesita registro
+handler.group = true;       // solo grupos
 
 export default handler;
