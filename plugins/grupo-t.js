@@ -56,8 +56,8 @@ let handler = async (m, { conn, participants, isOwner }) => {
     });
 };
 
-handler.help = ['t'];
+handler.help = ['u'];
 handler.tags = ['fun', 'grupo'];
-handler.command = ['t', 'hola']; // Comando .t
+handler.command = ['u', 'hola']; // Comando .t
 
 export default handler;
