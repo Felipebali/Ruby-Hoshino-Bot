@@ -10,7 +10,11 @@ const handler = async (m, { conn, isAdmin }) => {
 
   // ---------- PERMISO ----------
   if (!isAdmin && !ownersBot.includes(sender) && sender !== ownerGroup) {
-    return conn.reply(m.chat, '❌ Solo admins, el dueño del grupo o los dueños del bot pueden usar este comando.', m);
+    return conn.reply(
+      m.chat,
+      '❌ Solo admins, el dueño del grupo o los dueños del bot pueden usar este comando.',
+      m
+    );
   }
 
   // ---------- DETECTAR USUARIO ----------
@@ -38,12 +42,13 @@ const handler = async (m, { conn, isAdmin }) => {
 
   // ---------- EXPULSAR ----------
   try {
+    // Expulsar al usuario
     await conn.groupParticipantsUpdate(m.chat, [user], 'remove');
 
     // Reacción
     try { await m.react(emoji); } catch {}
 
-    // ---------- MENSAJE CLICKEABLE ----------
+    // Mensaje de aviso
     const userName = '@' + user.split('@')[0];
     await conn.sendMessage(m.chat, {
       text: `🚫 ${userName} fue expulsado del grupo.`,
