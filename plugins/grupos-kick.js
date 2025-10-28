@@ -73,7 +73,6 @@ handler.tags = ['grupo'];
 handler.command = ['k', 'echar', 'hechar', 'sacar', 'ban'];
 handler.admin = true;
 handler.group = true;
-handler.register = true;
 handler.botAdmin = true;
 
 export default handler;
