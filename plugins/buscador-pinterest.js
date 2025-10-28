@@ -1,42 +1,164 @@
-import axios from 'axios'
+import axios from 'axios';
+import baileys from '@whiskeysockets/baileys';
 
-let handler = async (m, { conn, text, usedPrefix }) => {
-if (!text) return m.reply(`(*∩_∩*) ⍴᥆r 𝖿ᥲ᥎᥆r, іᥒgrᥱsᥲ ᥣ᥆ 𝗊ᥙᥱ ძᥱsᥱᥲs ᑲᥙsᥴᥲr ⍴᥆r ⍴іᥒ𝗍ᥱrᥱs𝗍 🌸`)
+async function sendAlbumMessage(jid, medias, options = {}) {
+  if (typeof jid !== "string") throw new TypeError(`jid must be string, received: ${jid}`);
 
-try {
-await m.react('🕒')
+  for (const media of medias) {
+    if (!media.type || (media.type !== "image" && media.type !== "video")) 
+      throw new TypeError(`media.type must be "image" or "video", received: ${media.type}`);
+    if (!media.data || (!media.data.url && !Buffer.isBuffer(media.data))) 
+      throw new TypeError(`media.data must be object with url or buffer, received: ${media.data}`);
+  }
 
-const res = await axios.get(`https://ruby-core.vercel.app/api/search/pinterest?q=${encodeURIComponent(text)}`)
-const data = res.data
+  if (medias.length < 2) throw new RangeError("Minimum 2 media");
 
-if (!data.status || !data.results || data.results.length === 0) {
-return conn.reply(m.chat, `❀ ✧ No se encontraron resultados para «${text}» ❧ ❀`, m)
+  const caption = options.text || options.caption || "";
+  const delay = !isNaN(options.delay) ? options.delay : 500;
+  delete options.text;
+  delete options.caption;
+  delete options.delay;
+
+  // Crear el álbum
+  const album = baileys.generateWAMessageFromContent(
+    jid,
+    {
+      messageContextInfo: {},
+      albumMessage: {
+        expectedImageCount: medias.filter(m => m.type === "image").length,
+        expectedVideoCount: medias.filter(m => m.type === "video").length,
+        ...(options.quoted ? { contextInfo: options.quoted } : {})
+      }
+    },
+    {}
+  );
+
+  await conn.relayMessage(album.key.remoteJid, album.message, { 
+    messageId: album.key.id,
+    forwardedNewsletterMessageInfo: options.forwardedNewsletterMessageInfo
+  });
+
+  for (let i = 0; i < medias.length; i++) {
+    const { type, data } = medias[i];
+    const img = await baileys.generateWAMessage(
+      album.key.remoteJid,
+      { [type]: data, ...(i === 0 ? { caption } : {}) },
+      { upload: conn.waUploadToServer }
+    );
+
+    img.message.messageContextInfo = {
+      messageAssociation: { associationType: 1, parentMessageKey: album.key },
+      ...(options.quoted || {}),
+    };
+
+    await conn.relayMessage(img.key.remoteJid, img.message, { 
+      messageId: img.key.id,
+      forwardedNewsletterMessageInfo: options.forwardedNewsletterMessageInfo
+    });
+
+    await baileys.delay(delay);
+  }
+
+  return album;
 }
 
-const medias = data.results.slice(0, 10).map(img => ({
-type: 'image',
-data: { url: img.image_large_url, title: img.title }
-}))
+const pins = async (judul) => {
+  try {
+    const res = await axios.get(`https://anime-xi-wheat.vercel.app/api/pinterest?q=${encodeURIComponent(judul)}`);
+    if (Array.isArray(res.data.images)) {
+      return res.data.images.map(url => ({
+        image_large_url: url,
+        image_medium_url: url,
+        image_small_url: url
+      }));
+    }
+    return [];
+  } catch (error) {
+    console.error('Error:', error);
+    return [];
+  }
+};
 
-for (let i = 0; i < medias.length; i++) {
-await conn.sendMessage(m.chat, {
-image: { url: medias[i].data.url },
-caption: i === 0
-? `(*ˊᗜˋ*) ᑲᥙ́s𝗊ᥙᥱძᥲ ᥊ ⍴іᥒ𝗍ᥱrᥱs𝗍\n\n✧ 📌 𝗍і𝗍ᥙᥣ᥆ » «${text}»\n✐ 💎 rᥱsᥙᥣ𝗍ᥲძ᥆s » ${medias.length} іmᥲ́gᥱᥒᥱs ᥱᥒᥴ᥆ᥒ𝗍rᥲძᥲs`
-: `✧ ${medias[i].data.title || 'Sin título'}`
-}, { quoted: m })
-}
+let handler = async (m, { conn, text }) => {
+  if (!text) return conn.sendMessage(m.chat, { text: `Ingresa un texto. Ejemplo: .pin Gaara` }, { 
+    quoted: m,
+    forwardedNewsletterMessageInfo: {
+      newsletterJid: '120363422694102494@newsletter',
+      newsletterName: 'Gaara-Ultra-MD⚡️',
+      serverMessageId: 100
+    }
+  });
 
-await m.react('✔️')
-} catch (e) {
-await m.react('✖️')
-conn.reply(m.chat, `⚠︎ ❀ Se ha producido un error ❀\n> Usa *${usedPrefix}report* para informarlo.\n\n${e}`, m)
-}
-}
+  try {
+    const res2 = await fetch('https://files.catbox.moe/dloo3r.jpg');
+    const thumb2 = Buffer.from(await res2.arrayBuffer());
 
-handler.help = ['pinterest <texto>']
-handler.command = ['pinterest', 'pin']
-handler.tags = ["descargas"]
-handler.group = true
+    // Mensaje que simula el canal arriba
+    const fkontak = {
+      key: { 
+        participants: "0@s.whatsapp.net", 
+        remoteJid: "status@broadcast", 
+        fromMe: false, 
+        id: "Halo" 
+      },
+      message: {
+        locationMessage: {
+          name: '𝗕𝗨𝗦𝗤𝗨𝗘𝗗𝗔 𝗗𝗘 ✦ 𝗣𝗶𝗻𝘁𝗲𝗿𝗲𝘀𝘁',
+          jpegThumbnail: thumb2
+        }
+      },
+      participant: "0@s.whatsapp.net"
+    };
 
-export default handler
+    m.react('🕒');
+    const results = await pins(text);
+    if (!results || results.length === 0) return conn.sendMessage(m.chat, { text: `No se encontraron resultados para "${text}".` }, { 
+      quoted: m,
+      forwardedNewsletterMessageInfo: {
+        newsletterJid: '120363422694102494@newsletter',
+        newsletterName: 'Gaara-Ultra-MD⚡️',
+        serverMessageId: 100
+      }
+    });
+
+    const maxImages = Math.min(results.length, 15);
+    const medias = [];
+
+    for (let i = 0; i < maxImages; i++) {
+      medias.push({
+        type: 'image',
+        data: { url: results[i].image_large_url || results[i].image_medium_url || results[i].image_small_url }
+      });
+    }
+
+    // Enviar álbum con el canal simulado arriba
+    await sendAlbumMessage(m.chat, medias, {
+      caption: `Resultados de: ${text}\nCantidad de resultados: ${maxImages}`,
+      quoted: fkontak,
+      forwardedNewsletterMessageInfo: {
+        newsletterJid: '120363422694102494@newsletter',
+        newsletterName: 'Gaara-Ultra-MD⚡️',
+        serverMessageId: 100
+      }
+    });
+
+    await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
+
+  } catch (error) {
+    console.error(error);
+    conn.sendMessage(m.chat, { text: 'Error al obtener imágenes de Pinterest.' }, { 
+      quoted: m,
+      forwardedNewsletterMessageInfo: {
+        newsletterJid: '120363422694102494@newsletter',
+        newsletterName: 'Gaara-Ultra-MD⚡️',
+        serverMessageId: 100
+      }
+    });
+  }
+};
+
+handler.help = ['pinterest'];
+handler.command = ['pinterest', 'pin'];
+handler.tags = ['buscador'];
+
+export default handler;

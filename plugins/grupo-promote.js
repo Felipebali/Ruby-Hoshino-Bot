@@ -1,27 +1,28 @@
-const handler = async (m, { conn, text, participants }) => {
-  let user;
+// promote.js (.p)
+let handler = async (m, { conn, isAdmin, isBotAdmin, isOwner }) => {
+    if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.');
+    // Permitir admins o owners
+    if (!isAdmin && !isOwner) return m.reply('❌ Solo administradores o dueños pueden usar este comando.');
+    if (!isBotAdmin) return m.reply('❌ Necesito ser administrador para promover.');
 
-  // Obtener el usuario a promover
-  if (m.mentionedJid && m.mentionedJid.length) {
-    user = m.mentionedJid[0]; // usa el primer mencionado
-  } else if (m.quoted?.sender) {
-    user = m.quoted.sender;
-  } else {
-    throw '⚠️ Debes mencionar a un usuario o responder a su mensaje para promoverlo.';
-  }
+    const user = (m.mentionedJid && m.mentionedJid[0]) || (m.quoted && m.quoted.sender);
+    if (!user) return m.reply('⚠️ Menciona o responde al usuario que deseas promover.');
 
-  // Promocionar al usuario
-  await conn.groupParticipantsUpdate(m.chat, [user], 'promote');
-  conn.reply(m.chat, `✅ @${user.split('@')[0]} ahora es administrador.`, m, {
-    mentions: [user]
-  });
+    try {
+        await conn.groupParticipantsUpdate(m.chat, [user], 'promote');
+        await conn.sendMessage(m.chat, { 
+            text: `✅ @${user.split('@')[0]} bien por vos sos admin.`, 
+            mentions: [user] 
+        });
+    } catch (e) {
+        console.error(e);
+        m.reply('❌ Error al intentar promover al usuario.');
+    }
 };
 
-handler.help = ['promote'];
-handler.tags = ['grupo'];
-handler.command = ['promote', 'darpija', 'promover'];
+handler.command = ['p'];
 handler.group = true;
-handler.admin = true;
+handler.admin = false; // Lo manejamos dentro del handler
 handler.botAdmin = true;
 
 export default handler;

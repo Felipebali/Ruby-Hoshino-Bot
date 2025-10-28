@@ -1,71 +1,62 @@
+// plugins/_casino_deschetar.js
 let handler = async (m, { conn, text }) => {
-    let who;
 
-    if (m.isGroup) {
-        if (m.mentionedJid.length > 0) {
-            who = m.mentionedJid[0];
-        } else if (m.replyMessage && m.replyMessage.sender) {
-            who = m.replyMessage.sender;
-        } else if (text) {
-            who = text.trim();
-            if (!who.endsWith('@s.whatsapp.net')) {
-                who = `${who}@s.whatsapp.net`;
-            }
-        } else {
-            who = m.sender;
-        }
-    } else {
-        if (text) {
-            who = text.trim();
-            if (!who.endsWith('@s.whatsapp.net')) {
-                who = `${who}@s.whatsapp.net`;
-            }
-        } else {
-            who = m.sender;
-        }
-    }
+  const owners = ['59898719147', '59896026646'] // Dueños del casino
+  const senderShort = m.sender.split('@')[0]
 
-    console.log(`Usuario procesado: ${who}`); // Para depuración
+  if (!owners.includes(senderShort))
+    return m.reply(`🚫 @${senderShort} — No tienes permiso para usar este comando.`, null, { mentions: [m.sender] })
 
-    if (!global.db) global.db = {};
-    if (!global.db.data) global.db.data = {};
-    if (!global.db.data.users) global.db.data.users = {};
+  let who
 
-    let users = global.db.data.users;
+  // --- detectar usuario ---
+  if (m.isGroup) {
+    if (m.mentionedJid && m.mentionedJid.length > 0) who = m.mentionedJid[0]
+    else if (m.quoted && m.quoted.sender) who = m.quoted.sender
+  }
 
-    if (!users[who]) throw `${emoji2} El usuario no tiene datos para deschetar.`;
+  // --- detectar por número ---
+  if (text && !who) {
+    const num = text.trim().replace(/[^0-9]/g, '')
+    if (num) who = num + '@s.whatsapp.net'
+  }
 
-    users[who].coin = 0;
-    users[who].exp = 0;
-    users[who].level = 0;
+  if (!who) who = m.sender
 
-    await global.db.write();
+  // --- base de datos segura ---
+  if (!global.db) global.db = { data: {} }
+  if (!global.db.data.users) global.db.data.users = {}
+  if (!global.db.data.users[who]) global.db.data.users[who] = {}
 
-    for (let subbot of global.conns) {
-        try {
-            if (subbot.user) {
-                await subbot.sendMessage(m.chat, { text: `/deschetar ${who.split`@`[0]}` });
-            }
-        } catch (error) {
-            console.log(`${msm} Error al deschetar al usuario: ${error.message}`);
-        }
-    }
+  const user = global.db.data.users[who]
 
-    await m.reply(
-        `☁️ *¡Usuario descheteado con éxito!*\n\n` +
-        `👤 Usuario: @${who.split`@`[0]}\n` +
-        `💸 ${m.moneda}: *0*\n` +
-        `✨ Experiencia: *0*\n` +
-        `🌟 Nivel: *0*`,
-        null,
-        { mentions: [who] }
-    );
-};
+  // Inicializar campos si no existen
+  if (isNaN(user.coins)) user.coins = 100
+  if (isNaN(user.bank)) user.bank = 0
+  if (!Array.isArray(user.history)) user.history = []
+  if (!Array.isArray(user.inventory)) user.inventory = []
+  if (typeof user.lastDaily !== 'number') user.lastDaily = 0
 
-handler.help = ['deschetar *@user*', 'deschetar *<número>*'];
-handler.tags = ['owner'];
-handler.command = ['deschetar'];
-handler.register = true;
-handler.rowner = true;
+  // --- aplicar deschetada ---
+  user.coins = 100
+  user.bank = 0
+  user.history.unshift(`🧨 Don Feli te deschetó (${new Date().toLocaleDateString()})`)
+  if (user.history.length > 50) user.history.pop()
 
-export default handler;
+  // --- respuesta ---
+  await conn.sendMessage(m.chat, {
+    text: `💀 *¡Usuario deschetado!* 💀\n\n` +
+          `🎩 Usuario: @${who.split('@')[0]}\n` +
+          `💰 Fichas: ${user.coins.toLocaleString()}\n` +
+          `🏦 Banco: ${user.bank.toLocaleString()}\n\n` +
+          `😈 Justicia del casino mafioso.`,
+    mentions: [who]
+  })
+}
+
+handler.help = ['deschetar *@usuario*']
+handler.tags = ['owner']
+handler.command = /^deschetar$/i
+handler.rowner = true
+
+export default handler

@@ -1,65 +1,44 @@
-import fetch from 'node-fetch';
+import { promises as fs } from 'fs';
 
-const newsletterJid  = '120363335626706839@newsletter';
-const newsletterName = '🌸『 Ruby-Hoshino Waifu Channel 』🌸';
+const charactersFilePath = './src/database/characters.json';
 
-let handler = async (m, { conn, usedPrefix, command }) => {
-  try {
-    const contextInfo = {
-      mentionedJid: [m.sender],
-      isForwarded: true,
-      forwardingScore: 999,
-      forwardedNewsletterMessageInfo: {
-        newsletterJid,
-        newsletterName,
-        serverMessageId: -1
-      },
-      externalAdReply: {
-        title: packname,
-        body: dev,
-        thumbnail: icons,
-        sourceUrl: redes,
-        mediaType: 1,
-        renderLargerThumbnail: false
-      }
-    };
+async function loadCharacters() {
+    const data = await fs.readFile(charactersFilePath, 'utf-8');
+    return JSON.parse(data);
+}
 
-    await m.react('🌸');
-    await conn.reply(m.chat, '🎀 *Buscando una waifu para ti... espera un momento~*', m, { contextInfo });
+async function saveCharacters(characters) {
+    await fs.writeFile(charactersFilePath, JSON.stringify(characters, null, 2), 'utf-8');
+}
 
-    let res = await fetch('https://api.waifu.pics/sfw/waifu');
-    if (!res.ok) throw new Error('No se pudo obtener la waifu.');
-    let json = await res.json();
-    if (!json.url) throw new Error('Respuesta inválida.');
+let handler = async (m, { conn, args, isOwner }) => {
+    try {
+        if (!isOwner) return await conn.reply(m.chat, '✘ Solo el *owner* puede robar waifus.', m);
+        if (!args[0]) return await conn.reply(m.chat, '✘ Debes proporcionar el ID de la waifu que quieres robar.', m);
 
-    const caption = `🌸 *Aquí tienes tu waifu, ${conn.getName(m.sender)}-chan~* 〰️\n\n✨ ¿Quieres otra waifu? Solo toca el botón de abajo~`;
+        const characters = await loadCharacters();
+        const waifuId = args[0];
+        const waifu = characters.find(c => c.id === waifuId);
 
-    const buttons = [
-      { buttonId: usedPrefix + command, buttonText: { displayText: '🔁 Siguiente waifu' }, type: 1 }
-    ];
+        if (!waifu) return await conn.reply(m.chat, `✘ No se encontró ninguna waifu con el ID: *${waifuId}*`, m);
 
-    await conn.sendMessage(
-      m.chat,
-      {
-        image: { url: json.url },
-        caption,
-        footer: '🐾 Ruby Hoshino Bot',
-        buttons,
-        headerType: 4
-      },
-      { quoted: m, contextInfo }
-    );
+        const oldOwner = waifu.user;
+        waifu.user = m.sender;
+        await saveCharacters(characters);
 
-  } catch (e) {
-    console.error(e);
-    await conn.reply(m.chat, '❌ Lo siento, ocurrió un error al buscar tu waifu.', m);
-  }
+        await conn.reply(m.chat, `✧ Has robado a *${waifu.name}* (ID: ${waifu.id}) del usuario *${oldOwner.split('@')[0]}* ✧`, m);
+
+        if (oldOwner !== m.sender) {
+            await conn.sendMessage(oldOwner, { text: `✘ El owner ha robado a tu waifu *${waifu.name}* (ID: ${waifu.id}).` });
+        }
+    } catch (error) {
+        await conn.reply(m.chat, `✘ Error: ${error.message}`, m);
+    }
 };
 
-handler.help = ['waifu'];
-handler.tags = ['anime'];
-handler.command = ['waifu'];
+handler.help = ['robawaifu <id>'];
+handler.tags = ['gacha'];
+handler.command = ['robawaifu'];
 handler.group = true;
-handler.register = true;
 
 export default handler;

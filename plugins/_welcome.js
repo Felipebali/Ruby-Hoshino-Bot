@@ -1,187 +1,127 @@
-import fs from 'fs'
-import { WAMessageStubType } from '@whiskeysockets/baileys'
+// plugins/_welcome.js
+import fetch from 'node-fetch'
 
-const newsletterJid = '120363335626706839@newsletter';
-const newsletterName = '𖥔ᰔᩚ⋆｡˚ ꒰🍒 ʀᴜʙʏ-ʜᴏꜱʜɪɴᴏ | ᴄʜᴀɴɴᴇʟ-ʙᴏᴛ 💫꒱࣭';
-const packname = '⏤͟͞ू⃪  ̸̷͢𝐑𝐮𝐛y͟ 𝐇𝐨𝐬𝐡𝐢n͟ᴏ 𝐁𝐨t͟˚₊·—̳͟͞͞♡̥';
+export async function welcome(conn) {
+  // Escucha los cambios de participantes
+  conn.ev.on('group-participants.update', async (update) => {
+    try {
+      const chat = update.id || update.jid
+      const action = update.action
+      const participants = update.participants || []
 
-const iconos = [
-'https://qu.ax/wwbar.jpg',
-'https://qu.ax/iFzQw.jpeg',
-'https://qu.ax/dsZyo.jpeg',
-'https://qu.ax/eNdBB.jpeg',
-'https://qu.ax/MSzGw.jpeg',
-'https://qu.ax/JqMBW.jpeg',
-'https://qu.ax/HKcSr.jpeg',
-'https://qu.ax/HOuUU.jpeg',
-'https://qu.ax/ojUNn.jpeg',
-'https://qu.ax/HtqBi.jpeg',
-'https://qu.ax/bmQOA.jpeg',
-'https://qu.ax/nTFtU.jpeg',
-'https://qu.ax/PYKgC.jpeg',
-'https://qu.ax/exeBy.jpeg',
-'https://qu.ax/SCxhf.jpeg',
-'https://qu.ax/sqxSO.jpeg',
-'https://qu.ax/cdSYJ.jpeg',
-'https://qu.ax/dRmZY.jpeg',
-'https://qu.ax/ubwLP.jpg',
-'https://qu.ax/JSgSc.jpg',
-'https://qu.ax/FUXJo.jpg',
-'https://qu.ax/qhKUf.jpg',
-'https://qu.ax/mZKgt.jpg'
-];
+      if (!participants.length) return
 
-const getRandomIcono = () => iconos[Math.floor(Math.random() * iconos.length)];
+      // Obtener metadata del grupo
+      const groupMetadata = await conn.groupMetadata(chat).catch(() => ({}))
 
-async function generarBienvenida({ conn, userId, groupMetadata, chat }) {
-const username = `@${userId.split('@')[0]}`;
-const pp = await conn.profilePictureUrl(userId, 'image').catch(() => 'https://raw.githubusercontent.com/The-King-Destroy/Adiciones/main/Contenido/1745522645448.jpeg');
-const fecha = new Date().toLocaleDateString("es-ES", { timeZone: "America/Santo_Domingo", day: 'numeric', month: 'long', year: 'numeric' });
-const groupSize = groupMetadata.participants.length + 1; 
-const desc = groupMetadata.desc?.toString() || 'Sin descripción';
+      for (let who of participants) {
+        const username = who.split('@')[0]
 
-let caption;
-if (chat.welcomeText) {
-caption = chat.welcomeText
-.replace(/@user/g, username)
-.replace(/@subject/g, groupMetadata.subject)
-.replace(/@desc/g, desc);
-} else {
-const defaultWelcomeMessage = `｡ﾟﾟ･｡･ﾟﾟ｡
-ﾟ。      ｡ﾟ
-　ﾟ･｡･ﾟ
-︵ ⊹ ︵ ⊹ ︵ ⊹ ︵ ⊹ ︵ ⊹ ︵ ⊹ ︵
-╭──*·˚ 🪷 𝐍𝐔𝐄𝐕𝐎 𝐔𝐒𝐔𝐀𝐑𝐈𝐎 🪷 ˚·*──╮
+        // Función para obtener país
+        const getPais = (numero) => {
+          const paises = {
+            "1": "🇺🇸 Estados Unidos", "34": "🇪🇸 España", "52": "🇲🇽 México",
+            "54": "🇦🇷 Argentina", "55": "🇧🇷 Brasil", "56": "🇨🇱 Chile",
+            "57": "🇨🇴 Colombia", "58": "🇻🇪 Venezuela", "591": "🇧🇴 Bolivia",
+            "593": "🇪🇨 Ecuador", "595": "🇵🇾 Paraguay", "598": "🇺🇾 Uruguay",
+            "502": "🇬🇹 Guatemala", "503": "🇸🇻 El Salvador", "504": "🇭🇳 Honduras",
+            "505": "🇳🇮 Nicaragua", "506": "🇨🇷 Costa Rica", "507": "🇵🇦 Panamá",
+            "51": "🇵🇪 Perú", "53": "🇨🇺 Cuba", "91": "🇮🇳 India"
+          }
+          for (let i = 1; i <= 3; i++) {
+            const prefijo = numero.slice(0, i)
+            if (paises[prefijo]) return paises[prefijo]
+          }
+          return "🌎 Desconocido"
+        }
 
- ¡𝙃𝙤𝙡𝙖, @user! ૮(ˊ ᵔ ˋ)ა
- Bienvenid@ a la familia de:
- *@subject*
+        const numeroUsuario = username
+        const pais = getPais(numeroUsuario)
 
- 𝙀𝙨𝙥𝙚𝙧𝙖𝙢𝙤𝙨 𝙦𝙪𝙚 𝙩𝙪 𝙚𝙨𝙩𝙖𝙙𝙞𝙖
- 𝙨𝙚𝙖 𝙢𝙖𝙧𝙖𝙫𝙞𝙡𝙡𝙤𝙨𝙖.
+        // Avatar del usuario
+        const avatarUsuario = await conn.profilePictureUrl(who, 'image')
+          .catch(() => 'https://i.ibb.co/1s8T3sY/48f7ce63c7aa.jpg')
 
-· · • • • ✿ • • • · ·
-「 𝐈𝐍𝐅𝐎 𝐃𝐄𝐋 𝐆𝐑𝐔𝐏𝐎 」
-🍡 𝐌𝐢𝐞𝐦𝐛𝐫𝐨𝐬: ${groupSize}
-📅 𝐅𝐞𝐜𝐡𝐚: ${fecha}
-📄 𝐃𝐞𝐬𝐜𝐫𝐢𝐩𝐜𝐢𝐨́𝐧: 
-${desc}
-· · • • • ✿ • • • · ·
+        // Imagen de contacto para quoted
+        const thumbBuffer = await fetch('https://files.catbox.moe/7sbozb.jpg').then(res => res.buffer())
+        const fkontak = {
+          key: { participants: "0@s.whatsapp.net", remoteJid: chat, fromMe: false, id: "Halo" },
+          message: { locationMessage: { name: "☆ 𝚁𝙸𝙽 𝙸𝚃𝙾𝚂𝙷𝙸 𝚄𝙻𝚃𝚁𝙰 ☆ 🌸", jpegThumbnail: thumbBuffer } },
+          participant: "0@s.whatsapp.net"
+        }
 
-> 𝙿𝚞𝚎𝚍𝚎𝚜 𝚙𝚎𝚛𝚜𝚘𝚗𝚊𝚕𝚒𝚣𝚊𝚛 𝚎𝚜𝚝𝚎 𝚖𝚎𝚗𝚜𝚊𝚓𝚎
-> 𝚞𝚜𝚊𝚗𝚍𝚘: *#setwelcome*
+        const fechaObj = new Date()
+        const hora = fechaObj.toLocaleTimeString('es-PE', { timeZone: 'America/Lima' })
+        const fecha = fechaObj.toLocaleDateString('es-PE', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'America/Lima' })
+        const dia = fechaObj.toLocaleDateString('es-PE', { weekday: 'long', timeZone: 'America/Lima' })
+        const groupSize = groupMetadata.participants?.length || 0
 
-╰──*·˚ 🍥 ˚·*──────────╯`;
+        const contextInfo = {
+          mentionedJid: [who],
+          externalAdReply: {
+            title: '🍉 𝙒𝙚𝙡𝙘𝙤𝙢𝙚 𝙍𝙞𝙣 𝙄𝙩𝙤𝙨𝙝𝙞 - 𝘽𝙤𝙩 🌿',
+            body: '',
+            previewType: "PHOTO",
+            thumbnailUrl: avatarUsuario,
+            sourceUrl: "https://instagram.com",
+            mediaType: 1
+          }
+        }
 
-caption = defaultWelcomeMessage
-.replace(/@user/g, username)
-.replace(/@subject/g, groupMetadata.subject);
+        // Mensajes
+        const welcomeMessage = `
+╭━━━〔 🌸 *ＢＩＥＮ𝐕𝐄𝐍𝐈𝐃𝐎 @${numeroUsuario}* 🌸 〕━━⬣
+│🎀 ʙɪᴇɴᴠᴇɴɪᴅᴏ ᴀ *${groupMetadata.subject || "este grupo"}* 💫
+│🍃 _${groupMetadata.desc?.slice(0, 120) || "Sin descripción."}_
+│🌸 𝑀𝑖𝑒𝑚𝑏𝑟𝑜𝑠: *${groupSize}*
+│🕰️ 𝐹𝑒𝑐ℎ𝑎: *${dia}, ${fecha}*
+│🌍 𝐿𝑢𝑔𝑎𝑟: *${pais}*
+╰━━━〔 💮 𝑅𝑖𝑛 𝐼𝑡𝑜𝑠ℎ𝑖 💮 〕━━⬣
+> ✨ *Que disfrutes tu estadía en este grupo.*
+> ૮₍｡˃ ᵕ ˂ ｡₎ა 💕 Usa _#menu_ para explorar comandos.`
+
+        const byeMessage = `
+╭━━━〔 💔 *Ｈ𝐀𝐒𝐓𝐀 Ｐ𝐑𝐎𝐍𝐓𝐎 @${numeroUsuario}* 💔 
+│🍂 𝑬𝒔 𝒕𝒓𝒊𝒔𝒕𝒆 𝒗𝒆𝒓𝐭𝑒 𝒊𝒓...
+│🕊️ 𝐺𝑟𝑢𝑝𝑜: *${groupMetadata.subject || "este grupo"}*
+│🌸 𝑀𝑖𝑒𝑚𝑏𝑟𝑜𝑠: *${groupSize}*
+│🕰️ 𝐹𝑒𝑐ℎ𝑎: *${dia}, ${fecha}*
+│🌍 𝐿𝑢𝑔𝑎𝑟: *${pais}*
+╰━━━〔 💮 𝑅𝑖𝑛 𝐼𝑡𝑜𝑠ℎ𝑖 💮 〕━━⬣
+> 🌧️ *Esperamos verte de nuevo pronto.*
+> 🍃 Usa _#help_ si vuelves, estaremos aquí.`
+
+        // Acciones
+        if (action === 'add') {
+          await conn.sendMessage(chat, { 
+            image: { url: avatarUsuario },
+            caption: welcomeMessage,
+            contextInfo,
+            mentions: [who],
+            buttons: [
+              { buttonId: "#reg shadow.18", buttonText: { displayText: "💮 𝐀𝐔𝐓𝐎 𝐕𝐄𝐑𝐈𝐅𝐈𝐂𝐀𝐑 💮" }, type: 1 },
+              { buttonId: "#menu", buttonText: { displayText: "🌸 𝐌𝐄𝐍𝐔 𝐑𝐈𝐍 𝐈𝐓𝐎𝐒𝐇𝐈 🌸" }, type: 1 }
+            ],
+            headerType: 4
+          }, { quoted: fkontak })
+        }
+
+        if (action === 'remove') {
+          await conn.sendMessage(chat, { 
+            image: { url: avatarUsuario },
+            caption: byeMessage,
+            contextInfo,
+            mentions: [who],
+            buttons: [
+              { buttonId: "#menu", buttonText: { displayText: "☁️ 𝐌𝐄𝐍𝐔 ☁️" }, type: 1 },
+              { buttonId: "#p", buttonText: { displayText: "🍃 𝐒𝐓𝐀𝐓𝐔𝐒 🍃" }, type: 1 }
+            ],
+            headerType: 4
+          }, { quoted: fkontak })
+        }
+      }
+    } catch (e) {
+      console.error('Error en welcome plugin:', e)
+    }
+  })
 }
-return { pp, caption, mentions: [userId] };
-}
-
-async function generarDespedida({ conn, userId, groupMetadata, chat }) {
-const username = `@${userId.split('@')[0]}`;
-const pp = await conn.profilePictureUrl(userId, 'image').catch(() => 'https://raw.githubusercontent.com/The-King-Destroy/Adiciones/main/Contenido/1745522645448.jpeg');
-const fecha = new Date().toLocaleDateString("es-ES", { timeZone: "America/Santo_Domingo", day: 'numeric', month: 'long', year: 'numeric' });
-const groupSize = groupMetadata.participants.length - 1;
-
-let caption;
-if (chat.byeText) {
-caption = chat.byeText
-.replace(/@user/g, username)
-.replace(/@subject/g, groupMetadata.subject);
-} else {
-const defaultByeMessage = `｡ﾟﾟ･｡･ﾟﾟ｡
-ﾟ。      ｡ﾟ
-　ﾟ･｡･ﾟ
-︵ ⊹ ︵ ⊹ ︵ ⊹ ︵ ⊹ ︵ ⊹ ︵ ⊹ ︵
-╭──*·˚ 💔 𝐔𝐍𝐀 𝐃𝐄𝐒𝐏𝐄𝐃𝐈𝐃𝐀 💔 ˚·*──╮
-
- 𝙎𝙖𝙮𝙤𝙣𝙖𝙧𝙖, @user (TωT)/~~~
- Ha dejado el grupo:
- *@subject*
-
- 𝙀𝙨𝙥𝙚𝙧𝙖𝙢𝙤𝙨 𝙦𝙪𝙚 𝙝𝙖𝙮𝙖𝙨 𝙙𝙞𝙨𝙛𝙧𝙪𝙩𝙖𝙙𝙤
- 𝙩𝙪 𝙩𝙞𝙚𝙢𝙥𝙤 𝙘𝙤𝙣 𝙣𝙤𝙨𝙤𝙩𝙧𝙤𝙨.
-
-· · • • • ✿ • • • · ·
- 「 𝐄𝐒𝐓𝐀𝐃𝐎 𝐀𝐂𝐓𝐔𝐀𝐋 」
- 📉 𝐌𝐢𝐞𝐦𝐛𝐫𝐨𝐬: ${groupSize}
- 📅 𝐅𝐞𝐜𝐡𝐚: ${fecha}
-· · • • • ✿ • • • · ·
-
-> 𝙿𝚞𝚎𝚍𝚎𝚜 𝚙𝚎𝚛𝚜𝚘𝚗𝚊𝚕𝚒𝚣𝚊𝚛 𝚎𝚜𝚝𝚎 𝚖𝚎𝚗𝚜𝚊𝚓𝚎
-> 𝚞𝚜𝚊𝚗𝚍𝚘: *#setbye*
-
-╰──*·˚ 🥀 ˚·*──────────╯`;
-
-caption = defaultByeMessage
-.replace(/@user/g, username)
-.replace(/@subject/g, groupMetadata.subject);
-}
-return { pp, caption, mentions: [userId] };
-}
-
-let handler = m => m
-
-handler.before = async function (m, { conn, participants, groupMetadata }) {
-if (!m.messageStubType || !m.isGroup) return !0
-
-const chat = global.db.data.chats[m.chat]
-if (!chat) return !0;
-
-const primaryBot = chat.botPrimario
-if (primaryBot && conn.user.jid !== primaryBot) return !0
-
-const userId = m.messageStubParameters[0]
-
-if (chat.welcome && m.messageStubType == WAMessageStubType.GROUP_PARTICIPANT_ADD) {
-const { pp, caption, mentions } = await generarBienvenida({ conn, userId, groupMetadata, chat })
-const contextInfo = {
-mentionedJid: mentions,
-isForwarded: true,
-forwardingScore: 999,
-forwardedNewsletterMessageInfo: {
-newsletterJid,
-newsletterName,
-serverMessageId: -1
-},
-externalAdReply: {
-title: packname,
-body: 'I🎀 𓈒꒰ 𝐘𝐚𝐲~ 𝐁𝐢𝐞𝐧𝐯𝐞𝐧𝐢𝐝@! (≧∇≦)/',
-thumbnailUrl: getRandomIcono(),
-sourceUrl: global.redes,
-mediaType: 1,
-renderLargerThumbnail: false
-}
-};
-await conn.sendMessage(m.chat, { image: { url: pp }, caption, contextInfo }, { quoted: null })
-}
-
-if (chat.welcome && (m.messageStubType == WAMessageStubType.GROUP_PARTICIPANT_REMOVE || m.messageStubType == WAMessageStubType.GROUP_PARTICIPANT_LEAVE)) {
-const { pp, caption, mentions } = await generarDespedida({ conn, userId, groupMetadata, chat })
-const contextInfo = {
-mentionedJid: mentions,
-isForwarded: true,
-forwardingScore: 999,
-forwardedNewsletterMessageInfo: {
-newsletterJid,
-newsletterName,
-serverMessageId: -1
-},
-externalAdReply: {
-title: packname,
-body: 'I🎀 𓈒꒰ 𝐒𝐚𝐲𝐨̄𝐧𝐚𝐫𝐚... (TωT)/',
-thumbnailUrl: getRandomIcono(),
-sourceUrl: global.redes,
-mediaType: 1,
-renderLargerThumbnail: false
-}
-};
-await conn.sendMessage(m.chat, { image: { url: pp }, caption, contextInfo }, { quoted: null })
-}
-}
-
-export { generarBienvenida, generarDespedida }
-export default handler
