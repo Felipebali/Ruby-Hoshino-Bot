@@ -1,5 +1,5 @@
 // 📂 plugins/propietario-ln.js
-// Lista negra con expulsión automática, incluso si es admin
+// Lista negra con expulsión automática y menciones clickeables
 
 function normalizeJid(jid = '') {
   if (!jid) return null
