@@ -85,7 +85,6 @@ delete userRequests[m.sender];
 handler.help = ['mediafire', 'mediafiredl'];
 handler.tags = ['descargas'];
 handler.command = /^(mediafire|mediafiredl|dlmediafire)$/i;
-handler.register = true;
 handler.limit = 3;
 
 export default handler;
