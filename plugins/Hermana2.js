@@ -29,8 +29,7 @@ let handler = async (m, { conn, isOwner }) => {
     mentions: [hermanaID]
   })
 }
-
-handler.command = /^hermana$/i
+handler.customPrefix = /^hermana$/i
 handler.tags = ['frases']
 handler.help = ['hermana2']
 export default handler
