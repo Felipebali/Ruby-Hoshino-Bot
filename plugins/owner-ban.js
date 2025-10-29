@@ -99,7 +99,7 @@ const handler = async (m, { conn, command, text }) => {
     if (bannedUsers.length === 0)
       return conn.sendMessage(m.chat, { text: `${done} No hay usuarios en la lista negra.` })
 
-    const chunkSize = 10 // máximo 10 menciones por mensaje
+    const chunkSize = 10
     for (let i = 0; i < bannedUsers.length; i += chunkSize) {
       const chunk = bannedUsers.slice(i, i + chunkSize)
       let list = '🚫 *Lista negra actual:*\n\n'
@@ -140,8 +140,9 @@ const handler = async (m, { conn, command, text }) => {
 }
 
 // --- AUTO-KICK SI HABLA ---
-handler.all = async function (m, { conn }) {
+handler.all = async function (m) {
   if (!m.isGroup || !m.sender) return
+  const conn = this
   const db = global.db.data.users || {}
   const sender = normalizeJid(m.sender)
   if (db[sender]?.banned) {
@@ -156,15 +157,17 @@ handler.all = async function (m, { conn }) {
       console.log(`[AUTO-KICK] Eliminado ${sender}`)
     } catch (e) {
       if (e.data === 429 || e.message.includes('rate-overlimit')) {
-        console.log(`⚠️ Rate limit al intentar autokick. Esperando...`)
-        await new Promise(r => setTimeout(r, 8000))
+        console.log(`⚠️ Rate limit al intentar autokick. Esperando 10s...`)
+        await new Promise(r => setTimeout(r, 10000))
       } else console.log(`⚠️ No se pudo eliminar a ${sender}: ${e.message}`)
     }
   }
 }
 
 // --- AUTO-KICK AL UNIRSE ---
-handler.participantsUpdate = async function ({ id, participants, action }, conn) {
+handler.participantsUpdate = async function (event) {
+  const conn = this
+  const { id, participants, action } = event
   if (action !== 'add' && action !== 'invite') return
   const db = global.db.data.users || {}
   for (const user of participants) {
@@ -181,17 +184,4 @@ handler.participantsUpdate = async function ({ id, participants, action }, conn)
         console.log(`[AUTO-KICK JOIN] ${u} eliminado`)
       } catch (e) {
         if (e.data === 429 || e.message.includes('rate-overlimit')) {
-          console.log(`⚠️ Rate limit al expulsar a ${u}, pausando 10s...`)
-          await new Promise(r => setTimeout(r, 10000))
-        } else console.log(`⚠️ No se pudo eliminar a ${u}: ${e.message}`)
-      }
-    }
-  }
-}
-
-handler.help = ['ln', 'unln', 'cln', 'verln', 'usln']
-handler.tags = ['owner']
-handler.command = ['ln', 'unln', 'cln', 'verln', 'usln']
-handler.rowner = true
-
-export default handler
+          console.log(`
