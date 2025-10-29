@@ -2,27 +2,49 @@ import fs from 'fs'
 import axios from 'axios'
 
 let handler = async (m, { conn }) => {
-  if (!m.quoted || !m.quoted.message || !/image/.test(m.quoted.mtype)) {
-    return conn.reply(m.chat, '⚠️ Responde a una imagen con el comando .hd', m)
-  }
-
   try {
-    let media = await m.quoted.download?.()
-    if (!media) throw 'No se pudo descargar la imagen'
+    // Detectar si el mensaje citado contiene una imagen
+    const quoted = m.quoted ? m.quoted : m
+    const mime = (quoted.msg || quoted).mimetype || quoted.mtype || ''
 
-    // Subir imagen a un servidor temporal para procesarla
-    let { data: upload } = await axios.post('https://api.nekobot.xyz/api/imagegen', {
-      type: 'deepfry', // mejora tipo IA
-      image: 'data:image/jpeg;base64,' + media.toString('base64')
+    // Si no es imagen, avisar
+    if (!/image/.test(mime)) {
+      return conn.reply(m.chat, '⚠️ Responde a una imagen con el comando .hd', m)
+    }
+
+    // Descargar la imagen citada
+    const imgBuffer = await quoted.download?.()
+    if (!imgBuffer) throw 'No se pudo descargar la imagen'
+
+    // Subir la imagen a un host temporal
+    const upload = await axios.post('https://api.imgbb.com/1/upload', imgBuffer, {
+      headers: { 'Content-Type': 'application/octet-stream' },
+      params: { key: '2b7a1b9a3a347c24cf1f70a9c5f95d55' } // API key pública gratuita
     })
 
-    if (!upload || !upload.message) throw 'Error al mejorar la imagen'
+    const imgUrl = upload.data?.data?.url
+    if (!imgUrl) throw 'No se pudo subir la imagen'
 
-    await conn.sendMessage(m.chat, { image: { url: upload.message }, caption: '✅ Imagen mejorada en HD' }, { quoted: m })
+    // Enviar a API de mejora IA
+    const enhance = await axios.get(`https://imageupscaler.halolol.repl.co/upscale?url=${encodeURIComponent(imgUrl)}`, {
+      responseType: 'arraybuffer'
+    })
 
-  } catch (e) {
-    console.error(e)
-    conn.reply(m.chat, '❌ Ocurrió un error al mejorar la imagen.', m)
+    // Guardar el resultado temporalmente
+    const out = `./tmp/hd-${Date.now()}.jpg`
+    fs.writeFileSync(out, Buffer.from(enhance.data))
+
+    // Enviar la imagen mejorada
+    await conn.sendMessage(
+      m.chat,
+      { image: fs.readFileSync(out), caption: '✅ Imagen mejorada en HD' },
+      { quoted: m }
+    )
+
+    fs.unlinkSync(out)
+  } catch (err) {
+    console.error(err)
+    await conn.reply(m.chat, '❌ No se pudo mejorar la imagen. Intenta con otra.', m)
   }
 }
 
