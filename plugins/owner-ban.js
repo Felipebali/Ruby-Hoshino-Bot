@@ -1,5 +1,5 @@
 // 📂 plugins/propietario-ln.js
-// Sistema de lista negra con expulsión automática
+// Sistema de lista negra con expulsión automática y menciones clickeables
 
 function normalizeJid(jid = '') {
   if (!jid) return null
@@ -16,7 +16,6 @@ const handler = async (m, { conn, command, text }) => {
   const done = '✅'
   const db = global.db.data.users || (global.db.data.users = {})
 
-  // Reacciones por comando
   const reactions = { ln: '✅', unln: '☢️', cln: '👀', verln: '📜', usln: '🧹' }
   if (reactions[command])
     await conn.sendMessage(m.chat, { react: { text: reactions[command], key: m.key } })
@@ -52,7 +51,6 @@ const handler = async (m, { conn, command, text }) => {
       mentions: [userJid],
     })
 
-    // Expulsar de todos los grupos donde esté (con control de velocidad)
     const groups = Object.keys(await conn.groupFetchAllParticipating())
     const delay = (ms) => new Promise((res) => setTimeout(res, ms))
     let expulsados = 0
@@ -63,9 +61,7 @@ const handler = async (m, { conn, command, text }) => {
         const group = await conn.groupMetadata(jid).catch(() => null)
         if (!group?.participants) continue
 
-        const member = group.participants.find(
-          (p) => normalizeJid(p.id) === normalizeJid(userJid)
-        )
+        const member = group.participants.find((p) => normalizeJid(p.id) === normalizeJid(userJid))
         if (member) {
           await conn.groupParticipantsUpdate(jid, [member.id], 'remove')
           expulsados++
@@ -117,9 +113,7 @@ const handler = async (m, { conn, command, text }) => {
       })
 
     await conn.sendMessage(m.chat, {
-      text: `${emoji} @${userJid.split('@')[0]} está en la lista negra.\n📝 Motivo: ${
-        db[userJid].banReason || 'No especificado'
-      }`,
+      text: `${emoji} @${userJid.split('@')[0]} está en la lista negra.\n📝 Motivo: ${db[userJid].banReason || 'No especificado'}`,
       mentions: [userJid],
     })
   }
@@ -134,9 +128,7 @@ const handler = async (m, { conn, command, text }) => {
     const mentions = []
 
     for (const [jid, data] of bannedUsers) {
-      list += `• @${jid.split('@')[0]}\n  Motivo: ${
-        data.banReason || 'No especificado'
-      }\n\n`
+      list += `• @${jid.split('@')[0]}\n  Motivo: ${data.banReason || 'No especificado'}\n\n`
       mentions.push(jid)
     }
 
@@ -145,14 +137,19 @@ const handler = async (m, { conn, command, text }) => {
 
   // --- VACIAR LISTA ---
   else if (command === 'usln') {
+    const mentions = []
     for (const jid in db) {
       if (db[jid]?.banned) {
         db[jid].banned = false
         db[jid].banReason = ''
         db[jid].bannedBy = null
+        mentions.push(jid)
       }
     }
-    await conn.sendMessage(m.chat, { text: `${done} La lista negra ha sido vaciada.` })
+    await conn.sendMessage(m.chat, {
+      text: `${done} La lista negra ha sido vaciada.`,
+      mentions
+    })
   }
 
   if (global.db.write) await global.db.write()
@@ -170,16 +167,12 @@ handler.before = async function (m, { conn }) {
       const botJid = conn.user?.id || conn.user?.jid
       const botIsAdmin = groupMetadata.participants.some(p => p.id === botJid && p.admin)
 
-      if (!botIsAdmin) {
-        console.log(`⚠️ No se pudo eliminar a ${sender} porque el bot no es admin en ${m.chat}`)
-        return
-      }
+      if (!botIsAdmin) return
 
       await conn.groupParticipantsUpdate(m.chat, [sender], 'remove')
-      console.log(`[AUTO-KICK] Eliminado ${sender} del grupo ${m.chat}`)
       await conn.sendMessage(m.chat, {
         text: `🚫 @${sender.split('@')[0]} estaba en la lista negra y ha sido eliminado.\n📝 Motivo: ${reason}`,
-        mentions: [sender],
+        mentions: [sender]
       })
     } catch (e) {
       if (e.data === 429 || e.message.includes('rate-overlimit')) return
@@ -202,17 +195,12 @@ handler.participantsUpdate = async function (event) {
           const groupMetadata = await conn.groupMetadata(id)
           const botJid = conn.user?.id || conn.user?.jid
           const botIsAdmin = groupMetadata.participants.some(p => p.id === botJid && p.admin)
-
-          if (!botIsAdmin) {
-            console.log(`⚠️ No se pudo eliminar a ${u} porque el bot no es admin en ${id}`)
-            continue
-          }
+          if (!botIsAdmin) continue
 
           await conn.groupParticipantsUpdate(id, [u], 'remove')
-          console.log(`[AUTO-KICK JOIN] ${u} eliminado del grupo ${id}`)
           await conn.sendMessage(id, {
             text: `🚫 @${u.split('@')[0]} está en la lista negra y ha sido eliminado automáticamente.\n📝 Motivo: ${reason}`,
-            mentions: [u],
+            mentions: [u]
           })
         } catch (e) {
           if (e.data === 429 || e.message.includes('rate-overlimit')) continue
