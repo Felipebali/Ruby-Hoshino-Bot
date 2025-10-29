@@ -107,12 +107,12 @@ useDocument: 'useDocument' in user ? user.useDocument : false,
 level: isNumber(user.level) ? user.level : 0,
 warn: isNumber(user.warn) ? user.warn : 0,
 
-equipment: user.equipment || {
-weapon: 'none',
-armor: 'none',
-tool: 'none',
-weapon_durability: isNumber(user.equipment.weapon_durability) ? user.equipment.weapon_durability : 0,
-armor_durability: isNumber(user.equipment.armor_durability) ? user.equipment.armor_durability : 0,
+equipment: {
+  weapon: user.equipment?.weapon || 'none',
+  armor: user.equipment?.armor || 'none',
+  tool: user.equipment?.tool || 'none',
+  weapon_durability: isNumber(user.equipment?.weapon_durability) ? user.equipment.weapon_durability : 0,
+  armor_durability: isNumber(user.equipment?.armor_durability) ? user.equipment.armor_durability : 0,
 },
 inventory: user.inventory || {
 health_potion: 0,
