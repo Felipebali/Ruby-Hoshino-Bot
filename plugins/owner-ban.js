@@ -55,7 +55,6 @@ const handler = async (m, { conn, command, text }) => {
     // Expulsar de todos los grupos donde esté (con control de velocidad)
     const groups = Object.keys(await conn.groupFetchAllParticipating())
     const delay = (ms) => new Promise((res) => setTimeout(res, ms))
-    let expulsados = 0
 
     for (const jid of groups) {
       try {
@@ -68,7 +67,6 @@ const handler = async (m, { conn, command, text }) => {
         )
         if (member) {
           await conn.groupParticipantsUpdate(jid, [member.id], 'remove')
-          expulsados++
           await conn.sendMessage(jid, {
             text: `🚫 @${userJid.split('@')[0]} está en la lista negra y ha sido eliminado automáticamente.\n📝 Motivo: ${reason}`,
             mentions: [userJid],
@@ -84,10 +82,6 @@ const handler = async (m, { conn, command, text }) => {
         console.log(`⚠️ No se pudo expulsar de ${jid}: ${e.message}`)
       }
     }
-
-    await conn.sendMessage(m.chat, {
-      text: `${done} Eliminación automática finalizada.\nTotal de grupos revisados: ${groups.length}\nExpulsados: ${expulsados}`,
-    })
   }
 
   // --- QUITAR DE LISTA NEGRA ---
