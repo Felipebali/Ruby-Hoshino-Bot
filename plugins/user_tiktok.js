@@ -2,16 +2,17 @@ import axios from 'axios';
 
 let handler = async (m, { conn, args }) => {
   if (!args || !args[0]) {
-    return conn.sendMessage(m.chat, { text: '⚠️ Usa: `.tt @usuario`' }, { quoted: m });
+    return conn.sendMessage(m.chat, { text: '⚠️ Usa: `.tt @usuario` o `.tt <URL>`' }, { quoted: m });
   }
 
-  const username = args[0].replace('@', '').trim();
-
   try {
-    // 🔹 Traer perfil de TikTok desde API pública
+    // 🔹 Extraer solo el username si viene URL
+    let username = args[0].replace(/^https?:\/\/(www\.)?tiktok\.com\/@/, '');
+    username = username.split(/[?_]/)[0]; // Quitar query string (_t, _r, etc)
+
+    // 🔹 Llamar a la API
     const resp = await axios.get(`https://api.akuari.my.id/search/tiktok-user?user=${username}`);
     const user = resp.data?.result;
-
     if (!user) throw new Error('Usuario no encontrado');
 
     // 🔹 Estado actual
@@ -64,7 +65,7 @@ let handler = async (m, { conn, args }) => {
   }
 };
 
-handler.help = ['tt <usuario>'];
+handler.help = ['tt <usuario|url>'];
 handler.tags = ['downloader'];
 handler.command = ['tt'];
 
