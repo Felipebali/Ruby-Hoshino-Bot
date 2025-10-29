@@ -1,5 +1,5 @@
 // 📂 plugins/propietario-ln.js
-// Sistema de lista negra con expulsión automática
+// Sistema de lista negra con expulsión automática (incluye degradado si es admin)
 
 function normalizeJid(jid = '') {
   if (!jid) return null
@@ -9,6 +9,40 @@ function normalizeJid(jid = '') {
     .replace(/@c\.us$/, '@s.whatsapp.net')
     .replace(/@whatsapp\.net$/, '@s.whatsapp.net')
     .replace(/[^0-9@s\.]/g, '')
+}
+
+async function delay(ms) {
+  return new Promise((res) => setTimeout(res, ms))
+}
+
+/**
+ * Intenta expulsar a un usuario de un grupo.
+ * Si es admin, intenta demotear antes de remover.
+ * Devuelve true si expulsó, false si no.
+ */
+async function attemptRemove(conn, groupId, userJid) {
+  try {
+    // intento directo de remover
+    await conn.groupParticipantsUpdate(groupId, [userJid], 'remove')
+    return true
+  } catch (e) {
+    // si falla y parece por permisos/admin, intentamos demote -> remove
+    const msg = String(e?.message || e)
+    if (/admin|demote|not authorized|permission/i.test(msg) || /403|401|forbidden/i.test(msg)) {
+      try {
+        // Intentar demote (silencioso si falla lo ignoramos)
+        await conn.groupParticipantsUpdate(groupId, [userJid], 'demote')
+        await delay(1200)
+        await conn.groupParticipantsUpdate(groupId, [userJid], 'remove')
+        return true
+      } catch (err2) {
+        console.log(`⚠️ attemptRemove: no se pudo demote+remove ${userJid} en ${groupId}: ${err2?.message || err2}`)
+        return false
+      }
+    }
+    // Si no es error de permisos, re-lanzamos para manejo externo
+    throw e
+  }
 }
 
 const handler = async (m, { conn, command, text }) => {
@@ -53,35 +87,63 @@ const handler = async (m, { conn, command, text }) => {
     })
 
     // Expulsar de todos los grupos donde esté (con control de velocidad)
-    const groups = Object.keys(await conn.groupFetchAllParticipating())
-    const delay = (ms) => new Promise((res) => setTimeout(res, ms))
+    const groupsObj = await conn.groupFetchAllParticipating().catch(() => ({}))
+    const groups = Object.keys(groupsObj || {})
+    const waitBetween = 1500
+    let expulsados = 0
 
     for (const jid of groups) {
       try {
-        await delay(1500)
+        await delay(waitBetween)
         const group = await conn.groupMetadata(jid).catch(() => null)
         if (!group?.participants) continue
 
         const member = group.participants.find(
-          (p) => normalizeJid(p.id) === normalizeJid(userJid)
+          (p) => normalizeJid(p.id || p.jid) === normalizeJid(userJid)
         )
         if (member) {
-          await conn.groupParticipantsUpdate(jid, [member.id], 'remove')
-          await conn.sendMessage(jid, {
-            text: `🚫 @${userJid.split('@')[0]} está en la lista negra y ha sido eliminado automáticamente.\n📝 Motivo: ${reason}`,
-            mentions: [userJid],
-          })
-          console.log(`[AUTO-KICK] Expulsado ${userJid} de ${group.subject}`)
+          // verificar si bot es admin
+          const botJid = conn.user?.id || conn.user?.jid
+          const botParticipant = group.participants.find(p => (p.id || p.jid) === botJid)
+          const botIsAdmin = !!(botParticipant && (botParticipant.admin || botParticipant.isAdmin || botParticipant.admin === 'admin'))
+
+          if (!botIsAdmin) {
+            console.log(`⚠️ No se pudo eliminar a ${userJid} de ${group.subject} porque el bot no es admin`)
+            continue
+          }
+
+          // Intentar remover (si es admin se demotea primero internamente en attemptRemove)
+          const removed = await attemptRemove(conn, jid, member.id || member.jid)
+            .catch(err => {
+              if (String(err?.message || err).includes('rate-overlimit') || String(err?.message || err).includes('429')) {
+                console.log(`⚠️ Saltando grupo ${jid} por rate limit`)
+                return false
+              }
+              console.log(`⚠️ No se pudo expulsar de ${jid}: ${err?.message || err}`)
+              return false
+            })
+
+          if (removed) {
+            expulsados++
+            await conn.sendMessage(jid, {
+              text: `🚫 @${userJid.split('@')[0]} está en la lista negra y ha sido eliminado automáticamente.\n📝 Motivo: ${reason}`,
+              mentions: [userJid],
+            }).catch(()=>{})
+            console.log(`[AUTO-KICK] Expulsado ${userJid} de ${group.subject}`)
+          }
         }
       } catch (e) {
-        if (e.data === 429 || /rate-overlimit/i.test(e.message)) {
-          console.log(`⚠️ Saltando grupo ${jid} por rate limit`)
+        const em = String(e?.message || e)
+        if (em.includes('rate-overlimit') || /429/.test(em)) {
+          console.log(`⚠️ Saltando grupo ${jid} por rate limit (catch)`)
           await delay(3000)
           continue
         }
-        console.log(`⚠️ No se pudo expulsar de ${jid}: ${e.message}`)
+        console.log(`⚠️ Error en ciclo ln para ${jid}: ${e?.message || e}`)
       }
     }
+
+    // Nota: no enviamos el resumen final (lo pediste así)
   }
 
   // --- QUITAR DE LISTA NEGRA ---
@@ -162,22 +224,33 @@ handler.before = async function (m, { conn }) {
     try {
       const groupMetadata = await conn.groupMetadata(m.chat)
       const botJid = conn.user?.id || conn.user?.jid
-      const botIsAdmin = groupMetadata.participants.some(p => p.id === botJid && p.admin)
+      const botParticipant = groupMetadata.participants.find(p => (p.id || p.jid) === botJid)
+      const botIsAdmin = !!(botParticipant && (botParticipant.admin || botParticipant.isAdmin || botParticipant.admin === 'admin'))
 
       if (!botIsAdmin) {
         console.log(`⚠️ No se pudo eliminar a ${sender} porque el bot no es admin en ${m.chat}`)
         return
       }
 
-      await conn.groupParticipantsUpdate(m.chat, [sender], 'remove')
-      console.log(`[AUTO-KICK] Eliminado ${sender} del grupo ${m.chat}`)
-      await conn.sendMessage(m.chat, {
-        text: `🚫 @${sender.split('@')[0]} estaba en la lista negra y ha sido eliminado.\n📝 Motivo: ${reason}`,
-        mentions: [sender],
+      // Intentamos remover (si es admin, attemptRemove lo gestionará)
+      const removed = await attemptRemove(conn, m.chat, sender).catch(err => {
+        const em = String(err?.message || err)
+        if (em.includes('rate-overlimit') || /429/.test(em)) return false
+        console.log(`⚠️ No se pudo eliminar a ${sender}: ${em}`)
+        return false
       })
+
+      if (removed) {
+        console.log(`[AUTO-KICK] Eliminado ${sender} del grupo ${m.chat}`)
+        await conn.sendMessage(m.chat, {
+          text: `🚫 @${sender.split('@')[0]} estaba en la lista negra y ha sido eliminado.\n📝 Motivo: ${reason}`,
+          mentions: [sender],
+        }).catch(()=>{})
+      }
     } catch (e) {
-      if (e.data === 429 || e.message.includes('rate-overlimit')) return
-      console.log(`⚠️ No se pudo eliminar a ${sender}: ${e.message}`)
+      const em = String(e?.message || e)
+      if (em.includes('rate-overlimit') || /429/.test(em)) return
+      console.log(`⚠️ No se pudo eliminar a ${sender}: ${em}`)
     }
   }
 }
@@ -195,22 +268,32 @@ handler.participantsUpdate = async function (event) {
         try {
           const groupMetadata = await conn.groupMetadata(id)
           const botJid = conn.user?.id || conn.user?.jid
-          const botIsAdmin = groupMetadata.participants.some(p => p.id === botJid && p.admin)
+          const botParticipant = groupMetadata.participants.find(p => (p.id || p.jid) === botJid)
+          const botIsAdmin = !!(botParticipant && (botParticipant.admin || botParticipant.isAdmin || botParticipant.admin === 'admin'))
 
           if (!botIsAdmin) {
             console.log(`⚠️ No se pudo eliminar a ${u} porque el bot no es admin en ${id}`)
             continue
           }
 
-          await conn.groupParticipantsUpdate(id, [u], 'remove')
-          console.log(`[AUTO-KICK JOIN] ${u} eliminado del grupo ${id}`)
-          await conn.sendMessage(id, {
-            text: `🚫 @${u.split('@')[0]} está en la lista negra y ha sido eliminado automáticamente.\n📝 Motivo: ${reason}`,
-            mentions: [u],
+          const removed = await attemptRemove(conn, id, u).catch(err => {
+            const em = String(err?.message || err)
+            if (em.includes('rate-overlimit') || /429/.test(em)) return false
+            console.log(`⚠️ No se pudo eliminar a ${u} al unirse: ${em}`)
+            return false
           })
+
+          if (removed) {
+            console.log(`[AUTO-KICK JOIN] ${u} eliminado del grupo ${id}`)
+            await conn.sendMessage(id, {
+              text: `🚫 @${u.split('@')[0]} está en la lista negra y ha sido eliminado automáticamente.\n📝 Motivo: ${reason}`,
+              mentions: [u],
+            }).catch(()=>{})
+          }
         } catch (e) {
-          if (e.data === 429 || e.message.includes('rate-overlimit')) continue
-          console.log(`⚠️ No se pudo eliminar a ${u} al unirse: ${e.message}`)
+          const em = String(e?.message || e)
+          if (em.includes('rate-overlimit') || /429/.test(em)) continue
+          console.log(`⚠️ No se pudo eliminar a ${u} al unirse: ${em}`)
         }
       }
     }
