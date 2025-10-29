@@ -1,23 +1,44 @@
-let handler = async (m, { conn, text }) => {
-  // Si cita un mensaje, toma ese usuario; si no, toma el mencionado; y si no, responde error
-  let target = m.quoted ? m.quoted.sender : m.mentionedJid && m.mentionedJid[0]
-  if (!target) return m.reply('💋 Etiquetá o citá a alguien para calcular su porcentaje de "puta".')
+let handler = async (m, { conn }) => {
+  // Determinar objetivo: citado > mencionado > autor
+  let who = m.quoted ? m.quoted.sender : (m.mentionedJid && m.mentionedJid[0]) || m.sender;
+  let simpleId = who.split("@")[0];
 
-  // Nombre de la persona
-  let name = await conn.getName(target)
+  // Obtener nombre, si falla usa el número
+  let name = await conn.getName(who).catch(() => simpleId);
 
-  // Porcentaje aleatorio entre 0 y 100
-  let porcentaje = Math.floor(Math.random() * 101)
+  // Generar porcentaje aleatorio 0-100
+  let porcentaje = Math.floor(Math.random() * 101);
 
-  // Mensaje de respuesta
-  let msg = `💄 *${name}* tiene un *${porcentaje}% de puta* 💅`
+  // Barra visual 0-10
+  let filled = Math.round(porcentaje / 10);
+  let bar = '█'.repeat(filled) + '░'.repeat(10 - filled);
 
-  // Enviar respuesta
-  conn.reply(m.chat, msg, m, { mentions: [target] })
+  // Frases según porcentaje
+  let frase;
+  if (porcentaje >= 90) frase = '🔥 Modo diosa/o';
+  else if (porcentaje >= 70) frase = '😏 Rompe corazones';
+  else if (porcentaje >= 50) frase = '😉 Coquetea sin miedo';
+  else if (porcentaje >= 30) frase = '😅 Disimula un poco';
+  else if (porcentaje >= 10) frase = '😇 Casi inocente';
+  else frase = '👼 Nivel ángel';
+
+  // Mensaje final con mención clickeable
+  let msg = [
+    `💄 *Test de Puta 2.0*`,
+    ``,
+    `👤 @${simpleId}`,
+    `📊 Nivel: *${porcentaje}%*`,
+    `▸ ${bar}`,
+    ``,
+    `💬 ${frase}`
+  ].join('\n');
+
+  // Enviar mensaje con mención clickeable
+  await conn.sendMessage(m.chat, { text: msg, mentions: [who] }, { quoted: m });
 }
 
-handler.help = ['puta']
-handler.tags = ['fun']
-handler.command = /^puta$/i
+handler.help = ['puta'];
+handler.tags = ['fun'];
+handler.command = /^puta$/i;
 
-export default handler 
+export default handler;
