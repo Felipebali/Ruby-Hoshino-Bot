@@ -40,7 +40,6 @@ const handler = async (m, { conn, command, text }) => {
       mentions: [userJid]
     })
 
-    // Expulsar de grupos (limitado a 15 para evitar rate limit)
     const groups = Object.keys(await conn.groupFetchAllParticipating()).slice(0, 15)
     for (const jid of groups) {
       await new Promise(r => setTimeout(r, 3000))
@@ -76,10 +75,7 @@ const handler = async (m, { conn, command, text }) => {
     db[userJid].banReason = ''
     db[userJid].bannedBy = null
 
-    await conn.sendMessage(m.chat, {
-      text: `${done} @${userJid.split('@')[0]} fue eliminado de la lista negra.`,
-      mentions: [userJid]
-    })
+    await conn.sendMessage(m.chat, { text: `${done} @${userJid.split('@')[0]} fue eliminado de la lista negra.`, mentions: [userJid] })
   }
 
   // --- CONSULTAR ESTADO ---
@@ -184,4 +180,17 @@ handler.participantsUpdate = async function (event) {
         console.log(`[AUTO-KICK JOIN] ${u} eliminado`)
       } catch (e) {
         if (e.data === 429 || e.message.includes('rate-overlimit')) {
-          console.log(`
+          console.log(`⚠️ Rate limit al expulsar al unirse, esperando 10s...`)
+          await new Promise(r => setTimeout(r, 10000))
+        } else console.log(`⚠️ No se pudo eliminar a ${u} al unirse: ${e.message}`)
+      }
+    }
+  }
+}
+
+handler.help = ['ln', 'unln', 'cln', 'verln', 'usln']
+handler.tags = ['owner']
+handler.command = ['ln', 'unln', 'cln', 'verln', 'usln']
+handler.rowner = true
+
+export default handler
