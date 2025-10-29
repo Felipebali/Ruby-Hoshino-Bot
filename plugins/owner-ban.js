@@ -1,10 +1,14 @@
 // 📂 plugins/propietario-ln.js
+// Sistema de lista negra con expulsión automática
 
-function normalizeJid(jid) {
+function normalizeJid(jid = '') {
   if (!jid) return null
+  jid = jid.trim()
+  if (!jid.includes('@')) jid = jid + '@s.whatsapp.net'
   return jid
     .replace(/@c\.us$/, '@s.whatsapp.net')
-    .replace(/@s\.whatsapp\.net$/, '@s.whatsapp.net')
+    .replace(/@whatsapp\.net$/, '@s.whatsapp.net')
+    .replace(/[^0-9@s\.]/g, '')
 }
 
 const handler = async (m, { conn, command, text }) => {
@@ -55,9 +59,7 @@ const handler = async (m, { conn, command, text }) => {
 
     for (const jid of groups) {
       try {
-        // Esperar entre cada grupo para evitar rate limit
         await delay(1500)
-
         const group = await conn.groupMetadata(jid).catch(() => null)
         if (!group?.participants) continue
 
@@ -74,7 +76,6 @@ const handler = async (m, { conn, command, text }) => {
           console.log(`[AUTO-KICK] Expulsado ${userJid} de ${group.subject}`)
         }
       } catch (e) {
-        // Manejo seguro de errores de límite
         if (e.data === 429 || /rate-overlimit/i.test(e.message)) {
           console.log(`⚠️ Saltando grupo ${jid} por rate limit`)
           await delay(3000)
@@ -165,6 +166,15 @@ handler.before = async function (m, { conn }) {
   if (db[sender]?.banned) {
     const reason = db[sender].banReason || 'No especificado'
     try {
+      const groupMetadata = await conn.groupMetadata(m.chat)
+      const botJid = conn.user?.id || conn.user?.jid
+      const botIsAdmin = groupMetadata.participants.some(p => p.id === botJid && p.admin)
+
+      if (!botIsAdmin) {
+        console.log(`⚠️ No se pudo eliminar a ${sender} porque el bot no es admin en ${m.chat}`)
+        return
+      }
+
       await conn.groupParticipantsUpdate(m.chat, [sender], 'remove')
       console.log(`[AUTO-KICK] Eliminado ${sender} del grupo ${m.chat}`)
       await conn.sendMessage(m.chat, {
@@ -189,6 +199,15 @@ handler.participantsUpdate = async function (event) {
       if (db[u]?.banned) {
         const reason = db[u].banReason || 'No especificado'
         try {
+          const groupMetadata = await conn.groupMetadata(id)
+          const botJid = conn.user?.id || conn.user?.jid
+          const botIsAdmin = groupMetadata.participants.some(p => p.id === botJid && p.admin)
+
+          if (!botIsAdmin) {
+            console.log(`⚠️ No se pudo eliminar a ${u} porque el bot no es admin en ${id}`)
+            continue
+          }
+
           await conn.groupParticipantsUpdate(id, [u], 'remove')
           console.log(`[AUTO-KICK JOIN] ${u} eliminado del grupo ${id}`)
           await conn.sendMessage(id, {
