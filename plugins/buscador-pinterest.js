@@ -1,5 +1,5 @@
-import axios from 'axios';
-import baileys from '@whiskeysockets/baileys';
+import axios from 'axios'
+import baileys from '@whiskeysockets/baileys'
 
 async function sendAlbumMessage(jid, medias, options = {}) {
   if (typeof jid !== "string") throw new TypeError(`jid must be string, received: ${jid}`);
@@ -62,11 +62,12 @@ async function sendAlbumMessage(jid, medias, options = {}) {
   return album;
 }
 
-const pins = async (judul) => {
+// 🧠 API FUNCIONAL ACTUAL
+const pins = async (query) => {
   try {
-    const res = await axios.get(`https://anime-xi-wheat.vercel.app/api/pinterest?q=${encodeURIComponent(judul)}`);
-    if (Array.isArray(res.data.images)) {
-      return res.data.images.map(url => ({
+    const res = await axios.get(`https://api.akuari.my.id/search/pinterest?query=${encodeURIComponent(query)}`);
+    if (res.data?.result && Array.isArray(res.data.result)) {
+      return res.data.result.map(url => ({
         image_large_url: url,
         image_medium_url: url,
         image_small_url: url
@@ -74,13 +75,13 @@ const pins = async (judul) => {
     }
     return [];
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error al obtener imágenes:', error);
     return [];
   }
 };
 
 let handler = async (m, { conn, text }) => {
-  if (!text) return conn.sendMessage(m.chat, { text: `Ingresa un texto. Ejemplo: .pin Gaara` }, { 
+  if (!text) return conn.sendMessage(m.chat, { text: `⚠️ Ingresa un texto. Ejemplo: *.pin Gaara*` }, { 
     quoted: m,
     forwardedNewsletterMessageInfo: {
       newsletterJid: '120363422694102494@newsletter',
@@ -112,7 +113,8 @@ let handler = async (m, { conn, text }) => {
 
     m.react('🕒');
     const results = await pins(text);
-    if (!results || results.length === 0) return conn.sendMessage(m.chat, { text: `No se encontraron resultados para "${text}".` }, { 
+
+    if (!results || results.length === 0) return conn.sendMessage(m.chat, { text: `❌ No se encontraron resultados para *${text}*.` }, { 
       quoted: m,
       forwardedNewsletterMessageInfo: {
         newsletterJid: '120363422694102494@newsletter',
@@ -133,7 +135,7 @@ let handler = async (m, { conn, text }) => {
 
     // Enviar álbum con el canal simulado arriba
     await sendAlbumMessage(m.chat, medias, {
-      caption: `Resultados de: ${text}\nCantidad de resultados: ${maxImages}`,
+      caption: `📌 Resultados de: *${text}*\n🔢 Cantidad: ${maxImages}`,
       quoted: fkontak,
       forwardedNewsletterMessageInfo: {
         newsletterJid: '120363422694102494@newsletter',
@@ -146,7 +148,7 @@ let handler = async (m, { conn, text }) => {
 
   } catch (error) {
     console.error(error);
-    conn.sendMessage(m.chat, { text: 'Error al obtener imágenes de Pinterest.' }, { 
+    conn.sendMessage(m.chat, { text: '⚠️ Error al obtener imágenes de Pinterest.' }, { 
       quoted: m,
       forwardedNewsletterMessageInfo: {
         newsletterJid: '120363422694102494@newsletter',
@@ -157,7 +159,7 @@ let handler = async (m, { conn, text }) => {
   }
 };
 
-handler.help = ['pinterest'];
+handler.help = ['pinterest <texto>'];
 handler.command = ['pinterest', 'pin'];
 handler.tags = ['buscador'];
 
