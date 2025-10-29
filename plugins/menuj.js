@@ -29,6 +29,8 @@ Estado: ${gamesEnabled ? '🟢 Activados' : '🔴 Desactivados'}
 👑 *.top10* → Top 10 divertidos del grupo
 🍽️ *.plato* → Adivina la opción correcta
    🟢 Puede ser comida, objetos o personajes
+😈 *.puta <@user>* → Comando divertido/insulto gracioso
+😹 *.trolo <@user>* → Comando divertido/insulto gracioso
 ────────────────────────────
 `;
         } else {
