@@ -91,7 +91,6 @@ var handler = async (m, { conn, args, usedPrefix, command }) => {
 handler.help = ['ytmp3'].map(v => v + ' <link>');
 handler.tags = ['descargas'];
 handler.command = ['ytmp3', 'ytaudio', 'mp3'];
-handler.register = true;
 handler.limit = true;
 
 export default handler;
