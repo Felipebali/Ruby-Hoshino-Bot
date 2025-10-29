@@ -110,7 +110,6 @@ let handler = async (m, { conn, usedPrefix }) => {
 handler.help = ['status', 'estado', 'ping']
 handler.tags = ['info']
 handler.command = /^(estado|status|estate|state|stado|stats|ping|speed)$/i
-handler.register = true
 
 export default handler
 
