@@ -88,7 +88,6 @@ const handler = async (m, { conn, command, text }) => {
         if (member) {
           const botJid = conn.user?.id || conn.user?.jid
           const botIsAdmin = group.participants.some(p => (p.id || p.jid) === botJid && p.admin)
-
           if (!botIsAdmin) continue
 
           await attemptRemove(conn, jid, member.id || member.jid)
