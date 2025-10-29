@@ -3,8 +3,9 @@ let handler = async (m, { conn }) => {
   let who = m.quoted ? m.quoted.sender : (m.mentionedJid && m.mentionedJid[0]) || m.sender;
   let simpleId = who.split("@")[0];
 
-  // Obtener nombre, si falla usa el número
-  let name = await conn.getName(who).catch(() => simpleId);
+  // Obtener nombre (si getName no es promesa, usamos directo)
+  let name = conn.getName ? conn.getName(who) : simpleId;
+  if (!name) name = simpleId;
 
   // Generar porcentaje aleatorio 0-100
   let porcentaje = Math.floor(Math.random() * 101);
