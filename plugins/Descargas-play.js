@@ -2,9 +2,21 @@ import fetch from "node-fetch"
 import yts from "yt-search"
 
 const youtubeRegexID = /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/
+const cooldowns = {} // Aquí guardaremos los timestamps de cada usuario
 
-const handler = async (m, { conn, text, usedPrefix, command }) => {
+const handler = async (m, { conn, text, command }) => {
   try {
+    // --- COOLDOWN 2 MIN ---
+    const now = Date.now()
+    const lastUsed = cooldowns[m.sender] || 0
+    const waitTime = 2 * 60 * 1000 // 2 minutos en ms
+
+    if (now - lastUsed < waitTime) {
+      const remaining = Math.ceil((waitTime - (now - lastUsed)) / 1000)
+      return conn.reply(m.chat, `⏳ Por favor espera ${remaining} segundos antes de usar otro video.`, m)
+    }
+    cooldowns[m.sender] = now
+
     if (!text?.trim())
       return conn.reply(m.chat, `⚽ *Por favor, ingresa el nombre o enlace del video.*`, m)
 
@@ -43,6 +55,7 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
       }
     }, { quoted: m })
 
+    // --- AUDIO ---
     if (command === 'play' || command === 'playaudio') {
       try {
         const apiUrl = `https://api.vreden.my.id/api/v1/download/youtube/audio?url=${encodeURIComponent(url)}&quality=128`
@@ -79,6 +92,7 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
       }
     }
 
+    // --- VIDEO ---
     else if (command === 'playvideo' || command === 'play2') {
       try {
         const apiUrl = `https://api.stellarwa.xyz/dow/ytmp4?url=${encodeURIComponent(url)}&apikey=Shadow_Core`
