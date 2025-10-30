@@ -1,28 +1,36 @@
 // 📂 plugins/admin-ap.js
-let handler = async (m, { conn, text, isAdmin, isOwner, usedPrefix }) => {
+let handler = async (m, { conn, isAdmin, isOwner }) => {
     if (!isAdmin && !isOwner) return m.reply('❌ Solo administradores o el dueño pueden usar este comando.');
 
-    // Verifica que haya texto (número o mención)
-    if (!text) return m.reply(`❌ Usa: ${usedPrefix}ap @usuario`);
+    try {
+        // Obtén información del grupo
+        const groupMetadata = await conn.groupMetadata(m.chat);
+        const pendingParticipants = groupMetadata.participants.filter(p => p.pending);
 
-    // Extraer JIDs de las menciones
-    let mentions = m.mentionedJid;
-    if (!mentions || mentions.length === 0) return m.reply('❌ Debes mencionar al usuario a aprobar.');
-
-    for (let jid of mentions) {
-        try {
-            // Aprobar solicitud de unirse (aceptar al usuario)
-            await conn.groupAcceptInvite(jid); // <-- esto depende de tu versión de la librería
-            await conn.sendMessage(m.chat, { text: `✅ @${jid.split('@')[0]} fue aprobado para unirse al grupo.`, mentions: [jid] });
-        } catch (err) {
-            console.log(err);
-            await m.reply(`❌ No se pudo aprobar a @${jid.split('@')[0]}.`);
+        if (pendingParticipants.length === 0) {
+            return m.reply('ℹ️ No hay solicitudes pendientes en este grupo.');
         }
+
+        // Aprobar todas las solicitudes pendientes
+        for (let user of pendingParticipants) {
+            await conn.groupParticipantsUpdate(m.chat, [user.id], 'approve'); // 'approve' o 'add', según versión
+        }
+
+        // Mensaje de confirmación con menciones clickeables
+        let mentions = pendingParticipants.map(u => u.id);
+        await conn.sendMessage(m.chat, {
+            text: `✅ Se aprobaron todas las solicitudes pendientes:\n${mentions.map(jid => `@${jid.split('@')[0]}`).join('\n')}`,
+            mentions
+        });
+
+    } catch (err) {
+        console.log(err);
+        m.reply('❌ Ocurrió un error al aprobar las solicitudes.');
     }
 };
 
 handler.command = /^ap$/i;
 handler.group = true;
-handler.rowner = true; // Solo dueño si quieres
-handler.admin = true;  // Solo admin
+handler.admin = true; // Solo admins
+handler.rowner = true; // Y dueño
 export default handler;
