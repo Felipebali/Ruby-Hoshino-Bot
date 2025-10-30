@@ -13,7 +13,7 @@ let handler = async (m, { conn }) => {
 handler.help = ['banchat']
 handler.tags = ['grupo']
 handler.command = ['banchat']
-handler.admin = true
+handler.owner = true
 handler.botAdmin = true
 handler.group = true
 
