@@ -95,9 +95,11 @@ const handler = async (m, { conn, participants }) => {
     ...otherAdmins.map(a => a.id)
   ];
 
+  // 🔗 Enviar citando el mensaje del comando
   await conn.sendMessage(m.chat, {
     text: texto,
-    mentions: allMentions
+    mentions: allMentions,
+    quoted: m
   });
 };
 
