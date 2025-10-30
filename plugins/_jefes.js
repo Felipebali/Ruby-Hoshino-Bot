@@ -1,4 +1,5 @@
 const ownerNumbers = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net']; // Dueños del bot
+const specialNumber = '59895044754@s.whatsapp.net'; // Persona con rango único
 
 const handler = async (m, { conn, participants }) => {
   if (!m.isGroup) return m.reply('❗ Este comando solo funciona en grupos.');
@@ -15,7 +16,8 @@ const handler = async (m, { conn, participants }) => {
 
   const admins = participants.filter(p => p.admin);
   const ownersInGroup = participants.filter(p => ownerNumbers.includes(p.id));
-  const otherAdmins = admins.filter(a => !ownerNumbers.includes(a.id));
+  const specialUser = participants.find(p => p.id === specialNumber);
+  const otherAdmins = admins.filter(a => !ownerNumbers.includes(a.id) && a.id !== specialNumber);
 
   // 👑 Rangos personalizados para dueños
   const ownerRanks = {
@@ -24,9 +26,7 @@ const handler = async (m, { conn, participants }) => {
   };
 
   // 🌟 Rango único especial
-  const specialRanks = {
-    '59895044754@s.whatsapp.net': '✨ General Estelar del Ejército FelixCat 🚀'
-  };
+  const specialRank = '✨ General Estelar del Ejército FelixCat 🚀';
 
   // 🪖 Rangos y emojis para admins
   const adminRanks = [
@@ -47,19 +47,6 @@ const handler = async (m, { conn, participants }) => {
     { title: 'Instructor de Tropas', emoji: '📢' }
   ];
 
-  // 🫡 Construir menciones clickeables
-  const ownerText = ownersInGroup.map(o => {
-    const rank = ownerRanks[o.id] || 'Líder Supremo';
-    return `${rank} @${o.id.split('@')[0]}`;
-  });
-
-  const adminText = otherAdmins.map((a, i) => {
-    const specialRank = specialRanks[a.id];
-    if (specialRank) return `${specialRank} @${a.id.split('@')[0]}`;
-    const rank = adminRanks[i % adminRanks.length];
-    return `${rank.emoji} ${rank.title} @${a.id.split('@')[0]}`;
-  });
-
   // 💬 Frases militares aleatorias
   const frases = [
     '💣 Todos los mensajes deben alinearse o enfrentarán fuego de artillería.',
@@ -75,18 +62,48 @@ const handler = async (m, { conn, participants }) => {
   ];
   const fraseAleatoria = frases[Math.floor(Math.random() * frases.length)];
 
+  // 🫡 Texto de dueños
   let texto = `👑 *JEFES SUPREMOS DEL GRUPO* 👑\n\n`;
-
   if (ownersInGroup.length > 0) {
     texto += `💫 *COMANDANTES SUPREMOS:*\n`;
-    texto += ownerText.join('\n');
+    texto += ownersInGroup
+      .map(o => `${ownerRanks[o.id] || 'Líder Supremo'} @${o.id.split('@')[0]}`)
+      .join('\n');
     texto += `\n\n"${fraseAleatoria}"\n\n`;
   }
+
+  // 🌟 Usuario especial (si está en el grupo)
+  if (specialUser) {
+    texto += `🌠 *MIEMBRO DISTINGUIDO:*\n`;
+    texto += `${specialRank} @${specialUser.id.split('@')[0]}\n\n`;
+  }
+
+  // ⚡ Otros administradores
+  const adminText = otherAdmins.map((a, i) => {
+    const rank = adminRanks[i % adminRanks.length];
+    return `${rank.emoji} ${rank.title} @${a.id.split('@')[0]}`;
+  });
 
   texto += `⚡ *ADMINISTRADORES DEL GRUPO:*\n`;
   texto += adminText.join('\n') || 'Ninguno';
   texto += `\n\n⚠️ *Respeten a los jefes o sufrirán las consecuencias de la disciplina militar.*`;
 
-  // 📣 Menciones completas (dueños + admins + especial)
+  // 📣 Menciones completas
   const allMentions = [
     ...ownersInGroup.map(o => o.id),
+    ...(specialUser ? [specialUser.id] : []),
+    ...otherAdmins.map(a => a.id)
+  ];
+
+  await conn.sendMessage(m.chat, {
+    text: texto,
+    mentions: allMentions
+  });
+};
+
+handler.command = ['jefes'];
+handler.tags = ['group'];
+handler.help = ['jefes'];
+handler.group = true;
+
+export default handler;
