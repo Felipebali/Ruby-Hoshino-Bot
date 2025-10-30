@@ -44,7 +44,7 @@ let handler = async (m, { conn, isAdmin, chat }) => {
 ╭━━━〔 ⚠️ ADVERTENCIAS 〕━━━⬣
 ┃ 🐾 .warn @user - Dar advertencia ⚠️
 ┃ 🐾 .unwarn @user - Quitar advertencia 🟢
-┃ 🐾 .listadv - Lista de usuarios advertidos 📋
+┃ 🐾 .warnlist - Lista de usuarios advertidos 📋
 ╰━━━━━━━━━━━━━━━━━━━━⬣
 
 > 👑 Powered by FelixCat 🐾
