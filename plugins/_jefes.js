@@ -22,14 +22,11 @@ const handler = async (m, { conn, participants }) => {
     { title: 'Coronel', emoji: '📜' }
   ];
 
-  // Construir menciones
-  const ownerMentions = ownersInGroup.map(o => `@${o.id.split('@')[0]}`);
-  const ownerText = ownersInGroup.map(o => `${ownerRanks[o.id]} @${o.id.split('@')[0]}`);
-
-  const adminText = otherAdmins.map((a, i) => {
-    const rank = adminRanks[i % adminRanks.length];
-    return `${rank.emoji} ${rank.title} @${a.id.split('@')[0]}`;
-  });
+  // 🧠 Obtener nombres de los usuarios
+  const getDisplayName = async (jid) => {
+    const name = await conn.getName(jid);
+    return name?.replace(/\n/g, ' ') || jid.split('@')[0];
+  };
 
   // Frases militares grotescas
   const frases = [
@@ -44,9 +41,32 @@ const handler = async (m, { conn, participants }) => {
   ];
   const fraseAleatoria = frases[Math.floor(Math.random() * frases.length)];
 
+  // 🔧 Construcción de texto dinámico con menciones y nombres
+  const ownerMentions = [];
+  const ownerText = [];
+
+  for (const o of ownersInGroup) {
+    const name = await getDisplayName(o.id);
+    const rank = ownerRanks[o.id] || 'Dueño';
+    ownerText.push(`${rank} @${name}`);
+    ownerMentions.push(o.id);
+  }
+
+  const adminText = [];
+  const adminMentions = [];
+
+  for (let i = 0; i < otherAdmins.length; i++) {
+    const a = otherAdmins[i];
+    const name = await getDisplayName(a.id);
+    const rank = adminRanks[i % adminRanks.length];
+    adminText.push(`${rank.emoji} ${rank.title} @${name}`);
+    adminMentions.push(a.id);
+  }
+
+  // 📜 Texto final
   let texto = `👑 *JEFES SUPREMOS DEL GRUPO* 👑\n\n`;
 
-  if (ownersInGroup.length > 0) {
+  if (ownerText.length > 0) {
     texto += `💫 *COMANDANTES SUPREMOS:*\n`;
     texto += ownerText.join('\n');
     texto += `\n\n"${fraseAleatoria}"\n\n`;
@@ -58,7 +78,7 @@ const handler = async (m, { conn, participants }) => {
 
   await conn.sendMessage(m.chat, {
     text: texto,
-    mentions: [...ownerMentions, ...otherAdmins.map(a => a.id)]
+    mentions: [...ownerMentions, ...adminMentions]
   });
 };
 
