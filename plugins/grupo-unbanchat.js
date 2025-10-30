@@ -10,9 +10,9 @@ let handler = async (m, { conn }) => {
     await conn.reply(m.chat, '⚡ *¡FelixCat-Bot ya fue desbaneado en este chat!*', m)
 }
 
-handler.help = ['unbanchat']
+handler.help = ['ba']
 handler.tags = ['grupo']
-handler.command = ['unbanchat']
+handler.command = ['ba']
 handler.owner = true
 handler.botAdmin = true
 handler.group = true
