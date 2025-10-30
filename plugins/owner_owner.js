@@ -1,10 +1,9 @@
 // 📂 plugins/owner-info.js
 
-const ownerNumbers = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net']; // Dueños
+const ownerNumbers = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net']; // Dueños del bot
 
 const handler = async (m, { conn }) => {
   try {
-    // Si no hay dueños definidos
     if (!ownerNumbers.length) return m.reply('⚠️ No hay dueños configurados.');
 
     // Rangos personalizados
@@ -27,16 +26,13 @@ const handler = async (m, { conn }) => {
 
     let texto = `👑 *INFORMACIÓN DE LOS DUEÑOS DEL BOT* 👑\n\n`;
 
-    // Recorrer y mostrar cada owner
     for (const id of ownerNumbers) {
       const numero = id.split('@')[0];
       const rango = ownerRanks[id] || 'Líder Supremo';
-      const enlace = `https://wa.me/${numero}`;
 
       texto += `🔰 *Número:* +${numero}\n`;
       texto += `🎖️ *Rango:* ${rango}\n`;
-      texto += `🕶️ *Mención:* @${numero}\n`;
-      texto += `🌐 *Contacto:* ${enlace}\n\n`;
+      texto += `🕶️ *Mención:* @${numero}\n\n`;
     }
 
     texto += `💬 "${fraseAleatoria}"`;
@@ -54,6 +50,6 @@ const handler = async (m, { conn }) => {
 handler.command = ['owner', 'dueño'];
 handler.help = ['owner'];
 handler.tags = ['info'];
-handler.group = false; // puede usarse en privado también
+handler.group = false; // puede usarse en privado o grupo
 
 export default handler;
