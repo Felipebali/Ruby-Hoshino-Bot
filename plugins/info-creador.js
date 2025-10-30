@@ -42,6 +42,6 @@ async function handler(m, { conn, usedPrefix }) {
 
 handler.help = ['creador'];
 handler.tags = ['info'];
-handler.command = ['owner', 'creator', 'creador', 'dueño'];
+handler.command = ['creator', 'creador', 'dueño'];
 
 export default handler;
