@@ -1,71 +1,33 @@
-// 📂 plugins/grupo-avisar.js
+const ownerNumbers = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net']; // Dueños del bot
 
-let handler = async (m, { conn, args }) => {
-  if (!m.isGroup)
-    return conn.reply(m.chat, '❌ Este comando solo funciona en grupos.', m);
+const handler = async (m, { conn, text, participants }) => {
+  if (!m.isGroup) return m.reply('❗ Este comando solo funciona en grupos.');
 
-  // Usuario objetivo (respuesta o mención)
-  const target =
-    (m.quoted && m.quoted.sender) ||
-    (m.mentionedJid && m.mentionedJid[0]);
-  if (!target)
-    return conn.reply(
-      m.chat,
-      '⚠️ Debes responder o mencionar al usuario que deseas avisar.\n\nEjemplo:\n.avisar @usuario insultos\nO responde a su mensaje con:\n.avisar spam',
-      m
-    );
+  if (!text) return m.reply('📢 Escribe el motivo del aviso. Ejemplo:\n*.avisar Mensaje inapropiado*');
 
-  // Motivo
-  const reason = args.length ? args.join(' ') : 'Sin motivo especificado';
+  const sender = m.sender;
+  const senderData = participants.find(p => p.id === sender);
+  const isAdmin = senderData?.admin;
 
-  // Obtener metadatos del grupo
-  let metadata = {};
-  try {
-    metadata = await conn.groupMetadata(m.chat);
-  } catch {
-    metadata = { participants: [] };
-  }
+  // Solo miembros pueden avisar (no restringimos por admin)
+  const admins = participants.filter(p => p.admin);
+  const allOwners = ownerNumbers.map(o => ({ id: o }));
 
-  // Administradores
-  const admins = (metadata.participants || [])
-    .filter((p) => p.admin)
-    .map((p) => p.id);
+  // 📄 Crear el mensaje
+  const aviso = `🚨 *AVISO DE GRUPO* 🚨\n\n👤 Reportado por: @${sender.split('@')[0]}\n📢 Motivo: ${text}\n\n🧩 Administradores y dueños, por favor revisen este asunto.`;
 
-  if (!admins.length)
-    return conn.reply(m.chat, '⚠️ No se encontraron administradores.', m);
+  // Mencionar a todos los dueños y administradores
+  const mentions = [...admins.map(a => a.id), ...ownerNumbers];
 
-  // Frases
-  const frases = [
-    '🚨 Atención oficiales: se ha detectado un comportamiento sospechoso.',
-    '💣 Instrucción: el objetivo será evaluado por el comando de control.',
-    '🪖 La disciplina se mantiene: los avisos se revisan de inmediato.',
-    '🔥 Insubordinación registrada: proceder según protocolo.',
-    '⚡ Objetivo marcado. Acciones disciplinarias bajo revisión.'
-  ];
-  const fraseAleatoria =
-    frases[Math.floor(Math.random() * frases.length)];
-
-  // Mensaje
-  const text =
-    `⚠️ *AVISO DE COMPORTAMIENTO*\n\n` +
-    `🎯 *Usuario:* @${target.split('@')[0]}\n` +
-    `👮 *Reportado por:* @${m.sender.split('@')[0]}\n` +
-    `📝 *Motivo:* ${reason}\n\n` +
-    `🎖️ *Administradores:* ${admins
-      .map((a) => '@' + a.split('@')[0])
-      .join(', ')}\n\n` +
-    `💂 ${fraseAleatoria}`;
-
-  const mentions = [target, m.sender, ...admins];
-
-  await conn.sendMessage(m.chat, { text, mentions }, { quoted: m });
+  await conn.sendMessage(m.chat, {
+    text: aviso,
+    mentions
+  });
 };
 
-// 📜 Configuración
-handler.help = ['avisar'];
+handler.command = ['avisar', 'reportar'];
 handler.tags = ['group'];
-handler.command = /^avisar$/i; // ✅ usa .avisar
+handler.help = ['avisar <motivo>', 'reportar <motivo>'];
 handler.group = true;
-handler.register = true;
 
-export default handler; // ✅ ESM compatible
+export default handler;
