@@ -1,4 +1,4 @@
-const ownerNumbers = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net']; // Dueños del bot
+const ownerNumbers = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net']; // dueños
 
 const handler = async (m, { conn, participants }) => {
   if (!m.isGroup) return m.reply('❗ Este comando solo funciona en grupos.');
@@ -7,26 +7,14 @@ const handler = async (m, { conn, participants }) => {
   const ownersInGroup = participants.filter(p => ownerNumbers.includes(p.id));
   const otherAdmins = admins.filter(a => !ownerNumbers.includes(a.id));
 
-  // Rangos personalizados
+  // Rangos de dueños
   const ownerRanks = {
-    '59898719147@s.whatsapp.net': 'Comandante Supremo 👑',
-    '59896026646@s.whatsapp.net': 'Mariscal General 👑'
+    '59898719147@s.whatsapp.net': '👑 Comandante Supremo',
+    '59896026646@s.whatsapp.net': '👑 Mariscal General'
   };
 
-  // Rangos y emojis para admins
-  const adminRanks = [
-    { title: 'Mayor', emoji: '🛡️' },
-    { title: 'Capitán', emoji: '⚔️' },
-    { title: 'Teniente', emoji: '🪖' },
-    { title: 'Sargento', emoji: '🔰' },
-    { title: 'Coronel', emoji: '📜' }
-  ];
-
-  // Obtener nombre visible del contacto
-  const getDisplayName = async (jid) => {
-    const name = await conn.getName(jid);
-    return name?.replace(/\n/g, ' ') || jid.split('@')[0];
-  };
+  // Rangos para admins
+  const adminRanks = ['🛡️ Mayor', '⚔️ Capitán', '🪖 Teniente', '🔰 Sargento', '📜 Coronel'];
 
   // Frases aleatorias
   const frases = [
@@ -35,21 +23,16 @@ const handler = async (m, { conn, participants }) => {
     '🔥 Que tiemble el grupo: los generales controlan cada bit.',
     '☠️ Las sanciones caen con precisión quirúrgica sobre los rebeldes.',
     '⚡ Aquellos que desafíen al Comandante conocerán el horror de la disciplina.',
-    '💥 Toda insubordinación será eliminada sin piedad.',
-    '🛡️ La autoridad absoluta está por encima de cualquier miembro.',
-    '🔫 Cada palabra fuera de lugar será registrada y castigada.'
+    '💥 Toda insubordinación será eliminada sin piedad.'
   ];
   const fraseAleatoria = frases[Math.floor(Math.random() * frases.length)];
 
-  // Texto principal
   let texto = `👑 *JEFES SUPREMOS DEL GRUPO* 👑\n\n💫 *COMANDANTES SUPREMOS:*\n`;
-
   const mentions = [];
 
-  // Añadir dueños
+  // 🔹 Dueños
   for (const o of ownersInGroup) {
-    const name = await getDisplayName(o.id);
-    texto += `${ownerRanks[o.id] || 'Dueño'} @${name}\n`;
+    texto += `${ownerRanks[o.id] || 'Dueño'} @${o.id.split('@')[0]}\n`;
     mentions.push(o.id);
   }
 
@@ -58,18 +41,20 @@ const handler = async (m, { conn, participants }) => {
   if (otherAdmins.length === 0) {
     texto += 'Ninguno\n';
   } else {
-    for (let i = 0; i < otherAdmins.length; i++) {
-      const a = otherAdmins[i];
-      const name = await getDisplayName(a.id);
+    otherAdmins.forEach((a, i) => {
       const rank = adminRanks[i % adminRanks.length];
-      texto += `${rank.emoji} ${rank.title} @${name}\n`;
+      texto += `${rank} @${a.id.split('@')[0]}\n`;
       mentions.push(a.id);
-    }
+    });
   }
 
   texto += `\n⚠️ *Respeten a los jefes o sufrirán las consecuencias de la disciplina militar.*`;
 
-  await conn.sendMessage(m.chat, { text: texto.trim(), mentions });
+  // 📤 Enviar con menciones clickeables reales
+  await conn.sendMessage(m.chat, {
+    text: texto,
+    mentions: mentions
+  }, { quoted: m });
 };
 
 handler.command = ['jefes'];
