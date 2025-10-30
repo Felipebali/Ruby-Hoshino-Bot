@@ -7,6 +7,7 @@ let handler = async (m, { conn, args }) => {
     '⚠️ Debes responder o mencionar al usuario que deseas reportar.\n\nEjemplo:\n.report @usuario insultos\nO responde a su mensaje con:\n.report spam', m
   );
 
+  // Motivo
   const reason = args.length ? args.join(' ') : 'Sin motivo especificado';
 
   // Obtener metadatos del grupo
@@ -17,6 +18,7 @@ let handler = async (m, { conn, args }) => {
   const admins = (metadata.participants || []).filter(p => p.admin).map(p => p.id);
   if (admins.length === 0) return conn.reply(m.chat, '⚠️ No se encontraron administradores en este grupo.', m);
 
+  // Frases militares
   const frases = [
     '🚨 Atención oficiales: se ha detectado un comportamiento subversivo.',
     '💣 Instrucción: el objetivo será evaluado por el comando de control.',
@@ -26,6 +28,7 @@ let handler = async (m, { conn, args }) => {
   ];
   const fraseAleatoria = frases[Math.floor(Math.random() * frases.length)];
 
+  // Texto del mensaje
   const text = `⚠️ *ALERTA MILITAR EN EL GRUPO*\n\n` +
                `🎯 *Objetivo:* @${target.split('@')[0]}\n` +
                `👮 *Reportado por:* @${m.sender.split('@')[0]}\n` +
@@ -39,8 +42,8 @@ let handler = async (m, { conn, args }) => {
 
 handler.help = ['report', 'reportar'];
 handler.tags = ['group'];
-handler.command = /^report(ar)?$/i; // ✅ acepta ambos
+handler.command = /^report(ar)?$/i;
 handler.group = true;
 handler.register = true;
 
-module.exports = handler; // ✅ compatible con CommonJS
+export default handler; // ✅ versión compatible con ESM
