@@ -10,74 +10,32 @@ let handler = async (m, { conn }) => {
         { name: "Argentina", emoji: "🇦🇷" }, { name: "Bolivia", emoji: "🇧🇴" },
         { name: "Brasil", emoji: "🇧🇷" }, { name: "Canadá", emoji: "🇨🇦" },
         { name: "Chile", emoji: "🇨🇱" }, { name: "Colombia", emoji: "🇨🇴" },
-        { name: "Cuba", emoji: "🇨🇺" }, { name: "Ecuador", emoji: "🇪🇨" },
-        { name: "Estados Unidos", emoji: "🇺🇸" }, { name: "Honduras", emoji: "🇭🇳" },
-        { name: "Jamaica", emoji: "🇯🇲" }, { name: "México", emoji: "🇲🇽" },
+        { name: "México", emoji: "🇲🇽" }, { name: "Uruguay", emoji: "🇺🇾" },
         { name: "Paraguay", emoji: "🇵🇾" }, { name: "Perú", emoji: "🇵🇪" },
-        { name: "Uruguay", emoji: "🇺🇾" }, { name: "Venezuela", emoji: "🇻🇪" },
-        { name: "Guatemala", emoji: "🇬🇹" }, { name: "El Salvador", emoji: "🇸🇻" },
-        { name: "Panamá", emoji: "🇵🇦" }, { name: "República Dominicana", emoji: "🇩🇴" },
-        { name: "Costa Rica", emoji: "🇨🇷" }, { name: "Haití", emoji: "🇭🇹" },
-        { name: "Belice", emoji: "🇧🇿" }, { name: "Trinidad y Tobago", emoji: "🇹🇹" },
-        { name: "Surinam", emoji: "🇸🇷" },
+        { name: "Estados Unidos", emoji: "🇺🇸" }, { name: "Cuba", emoji: "🇨🇺" },
+        { name: "Ecuador", emoji: "🇪🇨" }, { name: "Venezuela", emoji: "🇻🇪" },
 
         // Europa
-        { name: "Alemania", emoji: "🇩🇪" }, { name: "Andorra", emoji: "🇦🇩" },
-        { name: "Austria", emoji: "🇦🇹" }, { name: "Bélgica", emoji: "🇧🇪" },
-        { name: "Bielorrusia", emoji: "🇧🇾" }, { name: "Bosnia y Herzegovina", emoji: "🇧🇦" },
-        { name: "Bulgaria", emoji: "🇧🇬" }, { name: "Chipre", emoji: "🇨🇾" },
-        { name: "Croacia", emoji: "🇭🇷" }, { name: "Dinamarca", emoji: "🇩🇰" },
-        { name: "Eslovaquia", emoji: "🇸🇰" }, { name: "Eslovenia", emoji: "🇸🇮" },
-        { name: "España", emoji: "🇪🇸" }, { name: "Estonia", emoji: "🇪🇪" },
-        { name: "Finlandia", emoji: "🇫🇮" }, { name: "Francia", emoji: "🇫🇷" },
-        { name: "Grecia", emoji: "🇬🇷" }, { name: "Hungría", emoji: "🇭🇺" },
-        { name: "Irlanda", emoji: "🇮🇪" }, { name: "Islandia", emoji: "🇮🇸" },
-        { name: "Italia", emoji: "🇮🇹" }, { name: "Letonia", emoji: "🇱🇻" },
-        { name: "Lituania", emoji: "🇱🇹" }, { name: "Luxemburgo", emoji: "🇱🇺" },
-        { name: "Malta", emoji: "🇲🇹" }, { name: "Moldavia", emoji: "🇲🇩" },
-        { name: "Mónaco", emoji: "🇲🇨" }, { name: "Noruega", emoji: "🇳🇴" },
-        { name: "Países Bajos", emoji: "🇳🇱" }, { name: "Polonia", emoji: "🇵🇱" },
-        { name: "Portugal", emoji: "🇵🇹" }, { name: "Reino Unido", emoji: "🇬🇧" },
-        { name: "Rumania", emoji: "🇷🇴" }, { name: "Rusia", emoji: "🇷🇺" },
-        { name: "Serbia", emoji: "🇷🇸" }, { name: "Suecia", emoji: "🇸🇪" },
-        { name: "Suiza", emoji: "🇨🇭" }, { name: "Ucrania", emoji: "🇺🇦" },
+        { name: "España", emoji: "🇪🇸" }, { name: "Francia", emoji: "🇫🇷" },
+        { name: "Italia", emoji: "🇮🇹" }, { name: "Alemania", emoji: "🇩🇪" },
+        { name: "Reino Unido", emoji: "🇬🇧" }, { name: "Portugal", emoji: "🇵🇹" },
+        { name: "Polonia", emoji: "🇵🇱" }, { name: "Grecia", emoji: "🇬🇷" },
+        { name: "Rusia", emoji: "🇷🇺" }, { name: "Ucrania", emoji: "🇺🇦" },
 
         // Asia
-        { name: "Arabia Saudita", emoji: "🇸🇦" }, { name: "Armenia", emoji: "🇦🇲" },
-        { name: "Azerbaiyán", emoji: "🇦🇿" }, { name: "Bangladesh", emoji: "🇧🇩" },
-        { name: "Camboya", emoji: "🇰🇭" }, { name: "China", emoji: "🇨🇳" },
-        { name: "Corea del Norte", emoji: "🇰🇵" }, { name: "Corea del Sur", emoji: "🇰🇷" },
-        { name: "Emiratos Árabes Unidos", emoji: "🇦🇪" }, { name: "Filipinas", emoji: "🇵🇭" },
-        { name: "Georgia", emoji: "🇬🇪" }, { name: "India", emoji: "🇮🇳" },
-        { name: "Indonesia", emoji: "🇮🇩" }, { name: "Irán", emoji: "🇮🇷" },
-        { name: "Irak", emoji: "🇮🇶" }, { name: "Israel", emoji: "🇮🇱" },
-        { name: "Japón", emoji: "🇯🇵" }, { name: "Jordania", emoji: "🇯🇴" },
-        { name: "Kazajistán", emoji: "🇰🇿" }, { name: "Kirguistán", emoji: "🇰🇬" },
-        { name: "Laos", emoji: "🇱🇦" }, { name: "Líbano", emoji: "🇱🇧" },
-        { name: "Malasia", emoji: "🇲🇾" }, { name: "Mongolia", emoji: "🇲🇳" },
-        { name: "Nepal", emoji: "🇳🇵" }, { name: "Pakistán", emoji: "🇵🇰" },
-        { name: "Qatar", emoji: "🇶🇦" }, { name: "Singapur", emoji: "🇸🇬" },
-        { name: "Siria", emoji: "🇸🇾" }, { name: "Tailandia", emoji: "🇹🇭" },
-        { name: "Turquía", emoji: "🇹🇷" }, { name: "Vietnam", emoji: "🇻🇳" },
-        { name: "Yemen", emoji: "🇾🇪" },
+        { name: "China", emoji: "🇨🇳" }, { name: "Japón", emoji: "🇯🇵" },
+        { name: "India", emoji: "🇮🇳" }, { name: "Corea del Sur", emoji: "🇰🇷" },
+        { name: "Arabia Saudita", emoji: "🇸🇦" }, { name: "Tailandia", emoji: "🇹🇭" },
+        { name: "Indonesia", emoji: "🇮🇩" }, { name: "Turquía", emoji: "🇹🇷" },
 
         // África
-        { name: "Angola", emoji: "🇦🇴" }, { name: "Argelia", emoji: "🇩🇿" },
-        { name: "Camerún", emoji: "🇨🇲" }, { name: "Congo", emoji: "🇨🇬" },
-        { name: "Egipto", emoji: "🇪🇬" }, { name: "Etiopía", emoji: "🇪🇹" },
-        { name: "Ghana", emoji: "🇬🇭" }, { name: "Kenia", emoji: "🇰🇪" },
-        { name: "Marruecos", emoji: "🇲🇦" }, { name: "Mozambique", emoji: "🇲🇿" },
-        { name: "Namibia", emoji: "🇳🇦" }, { name: "Nigeria", emoji: "🇳🇬" },
-        { name: "Senegal", emoji: "🇸🇳" }, { name: "Sudáfrica", emoji: "🇿🇦" },
-        { name: "Tanzania", emoji: "🇹🇿" }, { name: "Túnez", emoji: "🇹🇳" },
-        { name: "Uganda", emoji: "🇺🇬" }, { name: "Zambia", emoji: "🇿🇲" },
-        { name: "Zimbabue", emoji: "🇿🇼" },
+        { name: "Egipto", emoji: "🇪🇬" }, { name: "Sudáfrica", emoji: "🇿🇦" },
+        { name: "Nigeria", emoji: "🇳🇬" }, { name: "Marruecos", emoji: "🇲🇦" },
+        { name: "Argelia", emoji: "🇩🇿" }, { name: "Etiopía", emoji: "🇪🇹" },
 
         // Oceanía
-        { name: "Australia", emoji: "🇦🇺" }, { name: "Fiyi", emoji: "🇫🇯" },
-        { name: "Nueva Zelanda", emoji: "🇳🇿" }, { name: "Papúa Nueva Guinea", emoji: "🇵🇬" },
-        { name: "Samoa", emoji: "🇼🇸" }, { name: "Tonga", emoji: "🇹🇴" },
-        { name: "Islas Salomón", emoji: "🇸🇧" }, { name: "Vanuatu", emoji: "🇻🇺" }
+        { name: "Australia", emoji: "🇦🇺" }, { name: "Nueva Zelanda", emoji: "🇳🇿" },
+        { name: "Fiyi", emoji: "🇫🇯" }, { name: "Samoa", emoji: "🇼🇸" }
     ];
 
     const correct = flags[Math.floor(Math.random() * flags.length)];
@@ -89,52 +47,65 @@ let handler = async (m, { conn }) => {
     options = options.sort(() => Math.random() - 0.5);
 
     if (!global.flagGame) global.flagGame = {};
+
+    const text = `🌍 *ADIVINA LA BANDERA*\n\n${correct.emoji}\n\n🔹 Opciones:\n${options.map((o, i) => `*${i + 1}.* ${o}`).join('\n')}\n\nResponde citando este mensaje con el número o el nombre correcto.\n⏱️ *Tienes 25 segundos!*`;
+
+    const msg = await conn.sendMessage(m.chat, { text }, { quoted: m });
+
     global.flagGame[m.chat] = {
         answer: correct.name,
+        emoji: correct.emoji,
         answered: false,
+        messageId: msg.key.id, // 🔹 Guardamos el ID del mensaje del bot
         timeout: setTimeout(async () => {
             const game = global.flagGame?.[m.chat];
             if (game && !game.answered) {
-                const msgs = [
-                    '💀 Sos un inútil total!',
-                    '🤡 Ni siquiera lo intentaste!',
-                    '😹 Patético, la respuesta era',
-                    '🫠 Sos un desastre, era'
+                const failMsgs = [
+                    `⏰ Se acabó el tiempo! Era *${game.answer}* ${game.emoji}`,
+                    `💀 Nadie acertó, la respuesta era *${game.answer}* ${game.emoji}`
                 ];
-                await conn.sendMessage(m.chat, { text: `${msgs[Math.floor(Math.random() * msgs.length)]} *${correct.name}* ${correct.emoji}` }, { quoted: m });
+                await conn.sendMessage(m.chat, { text: failMsgs[Math.floor(Math.random() * failMsgs.length)] }, { quoted: msg });
                 delete global.flagGame[m.chat];
             }
-        }, 30000)
+        }, 25000)
     };
-
-    let text = `🌍 *Adivina la bandera*:\n\n${correct.emoji}\n\nOpciones:`;
-    options.forEach((o, i) => text += `\n${i + 1}. ${o}`);
-    text += `\n\nResponde con el número o el nombre correcto.\n⏱️ *Tienes 30 segundos!*`;
-
-    await conn.sendMessage(m.chat, { text }, { quoted: m });
 };
 
+// Detección de respuesta citando el mensaje del juego
 handler.before = async (m, { conn }) => {
     const game = global.flagGame?.[m.chat];
     if (!game || game.answered || !m.text) return;
 
-    const normalizedUser = m.text.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-    const normalizedAnswer = game.answer.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    // 🔹 Ignorar si el mensaje no cita el mensaje del juego
+    if (!m.quoted || m.quoted.key?.id !== game.messageId) return;
 
-    if (normalizedUser === normalizedAnswer) {
+    const userAnswer = m.text.trim().toLowerCase();
+    const normalizedAnswer = game.answer.toLowerCase();
+
+    const isNumber = /^(1|2|3|4)$/.test(userAnswer);
+    const chosenOption = isNumber ? parseInt(userAnswer) - 1 : null;
+
+    const correctByName = userAnswer === normalizedAnswer;
+    const correctByNumber = isNumber && game.answer === game.options?.[chosenOption];
+
+    if (correctByName || correctByNumber) {
         clearTimeout(game.timeout);
         game.answered = true;
-        await conn.sendMessage(m.chat, { text: `✅ Correcto! Era *${game.answer}* ${game.answer.emoji || ''} 🎉` }, { quoted: m });
+        const winMsgs = [
+            `🔥 Correcto! Era *${game.answer}* ${game.emoji}`,
+            `🏆 Sos un genio! *${game.answer}* ${game.emoji}`,
+            `👏 Bien hecho! *${game.answer}* ${game.emoji}`
+        ];
+        await conn.sendMessage(m.chat, { text: winMsgs[Math.floor(Math.random() * winMsgs.length)] }, { quoted: m });
         delete global.flagGame[m.chat];
     } else {
-        const msgs = [
-            '❌ No, esa no es!',
-            '🤔 Casi casi...',
-            '🙃 Esa no, probá otra!',
-            '😬 Incorrecto!',
-            '💀 Sos un desastre total!'
+        const failMsgs = [
+            '❌ Incorrecto!',
+            '🤔 No, esa no es.',
+            '🙃 Casi, pero no.',
+            '💀 Fallaste!'
         ];
-        await conn.sendMessage(m.chat, { text: msgs[Math.floor(Math.random() * msgs.length)] }, { quoted: m });
+        await conn.sendMessage(m.chat, { text: failMsgs[Math.floor(Math.random() * failMsgs.length)] }, { quoted: m });
     }
 };
 
