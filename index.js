@@ -528,3 +528,9 @@ return phoneUtil.isValidNumber(parsedNumber)
 } catch (error) {
 return false
 }}
+
+// --- resto de tu index.js ---
+import { setupWelcomeBye } from './plugins/grupo-bienvenida_despedida.js'
+
+// --- al final, después de inicializar todo ---
+setupWelcomeBye(conn)
