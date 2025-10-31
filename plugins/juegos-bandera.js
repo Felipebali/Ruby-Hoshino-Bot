@@ -38,6 +38,7 @@ let handler = async (m, { conn }) => {
         { name: "Fiyi", emoji: "🇫🇯" }, { name: "Samoa", emoji: "🇼🇸" }
     ];
 
+    // Selecciona una bandera correcta y genera opciones
     const correct = flags[Math.floor(Math.random() * flags.length)];
     let options = [correct.name];
     while (options.length < 4) {
@@ -48,15 +49,17 @@ let handler = async (m, { conn }) => {
 
     if (!global.flagGame) global.flagGame = {};
 
-    const text = `🌍 *ADIVINA LA BANDERA*\n\n${correct.emoji}\n\n🔹 Opciones:\n${options.map((o, i) => `*${i + 1}.* ${o}`).join('\n')}\n\nResponde citando este mensaje con el número o el nombre correcto.\n⏱️ *Tienes 25 segundos!*`;
+    const text = `🌍 *ADIVINA LA BANDERA*\n\n${correct.emoji}\n\n🔹 Opciones:\n${options.map((o, i) => `*${i + 1}.* ${o}`).join('\n')}\n\nResponde *citando este mensaje* con el número o el nombre correcto.\n⏱️ *Tienes 25 segundos!*`;
 
     const msg = await conn.sendMessage(m.chat, { text }, { quoted: m });
 
+    // 🔹 Guardar el juego completo
     global.flagGame[m.chat] = {
         answer: correct.name,
         emoji: correct.emoji,
+        options, // <--- faltaba esto
         answered: false,
-        messageId: msg.key.id, // 🔹 Guardamos el ID del mensaje del bot
+        messageId: msg.key.id,
         timeout: setTimeout(async () => {
             const game = global.flagGame?.[m.chat];
             if (game && !game.answered) {
@@ -71,12 +74,12 @@ let handler = async (m, { conn }) => {
     };
 };
 
-// Detección de respuesta citando el mensaje del juego
+// 🧠 Detección solo si se cita el mensaje del juego
 handler.before = async (m, { conn }) => {
     const game = global.flagGame?.[m.chat];
     if (!game || game.answered || !m.text) return;
 
-    // 🔹 Ignorar si el mensaje no cita el mensaje del juego
+    // Ignorar si no cita el mensaje del juego
     if (!m.quoted || m.quoted.key?.id !== game.messageId) return;
 
     const userAnswer = m.text.trim().toLowerCase();
@@ -84,9 +87,8 @@ handler.before = async (m, { conn }) => {
 
     const isNumber = /^(1|2|3|4)$/.test(userAnswer);
     const chosenOption = isNumber ? parseInt(userAnswer) - 1 : null;
-
+    const correctByNumber = isNumber && game.options[chosenOption]?.toLowerCase() === normalizedAnswer;
     const correctByName = userAnswer === normalizedAnswer;
-    const correctByNumber = isNumber && game.answer === game.options?.[chosenOption];
 
     if (correctByName || correctByNumber) {
         clearTimeout(game.timeout);
