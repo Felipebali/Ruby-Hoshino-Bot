@@ -32,6 +32,6 @@ let handler = async (m, { conn, text }) => {
 
 handler.help = ['imagen <texto>']
 handler.tags = ['buscador']
-handler.command = ['imagen', 'img']
+handler.command = ['imagen']
 
 export default handler
