@@ -1,38 +1,54 @@
-let { downloadContentFromMessage } = (await import('@whiskeysockets/baileys'))
+import { downloadContentFromMessage } from '@whiskeysockets/baileys'
+
+// Números de dueños
+const ownerNumbers = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net']
 
 let handler = async (m, { conn }) => {
-    let quoted = m.quoted
-    if (!quoted) return conn.reply(m.chat, `*Responde a un mensaje ViewOnce para ver su contenido.*`, m)
-
     try {
-        let viewOnceMessage = quoted.viewOnce ? quoted : quoted.mediaMessage?.imageMessage || quoted.mediaMessage?.videoMessage || quoted.mediaMessage?.audioMessage
-        let messageType = viewOnceMessage.mimetype || quoted.mtype
-        let stream = await downloadContentFromMessage(viewOnceMessage, messageType.split('/')[0])
+        // Verificar si el usuario es owner
+        if (!ownerNumbers.includes(m.sender)) 
+            return conn.reply(m.chat, '❌ Este comando solo puede ser usado por los dueños del bot.', m)
 
-        if (!stream) return conn.reply(m.chat, `*❌ No se pudo descargar el contenido.*`, m)
+        let quoted = m.quoted
+        if (!quoted) return conn.reply(m.chat, '⚠️ Responde a un mensaje *ViewOnce* (de imagen, video o audio).', m)
 
+        // Detectar si es un mensaje ViewOnce
+        let viewOnceMsg = quoted.message?.viewOnceMessageV2 || quoted.message?.viewOnceMessage || null
+        if (!viewOnceMsg) return conn.reply(m.chat, '❌ No es un mensaje ViewOnce.', m)
+
+        // Obtener tipo de mensaje (imagen, video o audio)
+        const inner = viewOnceMsg.message
+        const type = Object.keys(inner)[0]
+        const media = inner[type]
+
+        const mime = media.mimetype || ''
+        const stream = await downloadContentFromMessage(media, mime.split('/')[0])
         let buffer = Buffer.from([])
+
         for await (const chunk of stream) {
             buffer = Buffer.concat([buffer, chunk])
         }
 
-        if (messageType.includes('video')) {
-            await conn.sendMessage(m.chat, { video: buffer, caption: viewOnceMessage.caption || '', mimetype: 'video/mp4' }, { quoted: m })
-
-        } else if (messageType.includes('image')) {
-            await conn.sendMessage(m.chat, { image: buffer, caption: viewOnceMessage.caption || '' }, { quoted: m })
-
-        } else if (messageType.includes('audio')) {
-            await conn.sendMessage(m.chat, { audio: buffer, mimetype: 'audio/ogg; codecs=opus', ptt: viewOnceMessage.ptt || false }, { quoted: m })
+        // Enviar según el tipo de contenido
+        if (mime.includes('image')) {
+            await conn.sendMessage(m.chat, { image: buffer, caption: media.caption || '' }, { quoted: m })
+        } else if (mime.includes('video')) {
+            await conn.sendMessage(m.chat, { video: buffer, caption: media.caption || '', mimetype: 'video/mp4' }, { quoted: m })
+        } else if (mime.includes('audio')) {
+            await conn.sendMessage(m.chat, { audio: buffer, mimetype: 'audio/ogg; codecs=opus', ptt: media.ptt || false }, { quoted: m })
+        } else {
+            return conn.reply(m.chat, '❌ Tipo de contenido no compatible.', m)
         }
 
-    } catch {
-        conn.reply(m.chat, `*❌ No es un mensaje de imagen, video o audio ViewOnce.*`, m)
+    } catch (e) {
+        console.error(e)
+        return conn.reply(m.chat, '⚠️ Error al intentar ver el contenido ViewOnce.', m)
     }
 }
 
-handler.command = /^(readviewonce|read|viewonce|ver)$/i
-handler.owner = true // 🔹 Solo dueños
-handler.register = true
+handler.help = ['verviewonce', 'viewonce', 'ver']
+handler.tags = ['owner', 'tools']
+handler.command = /^(ver|viewonce|readviewonce)$/i
+handler.owner = true // Solo dueños
 
 export default handler
