@@ -1,89 +1,77 @@
+// plugins/parejas.js
+// Guardado en db.data.parejas y db.data.propuestas para persistencia
+if (!global.db.data.parejas) global.db.data.parejas = {};
+if (!global.db.data.propuestas) global.db.data.propuestas = {};
 
-// 💞 Sistema de parejas FelixCat_Bot
-if (!global.propuestas) global.propuestas = {};
-if (!global.parejas) global.parejas = {};
-
-let handler = async (m, { conn, command, args }) => {
+const handler = async (m, { conn, command }) => {
   const sender = m.sender;
   const chat = m.chat;
   const mentioned = m.mentionedJid ? m.mentionedJid[0] : null;
+  const parejas = global.db.data.parejas;
+  const propuestas = global.db.data.propuestas;
 
   switch (command) {
 
-    // 💍 PROPUESTA
     case 'marry':
-      if (!m.isGroup) return m.reply('❗ Este comando solo funciona en grupos.');
-      if (!mentioned) return m.reply('💞 Debes mencionar a alguien.\n👉 Ejemplo: *.marry @usuario*');
+      if (!mentioned) return m.reply('💞 Menciona a alguien. Ejemplo: *.marry @usuario*');
       if (mentioned === sender) return m.reply('❌ No puedes casarte contigo mismo.');
-      if (global.parejas[sender]) return m.reply('💔 Ya tienes pareja.');
-      if (global.parejas[mentioned]) return m.reply('💔 Esa persona ya tiene pareja.');
+      if (parejas[sender] || parejas[mentioned]) return m.reply('💔 Alguno ya tiene pareja.');
 
-      global.propuestas[mentioned] = { de: sender, chat: chat };
+      // Guardar propuesta en db persistente
+      propuestas[mentioned] = { de: sender, chat: chat };
+
       await conn.sendMessage(chat, {
-        text: `💍 *${await conn.getName(sender)}* le propuso matrimonio a *@${mentioned.split('@')[0]}* 💞\n\nResponde con *.aceptar* o *.rechazar* para decidir 💌`,
+        text: `💍 @${sender.split('@')[0]} te propuso matrimonio a @${mentioned.split('@')[0]} 💞\nResponde con *.aceptar* o *.rechazar*`,
         mentions: [sender, mentioned]
       });
       break;
 
-    // 💖 ACEPTAR PROPUESTA
     case 'aceptar':
-      if (!global.propuestas[sender]) return m.reply('❌ No tienes ninguna propuesta pendiente.');
-      const { de } = global.propuestas[sender];
-      if (!de) return m.reply('⚠️ Error interno, intenta de nuevo.');
+      if (!propuestas[sender]) return m.reply('❌ No tienes ninguna propuesta pendiente.');
+      const { de } = propuestas[sender];
 
-      // Registrar pareja
-      global.parejas[sender] = de;
-      global.parejas[de] = sender;
-      delete global.propuestas[sender];
+      parejas[sender] = de;
+      parejas[de] = sender;
+      delete propuestas[sender];
 
       await conn.sendMessage(chat, {
-        text: `💞 *${await conn.getName(sender)}* y *${await conn.getName(de)}* ahora son pareja oficial ❤️\n\n🎉 ¡Felicidades! 🎉`,
+        text: `💞 @${sender.split('@')[0]} y @${de.split('@')[0]} ahora son pareja ❤️`,
         mentions: [sender, de]
       });
       break;
 
-    // 💔 RECHAZAR PROPUESTA
     case 'rechazar':
-      if (!global.propuestas[sender]) return m.reply('❌ No tienes ninguna propuesta pendiente.');
-      const { de: rechazado } = global.propuestas[sender];
-      delete global.propuestas[sender];
+      if (!propuestas[sender]) return m.reply('❌ No tienes ninguna propuesta pendiente.');
+      const { de: rechazado } = propuestas[sender];
+      delete propuestas[sender];
 
       await conn.sendMessage(chat, {
-        text: `💔 *@${sender.split('@')[0]}* ha rechazado la propuesta de *@${rechazado.split('@')[0]}* 😢`,
+        text: `💔 @${sender.split('@')[0]} rechazó la propuesta de @${rechazado.split('@')[0]}.`,
         mentions: [sender, rechazado]
       });
       break;
 
-    // 📜 LISTA DE PAREJAS
     case 'listap':
-      const parejas = Object.entries(global.parejas);
-      if (parejas.length === 0) return m.reply('💤 No hay parejas registradas todavía.');
-
-      let usados = new Set();
       let lista = [];
-      for (let [a, b] of parejas) {
+      let usados = new Set();
+      for (let [a, b] of Object.entries(parejas)) {
         if (!usados.has(a) && !usados.has(b)) {
-          lista.push(`💞 *@${a.split('@')[0]}* ❤️ *@${b.split('@')[0]}*`);
+          lista.push(`💞 @${a.split('@')[0]} ❤️ @${b.split('@')[0]}`);
           usados.add(a);
           usados.add(b);
         }
       }
-
-      await conn.sendMessage(chat, {
-        text: `🌹 *Lista de Parejas FelixCat 💫*\n\n${lista.join('\n')}`,
-        mentions: [...usados]
-      });
+      if (lista.length === 0) return m.reply('💤 No hay parejas.');
+      await conn.sendMessage(chat, { text: `🌹 Lista de parejas:\n\n${lista.join('\n')}`, mentions: [...usados] });
       break;
 
-    // 💔 TERMINAR RELACIÓN
     case 'terminar':
-      if (!global.parejas[sender]) return m.reply('😿 No tienes pareja actualmente.');
-      const pareja = global.parejas[sender];
-      delete global.parejas[sender];
-      delete global.parejas[pareja];
-
+      if (!parejas[sender]) return m.reply('😿 No tienes pareja.');
+      const pareja = parejas[sender];
+      delete parejas[sender];
+      delete parejas[pareja];
       await conn.sendMessage(chat, {
-        text: `💔 *@${sender.split('@')[0]}* ha terminado su relación con *@${pareja.split('@')[0]}*.`,
+        text: `💔 @${sender.split('@')[0]} terminó su relación con @${pareja.split('@')[0]}.`,
         mentions: [sender, pareja]
       });
       break;
