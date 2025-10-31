@@ -1,60 +1,76 @@
 const ownerNumbers = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net'];
-const actividadAdmins = {}; // almacenamiento temporal
+const actividad = {}; // Guarda los mensajes por grupo
 
-const handler = async (m, { conn }) => {
-    if (!m.isGroup) return;
+const handler = async (m, { conn, participants }) => {
+  if (!m.isGroup) return m.reply('❗ Este comando solo funciona en grupos.');
 
-    // registrar actividad de todos los mensajes del grupo
-    if (!actividadAdmins[m.chat]) actividadAdmins[m.chat] = {};
-    actividadAdmins[m.chat][m.sender] = Date.now();
+  const sender = m.sender;
+  const isOwner = ownerNumbers.includes(sender);
+  const senderData = participants.find(p => p.id === sender);
+  const isAdmin = senderData?.admin;
 
-    // detectar el comando
-    if (!m.text) return;
-    const texto = m.text.trim().toLowerCase();
-    if (texto !== '.admins') return;
+  // Solo dueños o administradores
+  if (!isOwner && !isAdmin) {
+    return m.reply('🚫 Solo los administradores y los dueños pueden usar este comando.');
+  }
 
-    // obtener datos del grupo
-    const group = await conn.groupMetadata(m.chat);
-    const admins = group.participants.filter(p => p.admin);
-    const isAdmin = admins.some(a => a.id === m.sender);
-    const isOwner = ownerNumbers.includes(m.sender);
+  // Registrar la actividad del mensaje
+  if (!actividad[m.chat]) actividad[m.chat] = {};
+  actividad[m.chat][m.sender] = Date.now();
 
-    if (!isAdmin && !isOwner)
-        return m.reply('🚫 Solo los administradores o el dueño pueden usar este comando.');
+  // Si el comando no es .admins, no hace nada
+  if (!/^\.admins$/i.test(m.text)) return;
 
-    // analizar actividad
-    const ahora = Date.now();
-    const limite = 24 * 60 * 60 * 1000; // 24 horas
+  const groupName = (await conn.groupMetadata(m.chat)).subject;
+  const admins = participants.filter(p => p.admin);
 
-    let activos = [];
-    let inactivos = [];
+  const ahora = Date.now();
+  const limite = 24 * 60 * 60 * 1000; // 24 horas
 
-    for (const adm of admins) {
-        const id = adm.id;
-        const ultimo = actividadAdmins[m.chat]?.[id];
-        if (ultimo && (ahora - ultimo) < limite) activos.push('@' + id.split('@')[0]);
-        else inactivos.push('@' + id.split('@')[0]);
+  let activos = [];
+  let inactivos = [];
+
+  for (let adm of admins) {
+    const id = adm.id;
+    const ultimo = actividad[m.chat]?.[id];
+    if (ultimo && (ahora - ultimo) < limite) {
+      activos.push(`🟢 @${id.split('@')[0]}`);
+    } else {
+      inactivos.push(`🔴 @${id.split('@')[0]}`);
     }
+  }
 
-    let textoFinal = `👑 *Actividad de administradores*\n📅 (Últimas 24 h)\n\n`;
+  const frase = [
+    '🪖 El deber nunca descansa, pero algunos sí 😴',
+    '⚔️ Solo los verdaderos soldados siguen activos.',
+    '🎯 La disciplina separa a los líderes de los dormidos.',
+    '🧭 Vigilando las líneas del frente digitales.',
+    '🦾 Los que hablan poco... quizás planean mucho 😏'
+  ][Math.floor(Math.random() * 5)];
 
-    if (activos.length)
-        textoFinal += `🟢 *Activos:*\n${activos.map(a => '• ' + a).join('\n')}\n\n`;
-    else textoFinal += `🟢 *Activos:* Ninguno 😴\n\n`;
+  let texto = `📊 *ACTIVIDAD DE ADMINISTRADORES*\n`;
+  texto += `📍 *Grupo:* ${groupName}\n`;
+  texto += `📅 *Últimas 24 horas*\n\n`;
 
-    if (inactivos.length)
-        textoFinal += `🔴 *Inactivos:*\n${inactivos.map(a => '• ' + a).join('\n')}`;
-    else textoFinal += `🔴 *Inactivos:* Ninguno 🎉`;
+  texto += activos.length
+    ? `🟢 *Activos:*\n${activos.join('\n')}\n\n`
+    : '🟢 *Activos:* Ninguno 😴\n\n';
 
-    await conn.sendMessage(m.chat, {
-        text: textoFinal,
-        mentions: admins.map(a => a.id)
-    });
+  texto += inactivos.length
+    ? `🔴 *Inactivos:*\n${inactivos.join('\n')}\n\n`
+    : '🔴 *Inactivos:* Ninguno 🎉\n\n';
+
+  texto += `💬 "${frase}"\n\n`;
+  texto += `🫡 *Comando ejecutado por:* @${sender.split('@')[0]}`;
+
+  const menciones = [...admins.map(a => a.id), sender];
+
+  await conn.sendMessage(m.chat, { text: texto, mentions: menciones }, { quoted: m });
 };
 
+handler.command = ['admins'];
+handler.tags = ['group'];
 handler.help = ['admins'];
-handler.tags = ['admin'];
-handler.command = /^admins$/i;
 handler.group = true;
 
 export default handler;
