@@ -62,7 +62,7 @@ const handler = async (m, { conn, participants }) => {
   ];
   const fraseAleatoria = frases[Math.floor(Math.random() * frases.length)];
 
-  // 🫡 Texto de dueños
+  // 🫡 Texto principal
   let texto = `👑 *JEFES SUPREMOS DEL GRUPO* 👑\n\n`;
   if (ownersInGroup.length > 0) {
     texto += `💫 *COMANDANTES SUPREMOS:*\n`;
@@ -72,7 +72,7 @@ const handler = async (m, { conn, participants }) => {
     texto += `\n\n"${fraseAleatoria}"\n\n`;
   }
 
-  // 🌟 Usuario especial (si está en el grupo)
+  // 🌟 Usuario especial
   if (specialUser) {
     texto += `🌠 *MIEMBRO DISTINGUIDO:*\n`;
     texto += `${specialRank} @${specialUser.id.split('@')[0]}\n\n`;
@@ -86,21 +86,22 @@ const handler = async (m, { conn, participants }) => {
 
   texto += `⚡ *ADMINISTRADORES DEL GRUPO:*\n`;
   texto += adminText.join('\n') || 'Ninguno';
-  texto += `\n\n⚠️ *Respeten a los jefes o sufrirán las consecuencias de la disciplina militar.*`;
+  texto += `\n\n🫡 *Orden ejecutada por:* @${sender.split('@')[0]}\n`;
+  texto += `⚠️ *Respeten a los jefes o sufrirán las consecuencias de la disciplina militar.*`;
 
-  // 📣 Menciones completas
+  // 📣 Menciones
   const allMentions = [
+    sender, // quien ejecutó el comando
     ...ownersInGroup.map(o => o.id),
     ...(specialUser ? [specialUser.id] : []),
     ...otherAdmins.map(a => a.id)
   ];
 
-  // 🔗 Enviar citando el mensaje del comando
+  // 📩 Enviar citando el comando (solo si admin o owner)
   await conn.sendMessage(m.chat, {
     text: texto,
-    mentions: allMentions,
-    quoted: m
-  });
+    mentions: allMentions
+  }, { quoted: m }); // 👈 Esto hace que cite el mensaje del comando
 };
 
 handler.command = ['jefes'];
