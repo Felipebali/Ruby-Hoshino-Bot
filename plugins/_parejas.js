@@ -1,10 +1,12 @@
 // plugins/parejas.js
-const handler = async (m, { conn, text, participants, command }) => {
-    global.db.data.parejas = global.db.data.parejas || {};
-    global.db.data.propuestas = global.db.data.propuestas || {};
 
-    const parejas = global.db.data.parejas;
-    const propuestas = global.db.data.propuestas;
+let parejas = global.db.data.parejas || {};
+let propuestas = global.db.data.propuestas || {};
+
+const handler = async (m, { conn, text, participants, command }) => {
+    global.db.data.parejas = parejas;
+    global.db.data.propuestas = propuestas;
+
     const sender = m.sender;
     const mentioned = m.mentionedJid && m.mentionedJid[0];
 
@@ -13,18 +15,17 @@ const handler = async (m, { conn, text, participants, command }) => {
             if (!mentioned) return m.reply('💍 *Usa:* .marry @usuario');
             if (mentioned === sender) return m.reply('❗ No puedes casarte contigo mismo.');
 
-            // Verificar si alguno ya tiene pareja
             const parejaSender = Object.values(parejas).find(p => p.includes(sender));
             const parejaMentioned = Object.values(parejas).find(p => p.includes(mentioned));
 
             if (parejaSender) return m.reply('❤️ Ya tienes pareja. Usa .divorce si quieres terminar.');
             if (parejaMentioned) return m.reply('💔 Esa persona ya está en pareja.');
 
-            // Registrar propuesta
             propuestas[mentioned] = sender;
+
             await conn.reply(
                 m.chat,
-                `💞 @${sender.split('@')[0]} le propuso matrimonio a @${mentioned.split('@')[0]} 💍\n\n@${mentioned.split('@')[0]}, responde citando este mensaje con *sí* o *no*.`,
+                `💞 @${sender.split('@')[0]} le propuso matrimonio a @${mentioned.split('@')[0]} 💍\n\n@${mentioned.split('@')[0]}, responde *sí* o *no* (citando este mensaje).`,
                 m,
                 { mentions: [sender, mentioned] }
             );
@@ -37,7 +38,7 @@ const handler = async (m, { conn, text, participants, command }) => {
             for (let [id, par] of Object.entries(parejas)) {
                 texto += `💍 @${par[0].split('@')[0]} ❤️ @${par[1].split('@')[0]}\n`;
             }
-            m.reply(texto, null, { mentions: participants.map(p => p.id) });
+            await conn.reply(m.chat, texto, m, { mentions: participants.map(p => p.id) });
             break;
         }
 
@@ -45,7 +46,7 @@ const handler = async (m, { conn, text, participants, command }) => {
             const parejaExistente = Object.entries(parejas).find(([id, par]) => par.includes(sender));
             if (!parejaExistente) return m.reply('💔 No tienes pareja actualmente.');
             delete parejas[parejaExistente[0]];
-            m.reply('💔 Has terminado tu relación. 😢');
+            await m.reply('💔 Has terminado tu relación. 😢');
             break;
         }
 
@@ -68,38 +69,46 @@ handler.tags = ['parejas'];
 handler.command = /^(marry|listap|divorce|pareja)$/i;
 export default handler;
 
-// 📌 Sistema de aceptación / rechazo de propuesta
-export async function before(m, { conn }) {
-    if (!m.quoted) return;
-    global.db.data.parejas = global.db.data.parejas || {};
-    global.db.data.propuestas = global.db.data.propuestas || {};
+// ✅ SISTEMA DE RESPUESTA A PROPUESTAS
+handler.before = async (m, { conn }) => {
+    if (!m.quoted) return !1;
+    if (!m.text) return !1;
 
-    const propuestas = global.db.data.propuestas;
-    const parejas = global.db.data.parejas;
-    const proponente = propuestas[m.sender];
+    global.db.data.parejas = parejas;
+    global.db.data.propuestas = propuestas;
 
-    if (!proponente) return;
+    const respuesta = m.text.trim().toLowerCase();
+    const quienResponde = m.sender;
+    const quienPropuso = propuestas[quienResponde];
 
-    const text = m.text.trim().toLowerCase();
-    if (text === 'sí' || text === 'si') {
-        const idPareja = `${proponente}_${m.sender}`;
-        parejas[idPareja] = [proponente, m.sender];
-        delete propuestas[m.sender];
+    if (!quienPropuso) return !1;
+
+    // ACEPTAR PROPUESTA
+    if (['sí', 'si'].includes(respuesta)) {
+        const idPareja = `${quienPropuso}_${quienResponde}`;
+        parejas[idPareja] = [quienPropuso, quienResponde];
+        delete propuestas[quienResponde];
 
         await conn.reply(
             m.chat,
-            `💍 ¡Felicitaciones! 🎉\n@${proponente.split('@')[0]} y @${m.sender.split('@')[0]} ahora son pareja ❤️`,
+            `💍 ¡Felicitaciones! 🎉\n@${quienPropuso.split('@')[0]} y @${quienResponde.split('@')[0]} ahora son pareja ❤️`,
             m,
-            { mentions: [proponente, m.sender] }
+            { mentions: [quienPropuso, quienResponde] }
         );
-    } else if (text === 'no') {
-        delete propuestas[m.sender];
-        await conn.reply(
-            m.chat,
-            `💔 @${m.sender.split('@')[0]} rechazó la propuesta de @${proponente.split('@')[0]}.`,
-            m,
-            { mentions: [m.sender, proponente] }
-        );
+        return !0;
     }
-    return !0;
-}
+
+    // RECHAZAR PROPUESTA
+    if (['no'].includes(respuesta)) {
+        delete propuestas[quienResponde];
+        await conn.reply(
+            m.chat,
+            `💔 @${quienResponde.split('@')[0]} rechazó la propuesta de @${quienPropuso.split('@')[0]}.`,
+            m,
+            { mentions: [quienResponde, quienPropuso] }
+        );
+        return !0;
+    }
+
+    return !1;
+};
