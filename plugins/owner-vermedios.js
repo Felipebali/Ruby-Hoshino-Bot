@@ -1,54 +1,56 @@
-import { downloadContentFromMessage } from '@whiskeysockets/baileys'
+const { downloadContentFromMessage } = require('@whiskeysockets/baileys')
 
-// Números de dueños
-const ownerNumbers = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net']
+const ownerNumbers = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net'] // Dueños
 
 let handler = async (m, { conn }) => {
-    try {
-        // Verificar si el usuario es owner
-        if (!ownerNumbers.includes(m.sender)) 
-            return conn.reply(m.chat, '❌ Este comando solo puede ser usado por los dueños del bot.', m)
+  try {
+    if (!ownerNumbers.includes(m.sender))
+      return conn.reply(m.chat, '❌ Este comando solo lo pueden usar los dueños del bot.', m)
 
-        let quoted = m.quoted
-        if (!quoted) return conn.reply(m.chat, '⚠️ Responde a un mensaje *ViewOnce* (de imagen, video o audio).', m)
+    const quoted = m.quoted
+    if (!quoted) return conn.reply(m.chat, '🐾 Responde a un mensaje *ViewOnce* (ver una vez) para mostrarlo.', m)
 
-        // Detectar si es un mensaje ViewOnce
-        let viewOnceMsg = quoted.message?.viewOnceMessageV2 || quoted.message?.viewOnceMessage || null
-        if (!viewOnceMsg) return conn.reply(m.chat, '❌ No es un mensaje ViewOnce.', m)
+    // detectar si el mensaje tiene estructura viewOnce
+    const viewOnceMsg = quoted.msg?.viewOnceMessageV2 ||
+                        quoted.msg?.viewOnceMessage ||
+                        quoted.message?.viewOnceMessageV2 ||
+                        quoted.message?.viewOnceMessage
 
-        // Obtener tipo de mensaje (imagen, video o audio)
-        const inner = viewOnceMsg.message
-        const type = Object.keys(inner)[0]
-        const media = inner[type]
+    if (!viewOnceMsg) return conn.reply(m.chat, '⚠️ No es un mensaje de ver una vez.', m)
 
-        const mime = media.mimetype || ''
-        const stream = await downloadContentFromMessage(media, mime.split('/')[0])
-        let buffer = Buffer.from([])
+    const innerMsg = viewOnceMsg.message
+    const type = Object.keys(innerMsg)[0]
+    const mediaMsg = innerMsg[type]
 
-        for await (const chunk of stream) {
-            buffer = Buffer.concat([buffer, chunk])
-        }
+    const mime = mediaMsg.mimetype || ''
+    const mediaType = mime.split('/')[0]
 
-        // Enviar según el tipo de contenido
-        if (mime.includes('image')) {
-            await conn.sendMessage(m.chat, { image: buffer, caption: media.caption || '' }, { quoted: m })
-        } else if (mime.includes('video')) {
-            await conn.sendMessage(m.chat, { video: buffer, caption: media.caption || '', mimetype: 'video/mp4' }, { quoted: m })
-        } else if (mime.includes('audio')) {
-            await conn.sendMessage(m.chat, { audio: buffer, mimetype: 'audio/ogg; codecs=opus', ptt: media.ptt || false }, { quoted: m })
-        } else {
-            return conn.reply(m.chat, '❌ Tipo de contenido no compatible.', m)
-        }
+    const stream = await downloadContentFromMessage(mediaMsg, mediaType)
+    let buffer = Buffer.from([])
 
-    } catch (e) {
-        console.error(e)
-        return conn.reply(m.chat, '⚠️ Error al intentar ver el contenido ViewOnce.', m)
+    for await (const chunk of stream) {
+      buffer = Buffer.concat([buffer, chunk])
     }
+
+    if (mediaType === 'image') {
+      await conn.sendMessage(m.chat, { image: buffer, caption: mediaMsg.caption || '' }, { quoted: m })
+    } else if (mediaType === 'video') {
+      await conn.sendMessage(m.chat, { video: buffer, caption: mediaMsg.caption || '', mimetype: 'video/mp4' }, { quoted: m })
+    } else if (mediaType === 'audio') {
+      await conn.sendMessage(m.chat, { audio: buffer, mimetype: 'audio/ogg; codecs=opus', ptt: mediaMsg.ptt || false }, { quoted: m })
+    } else {
+      conn.reply(m.chat, '❌ Tipo de contenido no soportado.', m)
+    }
+
+  } catch (e) {
+    console.log(e)
+    conn.reply(m.chat, '⚠️ Error al intentar obtener el mensaje ViewOnce.', m)
+  }
 }
 
-handler.help = ['verviewonce', 'viewonce', 'ver']
-handler.tags = ['owner', 'tools']
 handler.command = /^(ver|viewonce|readviewonce)$/i
-handler.owner = true // Solo dueños
+handler.help = ['verviewonce']
+handler.tags = ['tools']
+handler.owner = true
 
-export default handler
+module.exports = handler
