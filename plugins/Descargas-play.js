@@ -20,6 +20,9 @@ const handler = async (m, { conn, text, command }) => {
     if (!text?.trim())
       return conn.reply(m.chat, `⚽ *Por favor, ingresa el nombre o enlace del video.*`, m)
 
+    // 🔎 Reacción mientras busca
+    await m.react('🔎')
+
     let videoIdMatch = text.match(youtubeRegexID)
     let search = await yts(videoIdMatch ? 'https://youtu.be/' + videoIdMatch[1] : text)
     let video = videoIdMatch
