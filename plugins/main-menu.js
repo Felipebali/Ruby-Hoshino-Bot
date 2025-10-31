@@ -22,7 +22,7 @@ let comandosPorCategoria = {
   'info': {'.creador':'👑', '.dash':'📊', '.status':'📈', '.estado':'📉', '.ping':'📶', '.infobot':'🤖', '.lid':'🆔'},
   'main': {'.menu':'📜'},
   'nable': { '.welcome':'👋', '.bv':'🎉', '.bienvenida':'🎊', '.antiprivado':'🚫', '.restrict':'🔒', '.autolevelup':'⬆️', '.autonivel':'⬆️', '.antibot':'🤖', '.autoaceptar':'✅', '.autorechazar':'❌', '.autoresponder':'💬', '.antisubbots':'🚫', '.modoadmin':'🛡️', '.soloadmin':'🛡️', '.autoread':'👀', '.autover':'📝', '.antiver':'📝', '.antiviewonce':'👁️', '.reaction':'❤️', '.emojis':'😺', '.nsfw':'🔞', '.antispam':'🚫', '.antidelete':'❌', '.delete':'🗑️', '.jadibotmd':'🤖', '.detect':'🕵️‍♂️', '.configuraciones':'⚙️', '.avisodegp':'📢', '.simi':'💬', '.antilink':'🔗', '.antitoxic':'☣️', '.antitraba':'🚫', '.antifake':'❌', '.antivirtuales':'👻', '.ruletaban':'🎯' },
-  'game': { '.acertijo':'❓', '.math':'➗', '.dance *<@user>*':'💃', '.ppt':'✂️', '.adivinanza':'❓', '.bandera':'🏴', '.capital':'🏛️', '.trivia':'🎯','.miau':'🐈‍⬛' },
+  'game': { ', '.math':'➗', '.dance *<@user>*':'💃', '.ppt':'✂️', '.adivinanza':'❓', '.bandera':'🏴', '.capital':'🏛️', '.trivia':'🎯','.miau':'🐈‍⬛' },
   'group': {'.enable <opción>':'✅', '.disable <opción>':'❌'},
   'downloader': { '.play <nombre de la canción>':'🎵', '.apk2 ':'📲', '.facebook ':'📘', '.ig ':'📸', '.play2 ':'🎶', '.ytmp3 ':'🎵', '.ytmp4 ':'🎬', '.mediafire ':'📥', '.spotify ':'🎧', '.tiktok ':'🎵', '.tiktoksearch ':'🔎' },
   'sticker': {'.stiker ':'🖼️', '.sticker ':'🖼️'},
