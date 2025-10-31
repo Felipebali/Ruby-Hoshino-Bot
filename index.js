@@ -528,17 +528,3 @@ return phoneUtil.isValidNumber(parsedNumber)
 } catch (error) {
 return false
 }}
-
-// --- todos tus imports ---
-import { setupWelcomeBye } from './plugins/grupo-bienvenida_despedida.js'
-
-// --- crear conexión ---
-const conn = makeWASocket({
-  printQRInTerminal: true,
-  auth: authState
-})
-
-// --- al final, después de crear conn ---
-setupWelcomeBye(conn)
-
-// --- resto de tu index.js: plugins, comandos, eventos ---
