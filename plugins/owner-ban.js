@@ -89,35 +89,21 @@ const handler = async (m, { conn, command, text }) => {
     })
   }
 
-  // --- VER LISTA COMPLETA ---
+  // --- VER LISTA COMPLETA (solo una lista) ---
   else if (command === 'verln') {
     const bannedUsers = Object.entries(db).filter(([_, data]) => data?.banned)
     if (bannedUsers.length === 0)
       return conn.sendMessage(m.chat, { text: `${done} No hay usuarios en la lista negra.` })
 
-    const chunkSize = 10
-    for (let i = 0; i < bannedUsers.length; i += chunkSize) {
-      const chunk = bannedUsers.slice(i, i + chunkSize)
-      let list = '🚫 *Lista negra actual:*\n\n'
-      const mentions = []
+    let list = '🚫 *Lista negra actual:*\n\n'
+    const mentions = []
 
-      for (const [jid, data] of chunk) {
-        list += `• @${jid.split('@')[0]}\n  Motivo: ${data.banReason || 'No especificado'}\n\n`
-        mentions.push(jid)
-      }
-
-      try {
-        await conn.sendMessage(m.chat, { text: list.trim(), mentions })
-        await new Promise(r => setTimeout(r, 3000))
-      } catch (e) {
-        if (e.data === 429 || e.message.includes('rate-overlimit')) {
-          console.log(`⚠️ Rate limit al mostrar lista, esperando 10s...`)
-          await new Promise(r => setTimeout(r, 10000))
-          continue
-        }
-        console.log(`⚠️ Error al enviar lista negra: ${e.message}`)
-      }
+    for (const [jid, data] of bannedUsers) {
+      list += `• @${jid.split('@')[0]}\n  Motivo: ${data.banReason || 'No especificado'}\n\n`
+      mentions.push(jid)
     }
+
+    await conn.sendMessage(m.chat, { text: list.trim(), mentions })
   }
 
   // --- VACIAR LISTA ---
