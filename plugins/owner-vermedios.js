@@ -1,4 +1,4 @@
-const { downloadContentFromMessage } = require('@whiskeysockets/baileys')
+import { downloadContentFromMessage } from '@whiskeysockets/baileys'
 
 const ownerNumbers = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net'] // Dueños
 
@@ -10,7 +10,6 @@ let handler = async (m, { conn }) => {
     const quoted = m.quoted
     if (!quoted) return conn.reply(m.chat, '🐾 Responde a un mensaje *ViewOnce* (ver una vez) para mostrarlo.', m)
 
-    // detectar si el mensaje tiene estructura viewOnce
     const viewOnceMsg = quoted.msg?.viewOnceMessageV2 ||
                         quoted.msg?.viewOnceMessage ||
                         quoted.message?.viewOnceMessageV2 ||
@@ -28,9 +27,7 @@ let handler = async (m, { conn }) => {
     const stream = await downloadContentFromMessage(mediaMsg, mediaType)
     let buffer = Buffer.from([])
 
-    for await (const chunk of stream) {
-      buffer = Buffer.concat([buffer, chunk])
-    }
+    for await (const chunk of stream) buffer = Buffer.concat([buffer, chunk])
 
     if (mediaType === 'image') {
       await conn.sendMessage(m.chat, { image: buffer, caption: mediaMsg.caption || '' }, { quoted: m })
@@ -50,7 +47,7 @@ let handler = async (m, { conn }) => {
 
 handler.command = /^(ver|viewonce|readviewonce)$/i
 handler.help = ['verviewonce']
-handler.tags = ['tools']
+handler.tags = ['owner']
 handler.owner = true
 
-module.exports = handler
+export default handler
