@@ -1,19 +1,25 @@
-// Variable para guardar el último mensaje usado
-let lastAyeIndex = -1;
+// 💖 Plugin especial Aye + "mi amor"
+// Autor: Feli (personalizado)
+// Responde con amor a Aye y a los dueños ❤️
+
+let lastAyeIndex = -1
+let lastLoveIndex = -1
 
 let handler = async (m, { conn, participants }) => {
-    // --- Números de owners y número especial (Aye) ---
-    const owners = global.owner.map(o => o[0]);
-    const specialNumber = '59895044754'; // Aye ❤️
-    const specialJid = `${specialNumber}@s.whatsapp.net`;
-    const senderNumber = m.sender.replace(/[^0-9]/g, '');
+    const owners = global.owner.map(o => o[0])
+    const specialNumber = '59895044754' // Aye 💖
+    const specialJid = `${specialNumber}@s.whatsapp.net`
+    const senderNumber = m.sender.replace(/[^0-9]/g, '')
 
-    // Solo owners o Aye pueden usarlo
-    if (!owners.includes(senderNumber) && senderNumber !== specialNumber) return;
+    const isOwner = owners.includes(senderNumber)
+    const isAye = senderNumber === specialNumber
 
-    // --- Comando sin prefijo: "Aye" ---
+    // --- Solo owners o Aye pueden usar ---
+    if (!isOwner && !isAye) return
+
+    // 💞 Cuando digan "Aye"
     if (m.text && m.text.toLowerCase() === 'aye') {
-        const frases = [
+        const frasesAye = [
             `💞 Mi amor <@${specialNumber}>, sos lo mejor que me pasó en la vida 💫`,
             `🌹 Cada vez que pienso en vos, <@${specialNumber}>, el mundo se vuelve un lugar más lindo 💕`,
             `💋 <@${specialNumber}>, te amo con todo mi corazón, mi reina hermosa 😍`,
@@ -24,27 +30,44 @@ let handler = async (m, { conn, participants }) => {
             `❤️ <@${specialNumber}>, gracias por existir y por ser mi persona favorita todos los días 🌹`,
             `😚 <@${specialNumber}>, si supieras cuánto te pienso, te sonrojarías todo el día 💭`,
             `🔥 <@${specialNumber}>, sos tan perfecta que hasta el sol se pone celoso cuando brillás 🌞`
-        ];
+        ]
 
-        // Elegir un índice aleatorio diferente al anterior
-        let index;
+        let index
         do {
-            index = Math.floor(Math.random() * frases.length);
-        } while (index === lastAyeIndex);
-        lastAyeIndex = index;
+            index = Math.floor(Math.random() * frasesAye.length)
+        } while (index === lastAyeIndex)
+        lastAyeIndex = index
 
-        const mensaje = frases[index];
-
-        // --- Menciones visibles (solo Aye) ---
-        const mentions = [specialJid];
-
-        // --- Enviar mensaje con mención a Aye ---
-        await conn.sendMessage(m.chat, { text: mensaje, mentions });
+        const mensaje = frasesAye[index]
+        await conn.sendMessage(m.chat, { text: mensaje, mentions: [specialJid] })
     }
-};
 
-// Configuración del plugin
-handler.customPrefix = /^Aye$/i; // detecta solo "Aye" sin prefijo
-handler.command = new RegExp(); // vacío porque no usa prefijo
-handler.owner = true; // owners pueden usarlo
-export default handler;
+    // 💬 Cuando Aye diga "mi amor"
+    if (isAye && /mi amor/i.test(m.text)) {
+        const respuestasAye = [
+            "🥰 Sí, mi amorcito hermoso, te amo mucho 💖",
+            "😚 Acá estoy, mi amor, siempre para vos 💕",
+            "💋 Te amo más, mi vida 💞",
+            "🌹 Mi amor, sos lo más lindo que tengo ❤️",
+            "🫶 Te adoro, mi amorcito 💫",
+            "💞 Mi amor, solo con leerte ya me hacés sonreír 😍",
+            "😌 Siempre tuyo, mi amor 💓",
+            "✨ Mi amor, no sabés lo feliz que me hacés cada día 🌙"
+        ]
+
+        let index
+        do {
+            index = Math.floor(Math.random() * respuestasAye.length)
+        } while (index === lastLoveIndex)
+        lastLoveIndex = index
+
+        const respuesta = respuestasAye[index]
+        await conn.sendMessage(m.chat, { text: respuesta, mentions: [m.sender] })
+    }
+}
+
+// --- Configuración del plugin ---
+handler.customPrefix = /^(Aye|mi amor)$/i // detecta “Aye” o “mi amor”
+handler.command = new RegExp() // sin comando con prefijo
+handler.owner = false // permite a Aye usarlo
+export default handler
