@@ -49,7 +49,7 @@ let handler = async (m, { conn }) => {
 
     if (!global.flagGame) global.flagGame = {};
 
-    const text = `🌍 *ADIVINA LA BANDERA*\n\n${correct.emoji}\n\n🔹 Opciones:\n${options.map((o, i) => `*${i + 1}.* ${o}`).join('\n')}\n\nResponde *citando ESTE mensaje* con el número (1-4) o el nombre correcto.\n⏱️ *Tienes 25 segundos!*`;
+    const text = `🌍 *ADIVINA LA BANDERA*\n\n${correct.emoji}\n\n🔹 Opciones:\n${options.map((o, i) => `*${i + 1}.* ${o}`).join('\n')}\n\nResponde *citando ESTE mensaje* con el nombre correcto.\n⏱️ *Tienes 25 segundos!*`;
 
     // Enviamos SIN citar el mensaje original (así el mensaje del bot es el objetivo a citar)
     const msg = await conn.sendMessage(m.chat, { text });
