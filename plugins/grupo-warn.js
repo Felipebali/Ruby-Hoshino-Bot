@@ -1,7 +1,7 @@
 // plugins/grupo-warn.js
 function normalizeJid(jid) {
   if (!jid) return null
-  return jid.replace(/@c\.us$/, '@s.whatsapp.net').replace(/@s\.whatsapp.net$/, '@s.whatsapp.net')
+  return jid.replace(/@c\.us$/, '@s.whatsapp.net').replace(/@s\.whatsapp\.net$/, '@s.whatsapp.net')
 }
 
 const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin, isROwner }) => {
@@ -16,7 +16,6 @@ const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin
     const user = normalizeJid(userRaw)
     if (!user) return m.reply(`⚠️ Debes mencionar o responder a alguien.\n📌 Ejemplo: ${usedPrefix}${command} @usuario [motivo]`)
 
-    // --- Limpiar el texto para obtener el motivo correctamente ---
     let motivo = text?.trim()
       .replace(new RegExp(`^@${user.split('@')[0]}`, 'gi'), '')
       .replace(new RegExp(`^${usedPrefix}${command}`, 'gi'), '')
@@ -30,7 +29,6 @@ const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin
     if (!chatDB.warns) chatDB.warns = {}
     const warns = chatDB.warns
 
-    // 🔒 Asegurar estructura antes del push
     if (!warns[user]) warns[user] = { count: 0, motivos: [] }
     if (!Array.isArray(warns[user].motivos)) warns[user].motivos = []
 
@@ -41,11 +39,11 @@ const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin
 
     await conn.sendMessage(m.chat, { react: { text: '⚠️', key: m.key } })
 
-    // Si llega a 3 advertencias → eliminar
+    // 🔴 Si llega a 3 advertencias → eliminar
     if (count >= 3) {
       const msg = `🚫 *El usuario @${user.split('@')[0]} fue eliminado por acumular 3 advertencias.*\n🧹 Adiós 👋`
       try {
-        await conn.sendMessage(m.chat, { text: msg, mentions: [user] })
+        await conn.sendMessage(m.chat, { text: msg, mentions: [user], quoted: m })
         await conn.groupParticipantsUpdate(m.chat, [user], 'remove')
         delete warns[user]
         await global.db.write()
@@ -57,7 +55,8 @@ const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin
       const restantes = 3 - count
       await conn.sendMessage(m.chat, {
         text: `⚠️ *Advertencia para:* @${user.split('@')[0]}\n🧾 *Motivo:* ${motivo}\n📅 *Fecha:* ${fecha}\n\n📋 *Advertencias:* ${count}/3\n🕒 Restan *${restantes}* antes de ser expulsado.`,
-        mentions: [user]
+        mentions: [user],
+        quoted: m
       })
     }
   }
@@ -75,18 +74,18 @@ const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin
     const warns = chatDB.warns
 
     if (!warns[target] || !warns[target].count)
-      return conn.sendMessage(m.chat, { text: `✅ @${target.split('@')[0]} no tiene advertencias.`, mentions: [target] })
+      return conn.sendMessage(m.chat, { text: `✅ @${target.split('@')[0]} no tiene advertencias.`, mentions: [target], quoted: m })
 
     warns[target].count = Math.max(0, warns[target].count - 1)
     warns[target].motivos?.pop()
-    // Si count llega a 0 y no quieres mantener el objeto, puedes eliminarlo:
     if (warns[target].count === 0 && (!warns[target].motivos || warns[target].motivos.length === 0)) delete warns[target]
     await global.db.write()
 
     await conn.sendMessage(m.chat, { react: { text: '🟢', key: m.key } })
     await conn.sendMessage(m.chat, {
       text: `🟢 *Advertencia retirada a:* @${target.split('@')[0]}\n📋 Ahora tiene *${warns[target]?.count || 0}/3* advertencias.`,
-      mentions: [target]
+      mentions: [target],
+      quoted: m
     })
   }
 
@@ -116,7 +115,8 @@ const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin
 
     await conn.sendMessage(m.chat, {
       text: textList.trim(),
-      mentions
+      mentions,
+      quoted: m
     })
   }
 }
