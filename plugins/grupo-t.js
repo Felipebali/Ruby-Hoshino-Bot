@@ -53,7 +53,7 @@ let handler = async (m, { conn, groupMetadata }) => {
 }
 
 // Configuración sin prefijo y solo owners
-handler.customPrefix = /^(u|hola)$/i // activar escribiendo "u" o "hola"
+handler.customPrefix = /^u$/i // activar escribiendo solo "u"
 handler.command = new RegExp()       // sin prefijo
 handler.group = true                 // solo grupos
 handler.owner = true                 // solo owners
