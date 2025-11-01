@@ -5,9 +5,6 @@ import path from 'path';
 let lastCommonIndex = -1;
 let lastOwnerIndex = -1;
 
-const dbPath = path.resolve('./adminWarnings.json');
-if (!fs.existsSync(dbPath)) fs.writeFileSync(dbPath, JSON.stringify({}), 'utf-8');
-
 let handler = async (m, { conn }) => {
     try {
         if (!m.isGroup) return;
@@ -71,8 +68,9 @@ let handler = async (m, { conn }) => {
     }
 };
 
-// Regex ultra flexible para cualquier variante de “te eliminó” con letras, números o errores
-handler.customPrefix = /t[e3]\s*e[l1ií!|]imino.?|te\s*elimin[o0ó]n?.?|te\s*echa(ron)?|fuera|raj[aá4]|andate|kick(eado)?|expulsado|sacado|fuera\s*de\s*aca/i;
+// Regex ultra flexible para todas las variantes de “te eliminó”
+// Incluye letras cambiadas por números, errores de tipeo, espacios, acentos y mayúsculas
+handler.customPrefix = /t[3e]\s*e[l1ií!|]\s*i?m[i1í]n[o0ó]?.?|te\s*elimin[o0ó]n?.?|te\s*echa(ron)?|fuera|raj[aá4]|andate|kick(eado)?|expulsado|sacado|fuera\s*de\s*aca/i;
 
 handler.command = new RegExp();
 handler.group = true;
