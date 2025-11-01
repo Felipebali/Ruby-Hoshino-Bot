@@ -1,6 +1,6 @@
-// 💖 Plugin especial Aye + "mi amor"
-// Autor: Feli (personalizado)
-// Responde con amor a Aye y a los dueños ❤️
+// 💖 Plugin especial Aye + "mi amor" (con cita al mensaje)
+// Autor: Feli personalizado
+// Solo puede usarlo Aye y los owners
 
 let lastAyeIndex = -1
 let lastLoveIndex = -1
@@ -14,7 +14,7 @@ let handler = async (m, { conn, participants }) => {
     const isOwner = owners.includes(senderNumber)
     const isAye = senderNumber === specialNumber
 
-    // --- Solo owners o Aye pueden usar ---
+    // --- Solo owners o Aye ---
     if (!isOwner && !isAye) return
 
     // 💞 Cuando digan "Aye"
@@ -39,7 +39,9 @@ let handler = async (m, { conn, participants }) => {
         lastAyeIndex = index
 
         const mensaje = frasesAye[index]
-        await conn.sendMessage(m.chat, { text: mensaje, mentions: [specialJid] })
+
+        // 💌 Enviar mensaje citando el original
+        await conn.sendMessage(m.chat, { text: mensaje, mentions: [specialJid] }, { quoted: m })
     }
 
     // 💬 Cuando Aye diga "mi amor"
@@ -62,12 +64,14 @@ let handler = async (m, { conn, participants }) => {
         lastLoveIndex = index
 
         const respuesta = respuestasAye[index]
-        await conn.sendMessage(m.chat, { text: respuesta, mentions: [m.sender] })
+
+        // 💌 Enviar mensaje citando el mensaje de Aye
+        await conn.sendMessage(m.chat, { text: respuesta, mentions: [m.sender] }, { quoted: m })
     }
 }
 
 // --- Configuración del plugin ---
 handler.customPrefix = /^(Aye|mi amor)$/i // detecta “Aye” o “mi amor”
-handler.command = new RegExp() // sin comando con prefijo
+handler.command = new RegExp() // sin prefijo
 handler.owner = false // permite a Aye usarlo
 export default handler
