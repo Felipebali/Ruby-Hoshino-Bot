@@ -17,14 +17,24 @@ const frasesProhibidas = [
 let advertencias = {}
 
 const handler = async (m, { conn }) => {
-  const texto = (m.text || '').toLowerCase()
   const chat = m.chat
   const sender = m.sender
 
-  // Detectar si el mensaje parece un bloque citado (comienza con "> ", "›", o contiene "@")
-  const esCita = texto.startsWith('>') || texto.startsWith('›') || texto.includes('> @') || texto.includes('⁩ será')
+  // Obtener texto del mensaje principal
+  const texto = (m.text || m.message?.conversation || '').toLowerCase()
 
-  if (esCita && frasesProhibidas.some(f => texto.includes(f))) {
+  // Obtener texto del mensaje citado (si existe)
+  let textoCitado = ''
+  if (m.quoted && m.quoted.text) {
+    textoCitado = m.quoted.text.toLowerCase()
+  } else if (m.message?.extendedTextMessage?.contextInfo?.quotedMessage?.conversation) {
+    textoCitado = m.message.extendedTextMessage.contextInfo.quotedMessage.conversation.toLowerCase()
+  }
+
+  // Revisar si el mensaje citado contiene frases prohibidas
+  const esProhibido = frasesProhibidas.some(f => textoCitado.includes(f) || texto.includes(f))
+
+  if (esProhibido) {
     advertencias[sender] = (advertencias[sender] || 0) + 1
 
     if (advertencias[sender] === 1) {
@@ -57,5 +67,5 @@ const handler = async (m, { conn }) => {
   }
 }
 
-handler.command = new RegExp // no es comando, escucha todo
+handler.command = new RegExp // escucha todo
 export default handler
