@@ -7,6 +7,10 @@ function normalizeJid(jid) {
 const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin, isROwner }) => {
   if (!m.isGroup) return m.reply('🚫 Este comando solo se puede usar en grupos.')
 
+  const chatDB = global.db.data.chats[m.chat] || (global.db.data.chats[m.chat] = {})
+  if (!chatDB.warns) chatDB.warns = {}
+  const warns = chatDB.warns
+
   // ---------- ⚠️ DAR ADVERTENCIA ----------
   if (['advertencia', 'ad', 'daradvertencia', 'advertir', 'warn'].includes(command)) {
     if (!isAdmin) return m.reply('❌ Solo los administradores pueden advertir.')
@@ -20,32 +24,28 @@ const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin
       .replace(new RegExp(`^@${user.split('@')[0]}`, 'gi'), '')
       .replace(new RegExp(`^${usedPrefix}${command}`, 'gi'), '')
       .trim()
-
     if (!motivo) motivo = 'Sin especificar 💤'
 
     const fecha = new Date().toLocaleString('es-UY', { timeZone: 'America/Montevideo' })
 
-    const chatDB = global.db.data.chats[m.chat] || (global.db.data.chats[m.chat] = {})
-    if (!chatDB.warns) chatDB.warns = {}
-    const warns = chatDB.warns
+    // Normalizar estructura
+    const uid = normalizeJid(user)
+    if (!warns[uid]) warns[uid] = { count: 0, motivos: [] }
+    if (!Array.isArray(warns[uid].motivos)) warns[uid].motivos = []
 
-    if (!warns[user]) warns[user] = { count: 0, motivos: [] }
-    if (!Array.isArray(warns[user].motivos)) warns[user].motivos = []
-
-    warns[user].count += 1
-    warns[user].motivos.push({ motivo, fecha })
-    const count = warns[user].count
+    warns[uid].count += 1
+    warns[uid].motivos.push({ motivo, fecha })
+    const count = warns[uid].count
     await global.db.write()
 
     await conn.sendMessage(m.chat, { react: { text: '⚠️', key: m.key } })
 
-    // 🔴 Si llega a 3 advertencias → eliminar
     if (count >= 3) {
-      const msg = `🚫 *El usuario @${user.split('@')[0]} fue eliminado por acumular 3 advertencias.*\n🧹 Adiós 👋`
+      const msg = `🚫 *El usuario @${uid.split('@')[0]} fue eliminado por acumular 3 advertencias.*\n🧹 Adiós 👋`
       try {
-        await conn.sendMessage(m.chat, { text: msg, mentions: [user], quoted: m })
-        await conn.groupParticipantsUpdate(m.chat, [user], 'remove')
-        delete warns[user]
+        await conn.sendMessage(m.chat, { text: msg, mentions: [uid], quoted: m })
+        await conn.groupParticipantsUpdate(m.chat, [uid], 'remove')
+        delete warns[uid]
         await global.db.write()
       } catch (e) {
         console.error(e)
@@ -54,8 +54,8 @@ const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin
     } else {
       const restantes = 3 - count
       await conn.sendMessage(m.chat, {
-        text: `⚠️ *Advertencia para:* @${user.split('@')[0]}\n🧾 *Motivo:* ${motivo}\n📅 *Fecha:* ${fecha}\n\n📋 *Advertencias:* ${count}/3\n🕒 Restan *${restantes}* antes de ser expulsado.`,
-        mentions: [user],
+        text: `⚠️ *Advertencia para:* @${uid.split('@')[0]}\n🧾 *Motivo:* ${motivo}\n📅 *Fecha:* ${fecha}\n\n📋 *Advertencias:* ${count}/3\n🕒 Restan *${restantes}* antes de ser expulsado.`,
+        mentions: [uid],
         quoted: m
       })
     }
@@ -69,48 +69,45 @@ const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin
     const target = normalizeJid(targetRaw)
     if (!target) return m.reply('❌ Debes mencionar o responder al mensaje del usuario para quitarle una advertencia.')
 
-    const chatDB = global.db.data.chats[m.chat] || (global.db.data.chats[m.chat] = {})
-    if (!chatDB.warns) chatDB.warns = {}
-    const warns = chatDB.warns
+    const uid = normalizeJid(target)
+    const userWarn = warns[uid]
 
-    if (!warns[target] || !warns[target].count)
-      return conn.sendMessage(m.chat, { text: `✅ @${target.split('@')[0]} no tiene advertencias.`, mentions: [target], quoted: m })
+    if (!userWarn || !userWarn.count)
+      return conn.sendMessage(m.chat, { text: `✅ @${uid.split('@')[0]} no tiene advertencias.`, mentions: [uid], quoted: m })
 
-    warns[target].count = Math.max(0, warns[target].count - 1)
-    warns[target].motivos?.pop()
-    if (warns[target].count === 0 && (!warns[target].motivos || warns[target].motivos.length === 0)) delete warns[target]
+    userWarn.count = Math.max(0, userWarn.count - 1)
+    userWarn.motivos?.pop()
+    if (userWarn.count === 0 && (!userWarn.motivos || userWarn.motivos.length === 0)) delete warns[uid]
     await global.db.write()
 
     await conn.sendMessage(m.chat, { react: { text: '🟢', key: m.key } })
     await conn.sendMessage(m.chat, {
-      text: `🟢 *Advertencia retirada a:* @${target.split('@')[0]}\n📋 Ahora tiene *${warns[target]?.count || 0}/3* advertencias.`,
-      mentions: [target],
+      text: `🟢 *Advertencia retirada a:* @${uid.split('@')[0]}\n📋 Ahora tiene *${userWarn?.count || 0}/3* advertencias.`,
+      mentions: [uid],
       quoted: m
     })
   }
 
   // ---------- 📜 LISTA DE ADVERTENCIAS ----------
   else if (['warnlist', 'advertencias', 'listaad'].includes(command)) {
-    const chatDB = global.db.data.chats[m.chat] || (global.db.data.chats[m.chat] = {})
-    if (!chatDB.warns) chatDB.warns = {}
-    const warns = chatDB.warns
+    const entries = Object.entries(warns)
+      .map(([jid, data]) => [normalizeJid(jid), data])
+      .filter(([_, w]) => w.count && w.count > 0)
 
-    const entries = Object.entries(warns).filter(([_, w]) => w.count && w.count > 0)
     if (entries.length === 0) return m.reply('✅ No hay usuarios con advertencias en este grupo.')
 
     let textList = '⚠️ *Usuarios con advertencias:*\n\n'
     let mentions = []
 
     for (const [jid, w] of entries) {
-      const normJid = normalizeJid(jid)
-      textList += `👤 @${normJid.split('@')[0]} → ${w.count}/3\n`
+      textList += `👤 @${jid.split('@')[0]} → ${w.count}/3\n`
       if (w.motivos?.length) {
         w.motivos.slice(-3).forEach((m, i) => {
           textList += `   ${i + 1}. ${m.motivo} — 🗓️ ${m.fecha}\n`
         })
       }
       textList += '\n'
-      mentions.push(normJid)
+      mentions.push(jid)
     }
 
     await conn.sendMessage(m.chat, {
