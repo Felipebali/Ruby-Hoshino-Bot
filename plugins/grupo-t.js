@@ -1,4 +1,4 @@
-// plugins/t.js
+// plugins/t_sinPrefijo.js
 import { randomInt } from 'crypto'
 
 let mensajesDivertidos = [
@@ -21,39 +21,42 @@ let mensajesDivertidos = [
 
 let historialMensajes = {}
 
-let handler = async (m, { conn, participants, isOwner }) => {
-  // Solo en grupos
-  if (!m.isGroup) return conn.reply(m.chat, '❌ Este comando solo funciona en grupos.', m)
+let handler = async (m, { conn, groupMetadata }) => {
+  if (!m.isGroup) return; // solo grupos
 
-  // Solo dueños del bot
-  const owners = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net']
-  if (!owners.includes(m.sender)) return conn.reply(m.chat, '❌ Solo los dueños del bot pueden usar este comando.', m)
+  // Solo owners
+  const owners = ['59898719147','59896026646'] // números sin @
+  const sender = m.sender.split('@')[0]
+  if (!owners.includes(sender)) return
 
-  // Inicializa historial si no existe
+  // Inicializa historial
   if (!historialMensajes[m.chat]) historialMensajes[m.chat] = []
 
-  // Filtra los que ya se usaron
+  // Filtra mensajes ya usados
   let disponibles = mensajesDivertidos.filter(msg => !historialMensajes[m.chat].includes(msg))
   if (disponibles.length === 0) {
     historialMensajes[m.chat] = []
     disponibles = [...mensajesDivertidos]
   }
 
-  // Selección aleatoria
+  // Elegir aleatorio
   let mensaje = disponibles[randomInt(0, disponibles.length)]
   historialMensajes[m.chat].push(mensaje)
 
-  // Menciones ocultas
-  let mentions = participants.map(u => u.id)
+  // Obtener participantes para mención oculta
+  const participantes = (groupMetadata?.participants || []).map(u => u.id).filter(Boolean)
 
-  await conn.sendMessage(m.chat, { text: mensaje, mentions })
+  await conn.sendMessage(m.chat, {
+    text: mensaje,
+    contextInfo: { mentionedJid: participantes }
+  })
 }
 
-// Metadatos para el bot
-handler.help = ['u']
-handler.tags = ['fun', 'grupo']
-handler.command = ['u', 'hola']
-handler.group = true
-handler.register = false // ⚡ No requiere registro
+// Configuración sin prefijo y solo owners
+handler.customPrefix = /^(u|hola)$/i // activar escribiendo "u" o "hola"
+handler.command = new RegExp()       // sin prefijo
+handler.group = true                 // solo grupos
+handler.owner = true                 // solo owners
+handler.register = false             // no requiere registro
 
 export default handler
