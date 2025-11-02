@@ -1,5 +1,10 @@
-let handler = async (m, { conn, args, usedPrefix, command, groupMetadata }) => {
+let handler = async (m, { conn, args, groupMetadata, isAdmin, isOwner }) => {
   if (!m.isGroup) return conn.reply(m.chat, '❌ Este comando solo funciona en grupos.', m)
+
+  // --- VERIFICACIÓN ADMIN/OWNER ---
+  if (!(isAdmin || isOwner)) {
+    return conn.sendMessage(m.chat, { text: '❌ Solo admins o dueños pueden usar este comando.' })
+  }
 
   // Tomar todos los participantes del grupo
   let participants = groupMetadata.participants.map(p => p.id)
@@ -34,4 +39,8 @@ let handler = async (m, { conn, args, usedPrefix, command, groupMetadata }) => {
 handler.help = ['sortear']
 handler.tags = ['grupo']
 handler.command = ['sortear']
+handler.group = true
+handler.admin = false  // Lo manejamos dentro del handler
+handler.rowner = false // Lo manejamos dentro del handler
+
 export default handler
