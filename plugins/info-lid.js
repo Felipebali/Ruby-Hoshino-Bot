@@ -1,4 +1,4 @@
-// 📂 plugins/info-lid.js
+// 📂 plugins/lidall.js
 const handler = async function (m, { conn, groupMetadata }) {
   if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.')
 
@@ -10,14 +10,13 @@ const handler = async function (m, { conn, groupMetadata }) {
   const isOwner = owners.includes(senderNumber)
   if (!isOwner) return m.reply('❌ Solo el owner puede usar este comando.')
 
-  // --- Base de datos de usuarios LID detectados ---
+  // --- Base de datos de LIDs detectados ---
   const db = global.db.data
   if (!db.lidUsers) db.lidUsers = {}
 
-  // --- Participantes del grupo ---
   const participantes = groupMetadata?.participants || []
 
-  // --- Crear tarjetas para cada usuario ---
+  // --- Crear listado de todos los participantes ---
   const tarjetas = participantes.map((p, index) => {
     const rawJid = p.id || 'N/A'
     const user = rawJid.split('@')[0]
@@ -25,11 +24,14 @@ const handler = async function (m, { conn, groupMetadata }) {
                   : p.admin === 'admin' ? '🛡️ Admin'
                   : '👤 Miembro'
 
-    const lidDetectado = db.lidUsers[rawJid] ? '✅ Detectado' : '❌ No detectado'
+    // Revisar si tenemos LID detectado para este usuario
+    const lidDetectado = Object.keys(db.lidUsers).find(j => j.startsWith(user))
+      ? db.lidUsers[Object.keys(db.lidUsers).find(j => j.startsWith(user))].lid || '✅ Detectado'
+      : '❌ No detectado'
 
     return [
       '┏━━━━━━━━━━━━━━━🐾',
-      `┃ 🌟 *Participante ${index + 1}*`,
+      `┃ 🌟 Participante ${index + 1}`,
       `┃ 🙍‍♂️ Usuario: @${user}`,
       `┃ 🏷️ Estado: ${estado}`,
       `┃ 🔗 LID: ${lidDetectado}`,
@@ -50,24 +52,25 @@ const handler = async function (m, { conn, groupMetadata }) {
   return conn.reply(m.chat, salida, m, { mentions: mencionados })
 }
 
-handler.command = ['lid']
-handler.help = ['lid']
-handler.tags = ['info']
-handler.rowner = true
-
-// --- Detección automática de usuarios LID ---
+// --- Detectar automáticamente LIDs cuando los usuarios envían mensajes ---
 handler.all = async function (m) {
   const db = global.db.data
   if (!db.lidUsers) db.lidUsers = {}
   if (m.sender && m.sender.endsWith('@lid')) {
     if (!db.lidUsers[m.sender]) {
       db.lidUsers[m.sender] = {
+        lid: m.sender.split('@')[0],
         detectado: true,
-        fecha: new Date().toLocaleString(),
+        fecha: new Date().toLocaleString()
       }
       console.log(`💡 Usuario con LID detectado: ${m.sender}`)
     }
   }
 }
+
+handler.command = ['lidall']
+handler.help = ['lidall']
+handler.tags = ['info']
+handler.rowner = true
 
 export default handler
