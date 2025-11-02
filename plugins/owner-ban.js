@@ -29,6 +29,9 @@ db[userJid].banned = true
 db[userJid].banReason = reason
 db[userJid].bannedBy = m.sender
 
+// Reacción al mensaje
+await conn.sendMessage(m.chat, { react: { text: '🚫', key: m.key } })
+
 await conn.sendMessage(m.chat, {
   text: `🚫 @${userJid.split('@')[0]} fue agregado a la lista negra.\n📝 Motivo: ${reason}`,
   mentions: [userJid]
@@ -64,22 +67,28 @@ for (const jid of groups) {
 
 // --- QUITAR DE LISTA NEGRA ---
 else if (command === 'unre') {
-if (!db[userJid]?.banned)
+if (!db[userJid]?.banned) {
+await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
 return conn.sendMessage(m.chat, { text: "✅ @${userJid.split('@')[0]} no está en la lista negra.", mentions: [userJid] })
+}
 
 db[userJid].banned = false
 db[userJid].banReason = ''
 db[userJid].bannedBy = null
 
+await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
 await conn.sendMessage(m.chat, { text: `✅ @${userJid.split('@')[0]} fue eliminado de la lista negra.`, mentions: [userJid] })
 
 }
 
 // --- CONSULTAR ESTADO ---
 else if (command === 'clre') {
-if (!db[userJid]?.banned)
+if (!db[userJid]?.banned) {
+await conn.sendMessage(m.chat, { react: { text: '🔍', key: m.key } })
 return conn.sendMessage(m.chat, { text: "🔍 @${userJid.split('@')[0]} no está en la lista negra.", mentions: [userJid] })
+}
 
+await conn.sendMessage(m.chat, { react: { text: '🚫', key: m.key } })
 await conn.sendMessage(m.chat, {
   text: `🚫 @${userJid.split('@')[0]} está en la lista negra.\n📝 Motivo: ${db[userJid].banReason || 'No especificado'}`,
   mentions: [userJid]
@@ -112,6 +121,7 @@ db[jid].banReason = ''
 db[jid].bannedBy = null
 }
 }
+await conn.sendMessage(m.chat, { react: { text: '🗑', key: m.key } })
 await conn.sendMessage(m.chat, { text: "🗑 La lista negra ha sido vaciada." })
 }
 
