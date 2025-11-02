@@ -1,31 +1,49 @@
 // plugins/mute.js
+
 function normalizeJid(jid) {
   if (!jid) return null
-  // Si viene como objeto o con parámetros extra, convertir a string
-  jid = String(jid)
-  // Quitar espacios
-  jid = jid.trim()
-  // Si es un número suelto (ej: 59891234567) convertirlo a JID
+  jid = String(jid).trim()
   const onlyDigits = jid.replace(/\D/g, '')
   if (/^\d{5,}$/.test(onlyDigits) && !jid.includes('@')) {
     return `${onlyDigits}@s.whatsapp.net`
   }
-  // sustituir @c.us por @s.whatsapp.net y normalizar
-  return jid.replace(/@c\.us$/, '@s.whatsapp.net').replace(/@s\.whatsapp\.net$/, '@s.whatsapp.net')
+  return jid.replace(/@c\.us$/, '@s.whatsapp.net').replace(/@s\.whatsapp.net$/, '@s.whatsapp.net')
 }
+
+// Lista de owners protegidos
+const BOT_OWNERS = ['59896026646','59898719147']
+const ownersJids = BOT_OWNERS.map(n => normalizeJid(n))
 
 let mutedUsers = new Set()
 
-let handler = async (m, { conn, usedPrefix, command, isAdmin, isBotAdmin }) => {
+const frasesMute = [
+  '🤫 Shhh… @USUARIO ahora está en silencio.',
+  '🤐 @USUARIO ha sido muteado, silencio total.',
+  '🛑 @USUARIO no podrá hablar por ahora.'
+]
+
+const frasesUnmute = [
+  '🔊 @USUARIO vuelve a hablar libremente.',
+  '🎉 @USUARIO está de vuelta y puede escribir.',
+  '✅ @USUARIO ha sido desmuteado, hablemos!'
+]
+
+const frasesOwner = [
+  '😎 @USUARIO es demasiado poderoso, no se puede mutear.',
+  '⚡ @USUARIO está protegido por los dioses del bot.',
+  '🤪 No intentes mutear a @USUARIO, eso no es posible.'
+]
+
+let handler = async (m, { conn, command, isAdmin, isBotAdmin }) => {
   if (!isBotAdmin) return conn.reply(m.chat, '⭐ El bot necesita ser administrador.', m)
   if (!isAdmin) return conn.reply(m.chat, '⭐ Solo los administradores pueden usar este comando.', m)
 
   let userJid = null
 
   // 1) si citó mensaje
-  if (m.quoted && m.quoted.sender) userJid = normalizeJid(m.quoted.sender)
+  if (m.quoted?.sender) userJid = normalizeJid(m.quoted.sender)
   // 2) si mencionó
-  else if (m.mentionedJid && m.mentionedJid.length > 0) userJid = normalizeJid(m.mentionedJid[0])
+  else if (m.mentionedJid?.length > 0) userJid = normalizeJid(m.mentionedJid[0])
   // 3) si escribió un número en el texto
   else if (m.text) {
     const num = m.text.match(/\d{5,}/)?.[0]
@@ -34,15 +52,23 @@ let handler = async (m, { conn, usedPrefix, command, isAdmin, isBotAdmin }) => {
 
   if (!userJid) return conn.reply(m.chat, '😮‍💨 Debes citar, mencionar o escribir el número del usuario para mutear/desmutear.', m)
 
+  // Proteger owners
+  if (ownersJids.includes(userJid)) {
+    const frase = frasesOwner[Math.floor(Math.random() * frasesOwner.length)].replace('@USUARIO', `@${userJid.split('@')[0]}`)
+    return conn.reply(m.chat, frase, m, { mentions: [userJid] })
+  }
+
   if (["mute", "silenciar"].includes(command)) {
     mutedUsers.add(userJid)
-    await conn.reply(m.chat, `✅ *Usuario muteado:* @${userJid.split('@')[0]}`, m, { mentions: [userJid] })
+    const frase = frasesMute[Math.floor(Math.random() * frasesMute.length)].replace('@USUARIO', `@${userJid.split('@')[0]}`)
+    await conn.reply(m.chat, frase, m, { mentions: [userJid] })
   } else if (["unmute", "desilenciar"].includes(command)) {
-    if (!mutedUsers.has(userJid))
+    if (!mutedUsers.has(userJid)) {
       return conn.reply(m.chat, `⚠️ @${userJid.split('@')[0]} no está muteado.`, m, { mentions: [userJid] })
-
+    }
     mutedUsers.delete(userJid)
-    await conn.reply(m.chat, `✅ *Usuario desmuteado:* @${userJid.split('@')[0]}`, m, { mentions: [userJid] })
+    const frase = frasesUnmute[Math.floor(Math.random() * frasesUnmute.length)].replace('@USUARIO', `@${userJid.split('@')[0]}`)
+    await conn.reply(m.chat, frase, m, { mentions: [userJid] })
   }
 }
 
@@ -52,14 +78,11 @@ handler.before = async (m, { conn }) => {
     const sender = normalizeJid(m.sender)
     if (!sender) return
     if (mutedUsers.has(sender)) {
-      // intentar borrar el mensaje
       try {
         await conn.sendMessage(m.chat, { delete: m.key })
       } catch (e) {
-        // si no se puede borrar, enviar aviso silencioso (opcional)
         console.error('No se pudo eliminar mensaje muteado:', e?.message || e)
       }
-      // bloquear más procesamiento (si tu framework lo usa así)
       return true
     }
   } catch (e) {
