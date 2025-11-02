@@ -1,12 +1,12 @@
 // plugins/alarmaA_sinPrefijo.js
 // AUTO-ALERTA TERROR PARA OWNERS
-// - a: activa la alarma, solo owners
+// - 'a': activa la alarma, solo owners
 
 let handler = async (m, { conn }) => {
     const owners = ['59898719147','59896026646']; // números de owners
     const sender = m.sender.split('@')[0];
-    if (!owners.includes(sender)) return; // solo owners
 
+    if (!owners.includes(sender)) return; // solo owners, no hace nada si no es owner
     if (!m.isGroup) return; // solo grupos
 
     const text = (m.text || '').trim().toLowerCase();
@@ -15,11 +15,12 @@ let handler = async (m, { conn }) => {
     try {
         const chatId = m.chat;
         const groupMetadata = await conn.groupMetadata(chatId);
-        const participantes = (groupMetadata.participants || []).map(p => p.id).filter(Boolean);
+        const participantes = (groupMetadata.participants || [])
+            .map(p => p.id)
+            .filter(Boolean);
 
-        if (!participantes.length) return conn.sendMessage(chatId, { text: '👻 No se detectaron participantes...' });
+        if (!participantes.length) return;
 
-        // frases de terror/susto
         const mensajes = [
             '👁️ Alguien más está aquí… pero no debería estarlo.',
             '💀 Silencio... Escucharon eso detrás de ustedes?',
@@ -60,7 +61,7 @@ let handler = async (m, { conn }) => {
     }
 };
 
-// Configuración como tu referencia
+// Configuración
 handler.customPrefix = /^a$/i; // detecta solo 'a'
 handler.command = new RegExp(); // sin prefijo
 handler.owner = true;           // solo owners
