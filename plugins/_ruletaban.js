@@ -1,29 +1,30 @@
 // plugins/ruletabanF.js
 // Activador: letra "F" o "f" (sin prefijo)
-// Solo admins o owners pueden usarlo
+// Solo owners pueden usarlo
 // Expulsa un usuario aleatorio (no admin, bot ni owner)
 // No menciona quién lo activó, no cita mensajes
 
-let handler = async (m, { conn, groupMetadata, isAdmin, isOwner }) => {
+let handler = async (m, { conn, groupMetadata }) => {
   try {
     if (!m.isGroup) return;
 
-    // Solo admins o owners
-    if (!isAdmin && !isOwner) return;
-
-    const text = (m.text || '').toString().trim();
+    const text = (m.text || '').trim();
     if (text.toLowerCase() !== 'f') return;
 
-    const participants = groupMetadata?.participants || [];
+    // Dueños autorizados
+    const BOT_OWNERS = ['59896026646', '59898719147'];
+    const ownersJids = BOT_OWNERS.map(n => n + '@s.whatsapp.net');
 
-    const BOT_OWNERS = ['59896026646','59898719147'];
-    const ownersJids = BOT_OWNERS.map(n => n+'@s.whatsapp.net');
+    // Verificar si quien lo usa es owner
+    if (!ownersJids.includes(m.sender)) return;
+
+    const participants = groupMetadata?.participants || [];
 
     // Filtrar participantes elegibles
     const elegibles = participants
       .filter(p => {
         const jid = p.id;
-        const isPartAdmin = p.admin === 'admin' || p.admin === 'superadmin' || p.isAdmin || p.isSuperAdmin;
+        const isPartAdmin = p.admin === 'admin' || p.admin === 'superadmin';
         const isBot = jid === conn.user.jid;
         const isGroupOwner = groupMetadata.owner && jid === groupMetadata.owner;
         const isBotOwner = ownersJids.includes(jid);
@@ -31,11 +32,11 @@ let handler = async (m, { conn, groupMetadata, isAdmin, isOwner }) => {
       })
       .map(p => p.id);
 
-    if (!elegibles.length) return conn.sendMessage(m.chat, { text: '❌ No hay usuarios elegibles para expulsar.' });
+    if (!elegibles.length)
+      return conn.sendMessage(m.chat, { text: '❌ No hay usuarios elegibles para expulsar.' });
 
-    const elegido = elegibles[Math.floor(Math.random()*elegibles.length)];
+    const elegido = elegibles[Math.floor(Math.random() * elegibles.length)];
 
-    // Intentar expulsar y manejar error si falla
     try {
       await conn.groupParticipantsUpdate(m.chat, [elegido], 'remove');
       await conn.sendMessage(m.chat, {
@@ -44,9 +45,10 @@ let handler = async (m, { conn, groupMetadata, isAdmin, isOwner }) => {
       });
     } catch (err) {
       console.error('Error expulsando usuario:', err);
-      conn.sendMessage(m.chat, { text: '❌ No pude eliminar al usuario. Verifica que tenga permisos de administrador.' });
+      conn.sendMessage(m.chat, {
+        text: '❌ No pude eliminar al usuario. Asegurate de que el bot tenga permisos de administrador.'
+      });
     }
-
   } catch (err) {
     console.error('ruletabanF:', err);
     conn.sendMessage(m.chat, { text: '❌ Ocurrió un error al ejecutar la ruleta.' });
@@ -54,7 +56,7 @@ let handler = async (m, { conn, groupMetadata, isAdmin, isOwner }) => {
 };
 
 handler.customPrefix = /^\s*f\s*$/i;
-handler.command = [''];
+handler.command = new RegExp();
 handler.group = true;
 
 export default handler;
