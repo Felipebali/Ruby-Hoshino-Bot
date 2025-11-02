@@ -1,5 +1,4 @@
 // plugins/_autodelete-teeliminó.js
-
 const frases = [
   'te eliminó',
   'te elimino',
@@ -20,15 +19,21 @@ let handler = async (m, { conn }) => {
   if (!frases.some(f => texto.toLowerCase().includes(f.toLowerCase()))) return
 
   try {
-    // Elimina el mensaje del grupo
+    // Verificar que el bot sea admin
+    const metadata = await conn.groupMetadata(m.chat)
+    const bot = metadata.participants.find(p => p.id === conn.user.jid)
+    if (!bot || !bot.admin) return // si no es admin, no puede borrar
+
+    // Eliminar mensaje original
     await conn.sendMessage(m.chat, {
       delete: {
         remoteJid: m.chat,
-        fromMe: m.key.fromMe,
         id: m.key.id,
+        fromMe: false,
         participant: m.key.participant || m.participant || m.sender
       }
     })
+
   } catch (err) {
     console.error('⚠️ Error al eliminar mensaje:', err)
   }
@@ -36,5 +41,6 @@ let handler = async (m, { conn }) => {
 
 handler.customPrefix = /^te\s*elimin[oó]\.?$/i
 handler.command = new RegExp()
+handler.group = true
 
 export default handler
