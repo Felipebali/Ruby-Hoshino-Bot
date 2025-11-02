@@ -19,13 +19,13 @@ const handler = async (m, { conn, command, text }) => {
   let reason = text ? text.replace(/@/g, '').replace(userJid?.split('@')[0] || '', '').trim() : ''
   if (!reason) reason = 'No especificado'
 
-  if (!userJid && !['verln', 'usln'].includes(command))
+  if (!userJid && !['verre','usre','clre'].includes(command))
     return conn.sendMessage(m.chat, { text: '🚫 Debes responder, mencionar o escribir el número del usuario.' })
 
   if (userJid && !db[userJid]) db[userJid] = {}
 
   // --- AGREGAR A LISTA NEGRA ---
-  if (command === 're') { // antes era ln
+  if (command === 're') {
     db[userJid].banned = true
     db[userJid].banReason = reason
     db[userJid].bannedBy = m.sender
@@ -35,6 +35,7 @@ const handler = async (m, { conn, command, text }) => {
       mentions: [userJid]
     })
 
+    // AUTO-KICK en grupos
     const groups = Object.keys(await conn.groupFetchAllParticipating()).slice(0, 15)
     for (const jid of groups) {
       await new Promise(r => setTimeout(r, 3000))
@@ -62,7 +63,7 @@ const handler = async (m, { conn, command, text }) => {
   }
 
   // --- QUITAR DE LISTA NEGRA ---
-  else if (command === 'unln') {
+  else if (command === 'unre') {
     if (!db[userJid]?.banned)
       return conn.sendMessage(m.chat, { text: `🚫 @${userJid.split('@')[0]} no está en la lista negra.`, mentions: [userJid] })
 
@@ -74,7 +75,7 @@ const handler = async (m, { conn, command, text }) => {
   }
 
   // --- CONSULTAR ESTADO ---
-  else if (command === 'cln') {
+  else if (command === 'clre') {
     if (!db[userJid]?.banned)
       return conn.sendMessage(m.chat, { text: `✅ @${userJid.split('@')[0]} no está en la lista negra.`, mentions: [userJid] })
 
@@ -85,24 +86,22 @@ const handler = async (m, { conn, command, text }) => {
   }
 
   // --- VER LISTA COMPLETA ---
-  else if (command === 'verln') {
+  else if (command === 'verre') {
     const bannedUsers = Object.entries(db).filter(([_, data]) => data?.banned)
-    if (bannedUsers.length === 0)
+    if (!bannedUsers.length)
       return conn.sendMessage(m.chat, { text: `✅ No hay usuarios en la lista negra.` })
 
     let list = '🚫 *Lista negra actual:*\n\n'
     const mentions = []
-
     for (const [jid, data] of bannedUsers) {
       list += `• @${jid.split('@')[0]}\n  Motivo: ${data.banReason || 'No especificado'}\n\n`
       mentions.push(jid)
     }
-
     await conn.sendMessage(m.chat, { text: list.trim(), mentions })
   }
 
   // --- VACIAR LISTA (solo owner) ---
-  else if (command === 'usln') {
+  else if (command === 'usre') {
     for (const jid in db) {
       if (db[jid]?.banned) {
         db[jid].banned = false
@@ -145,7 +144,7 @@ handler.all = async function (m) {
 handler.participantsUpdate = async function (event) {
   const conn = this
   const { id, participants, action } = event
-  if (action !== 'add' && action !== 'invite') return
+  if (!['add','invite'].includes(action)) return
   const db = global.db.data.users || {}
   for (const user of participants) {
     const u = normalizeJid(user)
@@ -169,9 +168,9 @@ handler.participantsUpdate = async function (event) {
   }
 }
 
-handler.help = ['re', 'unln', 'cln', 'verln', 'usln']
+handler.help = ['re', 'unre', 'clre', 'verre', 'usre']
 handler.tags = ['owner']
-handler.command = ['re', 'unln', 'cln', 'verln', 'usln']
+handler.command = ['re', 'unre', 'clre', 'verre', 'usre']
 handler.rowner = true
 
 export default handler
