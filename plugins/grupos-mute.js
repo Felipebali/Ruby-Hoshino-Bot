@@ -9,7 +9,6 @@ function normalizeJid(jid) {
   return jid.replace(/@c\.us$/, '@s.whatsapp.net').replace(/@s\.whatsapp.net$/, '@s.whatsapp.net')
 }
 
-// Lista de owners protegidos
 const BOT_OWNERS = ['59896026646','59898719147']
 const ownersJids = BOT_OWNERS.map(n => normalizeJid(n))
 
@@ -21,11 +20,8 @@ let handler = async (m, { conn, command, isAdmin, isBotAdmin }) => {
 
   let userJid = null
 
-  // 1) si citó mensaje
   if (m.quoted?.sender) userJid = normalizeJid(m.quoted.sender)
-  // 2) si mencionó
   else if (m.mentionedJid?.length > 0) userJid = normalizeJid(m.mentionedJid[0])
-  // 3) si escribió un número en el texto
   else if (m.text) {
     const num = m.text.match(/\d{5,}/)?.[0]
     if (num) userJid = normalizeJid(num)
@@ -33,36 +29,23 @@ let handler = async (m, { conn, command, isAdmin, isBotAdmin }) => {
 
   if (!userJid) return
 
-  // Proteger owners
+  const nombre = userJid.split('@')[0]
+
   if (ownersJids.includes(userJid)) {
-    await conn.sendMessage(m.chat, { text: `❌ No puedes mutear a un owner protegido.`, quoted: m })
+    await conn.sendMessage(m.chat, { text: `❌ No puedes mutear a un owner protegido.` })
     return
   }
 
-  const nombre = userJid.split('@')[0]
-
   if (["mute", "silenciar"].includes(command)) {
     mutedUsers.add(userJid)
-    await conn.sendMessage(m.chat, {
-      text: `🔇 Usuario @${nombre} ha sido muteado.`,
-      mentions: [userJid],
-      quoted: m
-    })
+    await conn.sendMessage(m.chat, { text: `🔇 Usuario @${nombre} ha sido muteado.`, mentions: [userJid] })
   } else if (["unmute", "desilenciar"].includes(command)) {
     if (!mutedUsers.has(userJid)) {
-      await conn.sendMessage(m.chat, {
-        text: `⚠️ Usuario @${nombre} no estaba muteado.`,
-        mentions: [userJid],
-        quoted: m
-      })
+      await conn.sendMessage(m.chat, { text: `⚠️ Usuario @${nombre} no estaba muteado.`, mentions: [userJid] })
       return
     }
     mutedUsers.delete(userJid)
-    await conn.sendMessage(m.chat, {
-      text: `🔊 Usuario @${nombre} ha sido desmuteado.`,
-      mentions: [userJid],
-      quoted: m
-    })
+    await conn.sendMessage(m.chat, { text: `🔊 Usuario @${nombre} ha sido desmuteado.`, mentions: [userJid] })
   }
 }
 
