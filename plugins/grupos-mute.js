@@ -1,5 +1,4 @@
 // plugins/mute.js
-
 function normalizeJid(jid) {
   if (!jid) return null
   jid = String(jid).trim()
@@ -35,17 +34,35 @@ let handler = async (m, { conn, command, isAdmin, isBotAdmin }) => {
   if (!userJid) return
 
   // Proteger owners
-  if (ownersJids.includes(userJid)) return
+  if (ownersJids.includes(userJid)) {
+    await conn.sendMessage(m.chat, { text: `❌ No puedes mutear a un owner protegido.`, quoted: m })
+    return
+  }
 
-  let nombre = userJid.split('@')[0]
+  const nombre = userJid.split('@')[0]
 
   if (["mute", "silenciar"].includes(command)) {
     mutedUsers.add(userJid)
-    await conn.sendMessage(m.chat, { text: `🔇 Usuario @${nombre} ha sido muteado.`, mentions: [userJid] })
+    await conn.sendMessage(m.chat, {
+      text: `🔇 Usuario @${nombre} ha sido muteado.`,
+      mentions: [userJid],
+      quoted: m
+    })
   } else if (["unmute", "desilenciar"].includes(command)) {
-    if (!mutedUsers.has(userJid)) return
+    if (!mutedUsers.has(userJid)) {
+      await conn.sendMessage(m.chat, {
+        text: `⚠️ Usuario @${nombre} no estaba muteado.`,
+        mentions: [userJid],
+        quoted: m
+      })
+      return
+    }
     mutedUsers.delete(userJid)
-    await conn.sendMessage(m.chat, { text: `🔊 Usuario @${nombre} ha sido desmuteado.`, mentions: [userJid] })
+    await conn.sendMessage(m.chat, {
+      text: `🔊 Usuario @${nombre} ha sido desmuteado.`,
+      mentions: [userJid],
+      quoted: m
+    })
   }
 }
 
