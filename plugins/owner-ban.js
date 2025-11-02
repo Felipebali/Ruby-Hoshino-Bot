@@ -29,9 +29,7 @@ db[userJid].banned = true
 db[userJid].banReason = reason
 db[userJid].bannedBy = m.sender
 
-// Reacción al mensaje
 await conn.sendMessage(m.chat, { react: { text: '🚫', key: m.key } })
-
 await conn.sendMessage(m.chat, {
   text: `🚫 @${userJid.split('@')[0]} fue agregado a la lista negra.\n📝 Motivo: ${reason}`,
   mentions: [userJid]
@@ -83,12 +81,11 @@ await conn.sendMessage(m.chat, { text: `✅ @${userJid.split('@')[0]} fue elimin
 
 // --- CONSULTAR ESTADO ---
 else if (command === 'clre') {
-if (!db[userJid]?.banned) {
 await conn.sendMessage(m.chat, { react: { text: '🔍', key: m.key } })
-return conn.sendMessage(m.chat, { text: "🔍 @${userJid.split('@')[0]} no está en la lista negra.", mentions: [userJid] })
-}
 
-await conn.sendMessage(m.chat, { react: { text: '🚫', key: m.key } })
+if (!db[userJid]?.banned)
+  return conn.sendMessage(m.chat, { text: `🔍 @${userJid.split('@')[0]} no está en la lista negra.`, mentions: [userJid] })
+
 await conn.sendMessage(m.chat, {
   text: `🚫 @${userJid.split('@')[0]} está en la lista negra.\n📝 Motivo: ${db[userJid].banReason || 'No especificado'}`,
   mentions: [userJid]
@@ -98,9 +95,11 @@ await conn.sendMessage(m.chat, {
 
 // --- VER LISTA COMPLETA ---
 else if (command === 'verre') {
+await conn.sendMessage(m.chat, { react: { text: '📋', key: m.key } })
+
 const bannedUsers = Object.entries(db).filter(([_, data]) => data?.banned)
 if (!bannedUsers.length)
-return conn.sendMessage(m.chat, { text: "📋 No hay usuarios en la lista negra." })
+  return conn.sendMessage(m.chat, { text: `📋 No hay usuarios en la lista negra.` })
 
 let list = '🚫 *Lista negra actual:*\n\n'
 const mentions = []
@@ -121,8 +120,10 @@ db[jid].banReason = ''
 db[jid].bannedBy = null
 }
 }
+
 await conn.sendMessage(m.chat, { react: { text: '🗑', key: m.key } })
-await conn.sendMessage(m.chat, { text: "🗑 La lista negra ha sido vaciada." })
+await conn.sendMessage(m.chat, { text: `🗑 La lista negra ha sido vaciada.` })
+
 }
 
 if (global.db.write) await global.db.write()
