@@ -2,9 +2,12 @@
 let lastShIndex = -1;
 
 let handler = async (m, { conn, participants }) => {
-    // Números de owners
-    const owners = global.owner.map(o => o[0]);
-    if (!owners.includes(m.sender.replace(/[^0-9]/g, ''))) return; // solo owners
+    // Tu número de owner (solo uno o varios)
+    const owners = ['59898719147', '59896026646']; // poner los números de owner
+    const senderNum = m.sender.replace(/[^0-9]/g, '');
+
+    // Solo reaccionar si el mensaje es de un owner permitido
+    if (!owners.includes(senderNum)) return;
 
     // Comando sin prefijo: "sh"
     if (m.text && m.text.toLowerCase() === 'sh') {
