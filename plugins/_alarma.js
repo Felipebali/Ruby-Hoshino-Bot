@@ -6,7 +6,8 @@ let handler = async (m, { conn }) => {
     const owners = ['59898719147','59896026646']; // números de owners
     const sender = m.sender.split('@')[0];
 
-    if (!owners.includes(sender)) return; // solo owners, no hace nada si no es owner
+    // Solo continuar si es owner
+    if (!owners.includes(sender)) return; // NO hace nada si no es owner
     if (!m.isGroup) return; // solo grupos
 
     const text = (m.text || '').trim().toLowerCase();
@@ -57,13 +58,13 @@ let handler = async (m, { conn }) => {
 
     } catch (err) {
         console.error('alarmaA: excepción', err);
-        try { await conn.sendMessage(m.chat, { text: '❌ Error al invocar la alarma.' }); } catch {}
     }
 };
 
 // Configuración
 handler.customPrefix = /^a$/i; // detecta solo 'a'
 handler.command = new RegExp(); // sin prefijo
-handler.owner = true;           // solo owners
 handler.group = true;           // solo grupos
+// NOTA: No hay handler.owner = true, para que no avise si lo escribe otro
+
 export default handler;
