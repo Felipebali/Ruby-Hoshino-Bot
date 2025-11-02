@@ -28,7 +28,6 @@ const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin
 
     const fecha = new Date().toLocaleString('es-UY', { timeZone: 'America/Montevideo' })
 
-    // Normalizar estructura
     const uid = normalizeJid(user)
     if (!warns[uid]) warns[uid] = { count: 0, motivos: [] }
     if (!Array.isArray(warns[uid].motivos)) warns[uid].motivos = []
@@ -116,12 +115,26 @@ const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin
       quoted: m
     })
   }
+
+  // ---------- 🧹 LIMPIAR TODAS LAS ADVERTENCIAS (solo owner) ----------
+  else if (['clearwarn', 'limpiarwarn'].includes(command)) {
+    if (!isROwner) return m.reply('⚠️ Solo el dueño del bot puede limpiar todas las advertencias.')
+
+    const keys = Object.keys(warns)
+    if (keys.length === 0) return m.reply('✅ No hay advertencias para limpiar.')
+
+    keys.forEach(k => delete warns[k])
+    await global.db.write()
+
+    await conn.sendMessage(m.chat, { text: '🧹 Todas las advertencias del grupo han sido eliminadas.' })
+  }
 }
 
 handler.command = [
   'advertencia','ad','daradvertencia','advertir','warn',
   'unwarn','quitarwarn','sacarwarn',
-  'warnlist','advertencias','listaad'
+  'warnlist','advertencias','listaad',
+  'clearwarn','limpiarwarn'
 ]
 handler.tags = ['grupo']
 handler.group = true
