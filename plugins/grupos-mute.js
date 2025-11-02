@@ -16,27 +16,9 @@ const ownersJids = BOT_OWNERS.map(n => normalizeJid(n))
 
 let mutedUsers = new Set()
 
-const frasesMute = [
-  '🤫 Shhh… @USUARIO ahora está en silencio.',
-  '🤐 @USUARIO ha sido muteado, silencio total.',
-  '🛑 @USUARIO no podrá hablar por ahora.'
-]
-
-const frasesUnmute = [
-  '🔊 @USUARIO vuelve a hablar libremente.',
-  '🎉 @USUARIO está de vuelta y puede escribir.',
-  '✅ @USUARIO ha sido desmuteado, hablemos!'
-]
-
-const frasesOwner = [
-  '😎 @USUARIO es demasiado poderoso, no se puede mutear.',
-  '⚡ @USUARIO está protegido por los dioses del bot.',
-  '🤪 No intentes mutear a @USUARIO, eso no es posible.'
-]
-
 let handler = async (m, { conn, command, isAdmin, isBotAdmin }) => {
-  if (!isBotAdmin) return conn.reply(m.chat, '⭐ El bot necesita ser administrador.', m)
-  if (!isAdmin) return conn.reply(m.chat, '⭐ Solo los administradores pueden usar este comando.', m)
+  if (!isBotAdmin) return
+  if (!isAdmin) return
 
   let userJid = null
 
@@ -50,25 +32,16 @@ let handler = async (m, { conn, command, isAdmin, isBotAdmin }) => {
     if (num) userJid = normalizeJid(num)
   }
 
-  if (!userJid) return conn.reply(m.chat, '😮‍💨 Debes citar, mencionar o escribir el número del usuario para mutear/desmutear.', m)
+  if (!userJid) return
 
   // Proteger owners
-  if (ownersJids.includes(userJid)) {
-    const frase = frasesOwner[Math.floor(Math.random() * frasesOwner.length)].replace('@USUARIO', `@${userJid.split('@')[0]}`)
-    return conn.reply(m.chat, frase, m, { mentions: [userJid] })
-  }
+  if (ownersJids.includes(userJid)) return
 
   if (["mute", "silenciar"].includes(command)) {
     mutedUsers.add(userJid)
-    const frase = frasesMute[Math.floor(Math.random() * frasesMute.length)].replace('@USUARIO', `@${userJid.split('@')[0]}`)
-    await conn.reply(m.chat, frase, m, { mentions: [userJid] })
   } else if (["unmute", "desilenciar"].includes(command)) {
-    if (!mutedUsers.has(userJid)) {
-      return conn.reply(m.chat, `⚠️ @${userJid.split('@')[0]} no está muteado.`, m, { mentions: [userJid] })
-    }
+    if (!mutedUsers.has(userJid)) return
     mutedUsers.delete(userJid)
-    const frase = frasesUnmute[Math.floor(Math.random() * frasesUnmute.length)].replace('@USUARIO', `@${userJid.split('@')[0]}`)
-    await conn.reply(m.chat, frase, m, { mentions: [userJid] })
   }
 }
 
