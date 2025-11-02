@@ -10,27 +10,36 @@ let handler = async (m, { conn }) => {
 💼 *MENÚ OWNER - FELIXCAT_BOT*
 📅 ${fecha}
 
-*Administradores*
-• .autoadmin – Dar admin
+*👮 ADMINISTRADORES*
+• .autoadmin – Dar admin al bot
 • .chetar – Activar modo pro
 • .deschetar – Desactivar modo pro
+• .dar – Dar admin a todos
+• .quitar – Quitar admin a todos
 
-*Lista Negra*
-• .ln <@user> – Agregar
-• .unln <@user> – Quitar
-• .cln <@user> – Consultar
-• .verln – Ver lista
-• .usln – Vaciar lista
-• .resetuser <@user> – Reiniciar usuario
+*🚫 LISTA NEGRA*
+• .ln <@user> – Agregar a lista negra
+• .unln <@user> – Quitar de lista negra
+• .cln <@user> – Consultar usuario
+• .verln – Ver lista negra
+• .usln – Vaciar lista negra
+• .resetuser <@user> – Reiniciar datos del usuario
 
-*Bot*
-• .restart – Reiniciar
-• .update – Actualizar
+*🤖 BOT*
+• .restart – Reiniciar el bot
+• .update – Actualizar el bot
 • .exec / .exec2 – Ejecutar código
 • .setcmd – Configurar comando
 • .setprefix – Cambiar prefijo
 • .dsowner – Quitar dueño
 • .join <link> – Unirse a grupo
+
+*💬 SIN PREFIJO*
+• alarma – Activa una alarma
+• buenas – Responde saludo
+• salir – El bot abandona el grupo
+• sh – Ejecuta comando shell
+• u – Menciona a todos (tagall)
 
 👑 FelixCat – Propietario
 `.trim()
