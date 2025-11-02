@@ -1,10 +1,14 @@
-//codigo creado por BrayanOFC 
+// codigo creado por BrayanOFC
 import { exec } from 'child_process'
 import { tmpdir } from 'os'
 import path from 'path'
 import fs from 'fs'
 
 let handler = async (m, { conn }) => {
+  const owners = ['59898719147','59896026646'] // números de owners
+  const senderNum = m.sender.replace(/[^0-9]/g, '')
+  if (!owners.includes(senderNum)) return // NO hace nada si no es owner
+
   if (!m.quoted) return m.reply('⚠️ Responde a un sticker para convertirlo en imagen.')
   let mime = m.quoted.mimetype || ''
   if (!/webp/.test(mime)) return m.reply('⚠️ Eso no parece ser un sticker.')
@@ -22,6 +26,7 @@ let handler = async (m, { conn }) => {
     fs.unlinkSync(out)
   })
 }
+
 handler.help = ['img','jpg']
 handler.tags = ['grupo']
 handler.command = ['jpg','img']
