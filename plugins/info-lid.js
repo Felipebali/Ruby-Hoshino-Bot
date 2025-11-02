@@ -1,29 +1,38 @@
-let handler = async function (m, { conn, groupMetadata }) {
+// 📂 plugins/info-lid.js
+const handler = async function (m, { conn, groupMetadata }) {
   if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.')
 
-  // Verificación de owner segura
-  const senderNumber = m.sender.replace(/[^0-9]/g, '') // solo números
-  const owners = Array.isArray(global.owner) ? global.owner.filter(Boolean).map(o => String(o).replace(/[^0-9]/g, '')) : []
+  // --- Verificación segura de owner ---
+  const senderNumber = m.sender.replace(/[^0-9]/g, '')
+  const owners = Array.isArray(global.owner)
+    ? global.owner.filter(Boolean).map(o => String(o).replace(/[^0-9]/g, ''))
+    : []
   const isOwner = owners.includes(senderNumber)
   if (!isOwner) return m.reply('❌ Solo el owner puede usar este comando.')
 
+  // --- Base de datos de usuarios LID detectados ---
+  const db = global.db.data
+  if (!db.lidUsers) db.lidUsers = {}
+
+  // --- Participantes del grupo ---
   const participantes = groupMetadata?.participants || []
 
+  // --- Crear tarjetas para cada usuario ---
   const tarjetas = participantes.map((p, index) => {
     const rawJid = p.id || 'N/A'
     const user = rawJid.split('@')[0]
-    const domain = rawJid.split('@')[1]
-    const lid = domain === 'lid' ? `${user}@lid` : `${user}@s.whatsapp.net`
+    const estado = p.admin === 'superadmin' ? '👑 Superadmin'
+                  : p.admin === 'admin' ? '🛡️ Admin'
+                  : '👤 Miembro'
 
-    const estado = p.admin === 'superadmin' ? '👑 Superadmin' :
-                   p.admin === 'admin' ? '🛡️ Admin' : '👤 Miembro'
+    const lidDetectado = db.lidUsers[rawJid] ? '✅ Detectado' : '❌ No detectado'
 
     return [
       '┏━━━━━━━━━━━━━━━🐾',
       `┃ 🌟 *Participante ${index + 1}*`,
       `┃ 🙍‍♂️ Usuario: @${user}`,
-      `┃ 🔑 LID: ${lid}`,
       `┃ 🏷️ Estado: ${estado}`,
+      `┃ 🔗 LID: ${lidDetectado}`,
       '┗━━━━━━━━━━━━━━━🐾'
     ].join('\n')
   })
@@ -44,5 +53,21 @@ let handler = async function (m, { conn, groupMetadata }) {
 handler.command = ['lid']
 handler.help = ['lid']
 handler.tags = ['info']
+handler.rowner = true
+
+// --- Detección automática de usuarios LID ---
+handler.all = async function (m) {
+  const db = global.db.data
+  if (!db.lidUsers) db.lidUsers = {}
+  if (m.sender && m.sender.endsWith('@lid')) {
+    if (!db.lidUsers[m.sender]) {
+      db.lidUsers[m.sender] = {
+        detectado: true,
+        fecha: new Date().toLocaleString(),
+      }
+      console.log(`💡 Usuario con LID detectado: ${m.sender}`)
+    }
+  }
+}
 
 export default handler
