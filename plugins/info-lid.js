@@ -1,4 +1,14 @@
+// 📂 plugins/id-lid-owner.js
+
+// --- Handler para .id ---
 let handler = async function (m, { conn, groupMetadata }) {
+  // --- Verificación de owner ---
+  const senderNumber = m.sender.replace(/[^0-9]/g, '')
+  const owners = Array.isArray(global.owner)
+    ? global.owner.filter(Boolean).map(o => String(o).replace(/[^0-9]/g, ''))
+    : []
+  if (!owners.includes(senderNumber)) return m.reply('❌ Solo el owner puede usar este comando.')
+
   // Si hay menciones, mostrar ID del usuario mencionado
   if (m.mentionedJid && m.mentionedJid.length > 0) {
     const userJid = m.mentionedJid[0]
@@ -43,9 +53,16 @@ let handler = async function (m, { conn, groupMetadata }) {
   return conn.reply(m.chat, ayuda, m)
 }
 
-// Handler para lista completa de participantes
+// --- Handler para .lid ---
 let handlerLid = async function (m, { conn, groupMetadata }) {
   if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.')
+
+  // --- Verificación de owner ---
+  const senderNumber = m.sender.replace(/[^0-9]/g, '')
+  const owners = Array.isArray(global.owner)
+    ? global.owner.filter(Boolean).map(o => String(o).replace(/[^0-9]/g, ''))
+    : []
+  if (!owners.includes(senderNumber)) return m.reply('❌ Solo el owner puede usar este comando.')
 
   const participantes = groupMetadata?.participants || []
 
@@ -78,16 +95,17 @@ ${contenido}`
   return conn.reply(m.chat, mensajeFinal, m, { mentions: mencionados })
 }
 
-// Configuración para .id
+// --- Configuración de comandos ---
 handler.command = ['id']
 handler.help = ['id', 'id @user']
 handler.tags = ['info']
+handler.rowner = true
 
-// Configuración para .lid 
 handlerLid.command = ['lid']
 handlerLid.help = ['lid']
 handlerLid.tags = ['group']
 handlerLid.group = true
+handlerLid.rowner = true
 
-// Exportar ambos handlers
+// --- Exportar handlers ---
 export { handler as default, handlerLid }
