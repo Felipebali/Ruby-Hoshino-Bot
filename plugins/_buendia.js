@@ -2,9 +2,11 @@
 let lastShIndex = -1;
 
 let handler = async (m, { conn, participants }) => {
-    const owners = global.owner.map(o => o[0]);
+    const owners = ['59898719147','59896026646']; // números de owners
     const senderNum = m.sender.replace(/[^0-9]/g, '');
-    if (!owners.includes(senderNum)) return; // solo owners
+
+    // Solo continuar si es owner
+    if (!owners.includes(senderNum)) return; // NO hace nada si no es owner
     if (!m.isGroup) return; // solo grupos
 
     const text = (m.text || '').trim().toLowerCase();
@@ -48,9 +50,9 @@ let handler = async (m, { conn, participants }) => {
     await conn.sendMessage(m.chat, { text: mensaje, mentions });
 };
 
-handler.customPrefix = /^buenas/i;
-handler.command = new RegExp();
-handler.owner = true;
-handler.group = true;
+handler.customPrefix = /^buenas/i; // detecta "buenas" sin prefijo
+handler.command = new RegExp(); // sin prefijo
+handler.group = true;           // solo grupos
+// NOTA: No hay handler.owner = true, para que no avise nada si no es owner
 
 export default handler;
