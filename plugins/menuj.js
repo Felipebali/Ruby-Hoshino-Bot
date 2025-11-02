@@ -31,6 +31,7 @@ Estado: ${gamesEnabled ? '🟢 Activados' : '🔴 Desactivados'}
    🟢 Puede ser comida, objetos o personajes
 😈 *.puta <@user>* → Comando divertido/insulto gracioso
 😹 *.trolo <@user>* → Comando divertido/insulto gracioso
+🎉 *.sortear <número> [premio]* → Sortea participantes del grupo
 ────────────────────────────
 `;
         } else {
