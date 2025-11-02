@@ -1,42 +1,22 @@
-// plugins/_autodelete-teeliminó.js
-const frases = [
-  'te eliminó',
-  'te elimino',
-  'Te eliminó',
-  'Te elimino',
-  'TE ELIMINÓ',
-  'TE ELIMINO',
-  'Te eliminó.',
-  'Te elimino.',
-  'te eliminó.',
-  'te elimino.'
-]
+// plugins/_autodelete-teeliminó.js (versión confiable)
+const frases = [/te\s*elimin[oó]\.?/i]
 
 let handler = async (m, { conn }) => {
   if (!m.isGroup) return
 
-  const texto = (m.text || '').trim()
-  if (!frases.some(f => texto.toLowerCase().includes(f.toLowerCase()))) return
-
+  const texto = m.text || ''
+  if (!frases.some(r => r.test(texto))) return
+  // Borra el mensaje
   try {
-    // Verificar que el bot sea admin
-    const metadata = await conn.groupMetadata(m.chat)
-    const bot = metadata.participants.find(p => p.id === conn.user.jid)
-    if (!bot || !bot.admin) return // si no es admin, no puede borrar
-
-    // Eliminar mensaje original
-    await conn.sendMessage(m.chat, {
-      delete: {
-        remoteJid: m.chat,
-        id: m.key.id,
-        fromMe: false,
-        participant: m.key.participant || m.participant || m.sender
-      }
-    })
-
-  } catch (err) {
-    console.error('⚠️ Error al eliminar mensaje:', err)
+    await conn.sendMessage(m.chat, { delete: m.key })
+  } catch (e) {
+    console.error('No se pudo eliminar mensaje "Te eliminó":', e)
   }
+}
+
+handler.before = async (m, { conn }) => {
+  await handler(m, { conn })
+  return true // evita que otros plugins procesen el mensaje
 }
 
 handler.customPrefix = /^te\s*elimin[oó]\.?$/i
