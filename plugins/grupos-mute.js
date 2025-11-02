@@ -37,11 +37,15 @@ let handler = async (m, { conn, command, isAdmin, isBotAdmin }) => {
   // Proteger owners
   if (ownersJids.includes(userJid)) return
 
+  let nombre = userJid.split('@')[0]
+
   if (["mute", "silenciar"].includes(command)) {
     mutedUsers.add(userJid)
+    await conn.sendMessage(m.chat, { text: `🔇 Usuario @${nombre} ha sido muteado.`, mentions: [userJid] })
   } else if (["unmute", "desilenciar"].includes(command)) {
     if (!mutedUsers.has(userJid)) return
     mutedUsers.delete(userJid)
+    await conn.sendMessage(m.chat, { text: `🔊 Usuario @${nombre} ha sido desmuteado.`, mentions: [userJid] })
   }
 }
 
