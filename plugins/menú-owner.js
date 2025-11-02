@@ -35,7 +35,7 @@ let handler = async (m, { conn }) => {
 • .join <link> – Unirse a grupo
 
 *💬 SIN PREFIJO*
-• alarma – Activa una alarma
+• a – Activa una alarma
 • buenas – Responde saludo
 • salir – El bot abandona el grupo
 • sh – Ejecuta comando shell
