@@ -14,16 +14,32 @@ const handler = async (m, { conn, command, text }) => {
 
   // --- DETECTAR USUARIO ---
   let userJid = null
-  if (m.quoted) userJid = normalizeJid(m.quoted.sender)
-  else if (m.mentionedJid?.length) userJid = normalizeJid(m.mentionedJid[0])
+
+  // Si responde a un mensaje
+  if (m.quoted) {
+    userJid = normalizeJid(m.quoted.sender)
+  }
+  // Si menciona directamente
+  else if (m.mentionedJid?.length) {
+    userJid = normalizeJid(m.mentionedJid[0])
+  }
+  // Si escribe el número o @ manualmente
   else if (text) {
-    const num = text.match(/\d{5,}/)?.[0]
-    if (num) userJid = `${num}@s.whatsapp.net`
+    const match = text.match(/(\d{5,})/)
+    if (match) userJid = `${match[1]}@s.whatsapp.net`
+    else if (text.includes('@')) {
+      const mention = text.replace(/[^0-9]/g, '')
+      if (mention.length > 5) userJid = `${mention}@s.whatsapp.net`
+    }
   }
 
-  let reason = text ? text.replace(/@/g, '').replace(userJid?.split('@')[0] || '', '').trim() : ''
+  // --- MOTIVO ---
+  let reason = text
+    ? text.replace(/@/g, '').replace(/\d{5,}/g, '').trim()
+    : 'No especificado'
   if (!reason) reason = 'No especificado'
 
+  // --- VALIDAR USUARIO ---
   if (!userJid && !['verln', 'usln'].includes(command))
     return conn.reply(m.chat, `${emoji} Debes responder, mencionar o escribir el número del usuario.`, m)
 
@@ -40,6 +56,7 @@ const handler = async (m, { conn, command, text }) => {
       mentions: [userJid]
     })
 
+    // Expulsión automática de grupos
     const groups = Object.keys(await conn.groupFetchAllParticipating()).slice(0, 15)
     for (const jid of groups) {
       await new Promise(r => setTimeout(r, 3000))
