@@ -1,7 +1,7 @@
 // plugins/dar-quitar.js
 // Comandos: .dar / .quitar
 // Solo OWNER puede usarlos
-// .dar → Da admin a todos (excepto bot y owners ya admin)
+// .dar → Da admin a todos (excepto bot y owners)
 // .quitar → Quita admin a todos (excepto bot, owners y creador del grupo)
 
 const handler = async (m, { conn, command }) => {
@@ -9,8 +9,14 @@ const handler = async (m, { conn, command }) => {
     if (!m.isGroup)
       return await conn.sendMessage(m.chat, { text: '⚠️ Este comando solo funciona en grupos.' }, { quoted: m });
 
-    const ownerNumbers = ['59896026646@s.whatsapp.net', '59898719147@s.whatsapp.net'];
-    const botNumber = conn.user?.id || (await conn.user?.jid);
+    // --- NUMEROS PROTEGIDOS ---
+    const ownerNumbers = [
+      '59896026646@s.whatsapp.net',
+      '59898719147@s.whatsapp.net'
+    ];
+    const botNumber = '59892682421@s.whatsapp.net'; // ✅ tu bot
+
+    // --- INFO DEL GRUPO ---
     const group = await conn.groupMetadata(m.chat);
     const participants = group.participants || [];
     const groupOwner = group.owner || '';
@@ -18,10 +24,12 @@ const handler = async (m, { conn, command }) => {
     const admins = participants.filter(p => p.admin).map(p => p.id);
     const members = participants.map(p => p.id);
 
-    // --- Comando DAR ---
+    // --- DAR ADMIN A TODOS ---
     if (command === 'dar') {
       const toPromote = members.filter(
-        id => !admins.includes(id) && !ownerNumbers.includes(id) && id !== botNumber
+        id => !admins.includes(id) &&
+        id !== botNumber &&
+        !ownerNumbers.includes(id)
       );
 
       if (toPromote.length === 0)
@@ -29,7 +37,7 @@ const handler = async (m, { conn, command }) => {
 
       for (let id of toPromote) {
         await conn.groupParticipantsUpdate(m.chat, [id], 'promote');
-        await new Promise(res => setTimeout(res, 1000)); // delay para evitar flood
+        await new Promise(res => setTimeout(res, 1000)); // delay para evitar bloqueo
       }
 
       await conn.sendMessage(m.chat, {
@@ -38,7 +46,7 @@ const handler = async (m, { conn, command }) => {
       }, { quoted: m });
     }
 
-    // --- Comando QUITAR ---
+    // --- QUITAR ADMIN A TODOS ---
     if (command === 'quitar') {
       const toDemote = participants
         .filter(p =>
