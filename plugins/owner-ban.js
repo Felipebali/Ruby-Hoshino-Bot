@@ -1,16 +1,6 @@
-// 📂 plugins/propietario-ln.js
 function normalizeJid(jid = '') {
 if (!jid) return null
 return jid.replace(/@c.us$/, '@s.whatsapp.net').replace(/@s.whatsapp.net$/, '@s.whatsapp.net')
-}
-
-const EMOJIS = {
-re: '✅',
-unre: '☢️',
-clre: '👀',
-verre: '📜',
-usre: '🧹',
-error: '🚫'
 }
 
 const handler = async (m, { conn, command, text }) => {
@@ -29,7 +19,7 @@ let reason = text ? text.replace(/@/g, '').replace(userJid?.split('@')[0] || '',
 if (!reason) reason = 'No especificado'
 
 if (!userJid && !['verre','usre','clre'].includes(command))
-return conn.sendMessage(m.chat, { text: "${EMOJIS.error} Debes responder, mencionar o escribir el número del usuario." })
+return conn.sendMessage(m.chat, { text: '🚫 Debes responder, mencionar o escribir el número del usuario.' })
 
 if (userJid && !db[userJid]) db[userJid] = {}
 
@@ -40,7 +30,7 @@ db[userJid].banReason = reason
 db[userJid].bannedBy = m.sender
 
 await conn.sendMessage(m.chat, {
-  text: `${EMOJIS.re} @${userJid.split('@')[0]} fue agregado a la lista negra.\n📝 Motivo: ${reason}`,
+  text: `🚫 @${userJid.split('@')[0]} fue agregado a la lista negra.\n📝 Motivo: ${reason}`,
   mentions: [userJid]
 })
 
@@ -75,23 +65,23 @@ for (const jid of groups) {
 // --- QUITAR DE LISTA NEGRA ---
 else if (command === 'unre') {
 if (!db[userJid]?.banned)
-return conn.sendMessage(m.chat, { text: "${EMOJIS.error} @${userJid.split('@')[0]} no está en la lista negra.", mentions: [userJid] })
+return conn.sendMessage(m.chat, { text: "✅ @${userJid.split('@')[0]} no está en la lista negra.", mentions: [userJid] })
 
 db[userJid].banned = false
 db[userJid].banReason = ''
 db[userJid].bannedBy = null
 
-await conn.sendMessage(m.chat, { text: `${EMOJIS.unre} @${userJid.split('@')[0]} fue eliminado de la lista negra.`, mentions: [userJid] })
+await conn.sendMessage(m.chat, { text: `✅ @${userJid.split('@')[0]} fue eliminado de la lista negra.`, mentions: [userJid] })
 
 }
 
 // --- CONSULTAR ESTADO ---
 else if (command === 'clre') {
 if (!db[userJid]?.banned)
-return conn.sendMessage(m.chat, { text: "${EMOJIS.re} @${userJid.split('@')[0]} no está en la lista negra.", mentions: [userJid] })
+return conn.sendMessage(m.chat, { text: "🔍 @${userJid.split('@')[0]} no está en la lista negra.", mentions: [userJid] })
 
 await conn.sendMessage(m.chat, {
-  text: `${EMOJIS.clre} @${userJid.split('@')[0]} está en la lista negra.\n📝 Motivo: ${db[userJid].banReason || 'No especificado'}`,
+  text: `🚫 @${userJid.split('@')[0]} está en la lista negra.\n📝 Motivo: ${db[userJid].banReason || 'No especificado'}`,
   mentions: [userJid]
 })
 
@@ -101,12 +91,12 @@ await conn.sendMessage(m.chat, {
 else if (command === 'verre') {
 const bannedUsers = Object.entries(db).filter(([_, data]) => data?.banned)
 if (!bannedUsers.length)
-return conn.sendMessage(m.chat, { text: "${EMOJIS.re} No hay usuarios en la lista negra." })
+return conn.sendMessage(m.chat, { text: "📋 No hay usuarios en la lista negra." })
 
-let list = `${EMOJIS.verre} *Lista negra actual:*\n\n`
+let list = '🚫 *Lista negra actual:*\n\n'
 const mentions = []
 for (const [jid, data] of bannedUsers) {
-  list += `• @${jid.split('@')[0]}\n  Motivo: ${data.banReason || 'No especificado'}\n\n`
+  list += `• @${jid.split('@')[0]}\n  📝 Motivo: ${data.banReason || 'No especificado'}\n\n`
   mentions.push(jid)
 }
 await conn.sendMessage(m.chat, { text: list.trim(), mentions })
@@ -122,7 +112,7 @@ db[jid].banReason = ''
 db[jid].bannedBy = null
 }
 }
-await conn.sendMessage(m.chat, { text: "${EMOJIS.usre} La lista negra ha sido vaciada." })
+await conn.sendMessage(m.chat, { text: "🗑 La lista negra ha sido vaciada." })
 }
 
 if (global.db.write) await global.db.write()
@@ -181,7 +171,7 @@ await new Promise(r => setTimeout(r, 10000))
 }
 }
 
-handler.help = ['re', 'unre', 'clre', 'verre', 'usre']
+handler.help = ['🚫 re', '✅ unre', '🔍 clre', '📋 verre', '🗑 usre']
 handler.tags = ['owner']
 handler.command = ['re', 'unre', 'clre', 'verre', 'usre']
 handler.rowner = true
