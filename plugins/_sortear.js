@@ -1,25 +1,37 @@
-let handler = async (m, { conn, text, groupMetadata }) => {
+let handler = async (m, { conn, args, usedPrefix, command, groupMetadata }) => {
   if (!m.isGroup) return conn.reply(m.chat, '❌ Este comando solo funciona en grupos.', m)
 
-  // Tomar participantes del grupo
+  // Tomar todos los participantes del grupo
   let participants = groupMetadata.participants.map(p => p.id)
-  if (participants.length === 0) return conn.reply(m.chat, '❌ No hay participantes para sortear.', m)
+  if (!participants.length) return conn.reply(m.chat, '❌ No hay participantes para sortear.', m)
 
-  // Opcional: permitir mencionar usuarios específicos
-  let mentions = m.mentionedJid.length > 0 ? m.mentionedJid : participants
+  // Número de ganadores a elegir
+  let num = args[0] && !isNaN(args[0]) ? Math.min(parseInt(args[0]), participants.length) : 1
 
-  // Elegir uno al azar
-  let ganador = mentions[Math.floor(Math.random() * mentions.length)]
-  let nombreGanador = await conn.getName(ganador)
+  // Si mencionaron usuarios, sortear solo entre ellos
+  let pool = m.mentionedJid.length > 0 ? m.mentionedJid : participants
 
+  if (pool.length < num) return conn.reply(m.chat, `❌ No hay suficientes participantes para sortear ${num} ganador(es).`, m)
+
+  // Mezclar y elegir ganadores sin repetir
+  let shuffled = pool.sort(() => Math.random() - 0.5)
+  let winners = shuffled.slice(0, num)
+
+  // Preparar texto con emojis
+  let text = winners.map((jid, i) => `🏆 Ganador ${i + 1}: @${jid.split('@')[0]}`).join('\n')
+
+  // Enviar mensaje con menciones
   await conn.sendMessage(
     m.chat,
-    { text: `🎉 ¡El ganador del sorteo es @${ganador.split('@')[0]}! 🎉`, mentions: [ganador] },
+    { text: `🎉 ¡🎊 Sorteo terminado! 🎊🎉\n\n${text}`, mentions: winners },
     { quoted: m }
   )
+
+  // Reaccionar al mensaje original
+  await m.react('🎉')
 }
 
 handler.help = ['sortear']
 handler.tags = ['grupo']
 handler.command = ['sortear']
-export default handler 
+export default handler
