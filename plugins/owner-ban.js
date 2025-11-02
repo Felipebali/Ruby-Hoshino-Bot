@@ -18,7 +18,7 @@ if (m.quoted) userJid = normalizeJid(m.quoted.sender)
 else if (m.mentionedJid?.length) userJid = normalizeJid(m.mentionedJid[0])
 else if (text) {
 const num = text.match(/\d{5,}/)?.[0]
-if (num) userJid = ${num}@s.whatsapp.net
+if (num) userJid = '${num}@s.whatsapp.net'
 }
 
 let reason = text ? text.replace(/@/g, '').replace(userJid?.split('@')[0] || '', '').trim() : ''
