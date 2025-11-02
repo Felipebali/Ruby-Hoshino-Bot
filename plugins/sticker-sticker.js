@@ -5,11 +5,12 @@ import { webp2png } from '../lib/webp2mp4.js'
 
 let handler = async (m, { conn, args }) => {
   // --- NORMALIZA NÚMEROS ---
-  const owners = global.owner.map(o => o[0].replace(/[^0-9]/g, ''))
-  const senderNumber = m.sender.replace(/[^0-9]/g, '')
+  const owners = global.owner.map(o => o[0].replace(/[^0-9]/g, '')) // Solo números
+  const senderNumber = m.sender.replace(/[^0-9]/g, '') // Número del que envía
 
   // --- SOLO OWNERS ---
   if (!owners.includes(senderNumber)) {
+    await m.react('✖️') // Reacción de error
     return conn.reply(m.chat, '❌ Solo los *owners* pueden usar este comando.', m)
   }
 
@@ -56,7 +57,7 @@ let handler = async (m, { conn, args }) => {
 handler.help = ['sticker']
 handler.tags = ['sticker']
 handler.command = ['s', 'sticker']
-handler.owner = false // ⚠️ lo desactivamos porque ya controlamos arriba manualmente
+handler.owner = false // Ya lo controlamos arriba
 
 export default handler
 
