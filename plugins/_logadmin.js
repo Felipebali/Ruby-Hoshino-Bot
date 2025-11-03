@@ -31,7 +31,8 @@ const handler = async (m, { conn, command }) => {
 
 handler.command = ['adminlog', 'adminh']
 handler.group = true
-handler.admin = true
+handler.admin = false   // No cualquiera que sea admin podrá usarlo
+handler.owner = true    // Solo owners pueden ejecutar
 
 // before hook para registrar cambios de admin
 handler.before = async (m, { conn }) => {
