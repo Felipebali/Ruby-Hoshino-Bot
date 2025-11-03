@@ -1,5 +1,5 @@
-import speed from 'performance-now'
-import { spawn, exec, execSync } from 'child_process'
+import { createCanvas, loadImage } from 'canvas'
+import fs from 'fs'
 
 let handler = async (m, { conn, text, usedPrefix }) => {
 const ctxErr = (global.rcanalx || {})
@@ -7,12 +7,11 @@ const ctxWarn = (global.rcanalw || {})
 const ctxOk = (global.rcanalr || {})
 
 try {
-// Verificar si se proporcionó texto
 if (!text) {
 return await conn.reply(m.chat,
 "🤖 *Crear Captura WhatsApp Android*\n\n" +
-"💡 *Uso:*.fakewa <texto>\n" +
-"📝 *Ejemplo:*.fakewa Hola, ¿cómo estás?\n\n" +
+"💡 *Uso:* ${usedPrefix}fakewa <texto>\n" +
+"📝 *Ejemplo:* ${usedPrefix}fakewa Hola, ¿cómo estás?\n\n" +
 "🕒 *Hora automática:* Se detecta tu zona horaria",
 m, ctxWarn
 )
@@ -20,9 +19,8 @@ m, ctxWarn
 
 await conn.reply(m.chat, '🎀 Creando captura Android...', m, ctxOk)  
 
-// Detectar país y zona horaria del usuario  
-let userTimeZone = 'America/Mexico_City' // Por defecto  
-
+// Detectar zona horaria  
+let userTimeZone = 'America/Mexico_City'  
 try {  
   if (m.sender) {  
     const countryCode = m.sender.split('@')[0].slice(0, 3)  
@@ -58,31 +56,55 @@ try {
     }  
     userTimeZone = timeZones[countryCode] || 'America/Mexico_City'  
   }  
-} catch (e) {  
-  userTimeZone = 'America/Mexico_City'  
-}  
+} catch { userTimeZone = 'America/Mexico_City' }  
 
-// Obtener hora actual según la zona horaria detectada  
 let horaUsuario = new Date().toLocaleTimeString('es-ES', {  
-  timeZone: userTimeZone,  
-  hour: '2-digit',  
-  minute: '2-digit',  
-  hour12: false  
+  timeZone: userTimeZone, hour: '2-digit', minute: '2-digit', hour12: false  
 })  
-
-// Formatear hora en 12h  
 let horaFormateada = new Date().toLocaleTimeString('es-ES', {  
-  timeZone: userTimeZone,  
-  hour: '2-digit',  
-  minute: '2-digit',  
-  hour12: true  
+  timeZone: userTimeZone, hour: '2-digit', minute: '2-digit', hour12: true  
 })  
 
-// URL de la API simulando Android  
-let apiUrl = `https://api.zenzxz.my.id/api/maker/fakechatiphone?text=${encodeURIComponent(text)}&chatime=${encodeURIComponent(horaUsuario)}&statusbartime=${encodeURIComponent(horaUsuario)}&device=android`  
+// Canvas básico Android  
+const width = 720  
+const height = 1280  
+const canvas = createCanvas(width, height)  
+const ctx = canvas.getContext('2d')  
 
-// Enviar la imagen  
-await conn.sendFile(m.chat, apiUrl, 'fakewa.jpg',  
+// Fondo Android gris claro  
+ctx.fillStyle = '#ECE5DD'  
+ctx.fillRect(0, 0, width, height)  
+
+// Dibujar barra superior Android  
+ctx.fillStyle = '#075E54'  
+ctx.fillRect(0, 0, width, 120)  
+ctx.fillStyle = '#FFFFFF'  
+ctx.font = 'bold 40px Sans'  
+ctx.fillText('WhatsApp', 30, 70)  
+
+// Dibujar burbuja de mensaje enviado  
+const bubbleWidth = 500  
+const bubbleHeight = 80  
+const padding = 20  
+const startY = 200  
+
+ctx.fillStyle = '#DCF8C6' // verde mensaje enviado  
+ctx.roundRect(width - bubbleWidth - padding, startY, bubbleWidth, bubbleHeight, 20)  
+ctx.fill()  
+
+ctx.fillStyle = '#000000'  
+ctx.font = '28px Sans'  
+ctx.fillText(text, width - bubbleWidth - padding + 20, startY + 50)  
+
+ctx.fillStyle = '#555555'  
+ctx.font = '20px Sans'  
+ctx.fillText(horaFormateada, width - bubbleWidth - padding + bubbleWidth - 80, startY + bubbleHeight - 20)  
+
+// Exportar imagen a buffer  
+const buffer = canvas.toBuffer('image/jpeg')  
+
+// Enviar imagen  
+await conn.sendFile(m.chat, buffer, 'fakewa.jpg',  
   `🤖 *Captura WhatsApp Android*\n\n` +  
   `💬 *Mensaje:* ${text}\n` +  
   `🕒 *Hora:* ${horaFormateada}\n` +  
@@ -107,3 +129,17 @@ handler.tags = ['maker']
 handler.command = ['fakewa', 'fakeandroid', 'fakewhatsapp', 'androidfake']
 
 export default handler
+
+// Extensión para dibujar burbujas redondeadas
+CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+if (w < 2 * r) r = w / 2;
+if (h < 2 * r) r = h / 2;
+this.beginPath();
+this.moveTo(x + r, y);
+this.arcTo(x + w, y, x + w, y + h, r);
+this.arcTo(x + w, y + h, x, y + h, r);
+this.arcTo(x, y + h, x, y, r);
+this.arcTo(x, y, x + w, y, r);
+this.closePath();
+return this;
+}
