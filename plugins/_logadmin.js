@@ -1,43 +1,31 @@
-// plugins/grupo-adminlog.js
-const ownerNumbers = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net']; // Dueños del bot
+const ownerNumbers = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net'];
 
-export async function before(m, { conn, participants, isAdmin, isBotAdmin }) {
+export async function before(m, { conn }) {
   if (!m.isGroup) return;
   if (!m.messageStubType) return;
 
   try {
-    let texto = '';
     let action = '';
-    let actor = m.sender || 'Desconocido';
+    let actor = m.participant || m.key?.participant || m.sender || 'Desconocido';
     let target = m.messageStubParameters ? m.messageStubParameters[0] : null;
-
     if (!target) return;
 
-    // Detecta los cambios de admin en el grupo
+    // Detecta cambios de admin
     switch (m.messageStubType) {
-      case 29: // se le da admin a alguien
-        action = 'promovió a admin';
-        break;
-      case 30: // se le quita admin
-        action = 'degradó de admin';
-        break;
-      default:
-        return;
+      case 29: action = 'promovió a admin'; break;
+      case 30: action = 'degradó de admin'; break;
+      default: return;
     }
 
-    // Determina si quien ejecutó es owner o admin
-    const rango = ownerNumbers.includes(actor)
-      ? '👑 Dueño'
-      : '🛡️ Administrador';
+    const isOwner = ownerNumbers.includes(actor);
+    const rango = isOwner ? '👑 Dueño' : '🛡️ Administrador';
+    const emoji = isOwner ? '👑' : '⚙️';
 
-    texto = `⚙️ *Cambio de administración detectado*\n\n${rango} @${actor.split('@')[0]} *${action}* a @${target.split('@')[0]}`;
+    const texto = `*Cambio de administración detectado*\n\n${rango} @${actor.split('@')[0]} *${action}* a @${target.split('@')[0]}`;
 
-    await conn.sendMessage(m.chat, {
-      text: texto,
-      mentions: [actor, target],
-    });
+    await conn.sendMessage(m.chat, { text: texto, mentions: [actor, target] });
+    await conn.sendMessage(m.chat, { react: { text: emoji, key: m.key } });
 
-    await conn.sendMessage(m.chat, { react: { text: '⚙️', key: m.key } });
   } catch (e) {
     console.error('Error en grupo-adminlog.js:', e);
   }
