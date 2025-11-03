@@ -25,9 +25,15 @@ const handler = async (m, { conn, command }) => {
     const history = chatData.adminHistory || []
     if (history.length === 0) return conn.sendMessage(m.chat, { text: '📋 No hay historial de cambios de admin en este grupo.' })
 
-    let texto = '📋 *Historial de cambios de administración*\n\n'
+    let texto = '📋 *Historial de Cambios de Administración*\n━━━━━━━━━━━━━━━━━━━━━━━━\n\n'
     texto += history
-      .map((h, i) => `✨ ${i + 1}. [${h.fecha}] ${h.rango} @${h.actor.split('@')[0]} *${h.action}* a @${h.target.split('@')[0]}`)
+      .map((h, i) => {
+        let accionEmoji = h.action.includes('promovió') ? '🟢' : h.action.includes('degradó') ? '🔴' : '⚙️'
+        return `✨ *${i + 1}.* [${h.fecha}]
+${accionEmoji} ${h.rango} @${h.actor.split('@')[0]}
+➡️ ${h.action} a @${h.target.split('@')[0]}
+━━━━━━━━━━━━━━━━━━━━━━━━`
+      })
       .join('\n')
 
     await conn.sendMessage(m.chat, { text: texto, mentions: history.flatMap(h => [h.actor, h.target]) })
@@ -79,7 +85,7 @@ handler.before = async (m, { conn }) => {
     await conn.sendMessage(m.chat, { text: texto, mentions: [actor, target] })
     await conn.sendMessage(m.chat, { react: { text: emoji, key: m.key } })
 
-    // Guardar historial (últimas 20 acciones)
+    // Guardar historial (últimas 20 acciones) de forma vistosa
     if (!chatData.adminHistory) chatData.adminHistory = []
     chatData.adminHistory.push({
       fecha: new Date().toLocaleString('es-UY', { timeZone: 'America/Montevideo', hour12: false }),
