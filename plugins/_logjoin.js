@@ -1,32 +1,45 @@
-// plugins/grupo-joinlog.js
-const ownerNumbers = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net'];
+// 📂 plugins/grupo-solicitudes.js
+import { format } from 'date-fns'
 
-export async function participantsRequestUpdate({ id, participants, actor, action, conn }) {
-  try {
-    // Solo para grupos
-    if (!id.endsWith('@g.us')) return;
+let handler = async (m, { conn }) => {
+  // Este comando no hace nada, el plugin funciona solo escuchando el evento
+}
+handler.command = /^$/ // sin comando, solo escucha eventos
 
-    let texto = '';
-    const user = participants[0]; // usuario que fue aceptado o rechazado
-    const rango = ownerNumbers.includes(actor)
-      ? '👑 Dueño'
-      : '🛡️ Administrador';
+export default handler
 
-    if (action === 'approve') {
-      texto = `✅ *Solicitud aprobada*\n\n${rango} @${actor.split('@')[0]} aceptó a @${user.split('@')[0]} para ingresar al grupo.`;
-    } else if (action === 'reject') {
-      texto = `❌ *Solicitud rechazada*\n\n${rango} @${actor.split('@')[0]} rechazó el ingreso de @${user.split('@')[0]}.`;
-    } else {
-      return; // si es otra acción, no hace nada
+// ======== Escucha global (sin tocar index.js) ========
+
+export async function before(m, { conn }) {
+  if (!conn || !conn.ev) return
+  if (conn._listenJoinReq) return // evitar duplicado
+  conn._listenJoinReq = true
+
+  conn.ev.on('group-participants-request-update', async (update) => {
+    try {
+      const { id, participants, actor, action } = update
+      if (!id.endsWith('@g.us')) return
+
+      const user = participants[0]
+      const actorName = await conn.getName(actor)
+      const userName = await conn.getName(user)
+      const fecha = format(new Date(), 'dd/MM/yyyy HH:mm')
+
+      let texto = ''
+      let emoji = ''
+
+      if (action === 'approve') {
+        texto = `✅ *Solicitud aprobada*\n\n👤 *Aprobado por:* ${actorName}\n🪪 *Usuario:* ${userName}\n📅 *Fecha:* ${fecha}`
+        emoji = '✅'
+      } else if (action === 'reject') {
+        texto = `❌ *Solicitud rechazada*\n\n👤 *Rechazado por:* ${actorName}\n🪪 *Usuario:* ${userName}\n📅 *Fecha:* ${fecha}`
+        emoji = '❌'
+      } else return
+
+      await conn.sendMessage(id, { text: texto, mentions: [actor, user] })
+      await conn.sendMessage(id, { react: { text: emoji, key: { remoteJid: id } } })
+    } catch (e) {
+      console.error('Error en solicitudes:', e)
     }
-
-    await conn.sendMessage(id, {
-      text: texto,
-      mentions: [actor, user],
-    });
-
-    await conn.sendMessage(id, { react: { text: action === 'approve' ? '✅' : '❌', key: { remoteJid: id } } });
-  } catch (e) {
-    console.error('Error en grupo-joinlog.js:', e);
-  }
+  })
 }
