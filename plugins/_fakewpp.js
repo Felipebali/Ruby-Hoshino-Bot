@@ -11,8 +11,8 @@ try {
 if (!text) {
 return await conn.reply(m.chat,
 "📱 *Crear Captura iPhone WhatsApp*\n\n" +
-"💡 *Uso:* ${usedPrefix}fakewpp <texto>\n" +
-"📝 *Ejemplo:* ${usedPrefix}fakewpp Hola, ¿cómo estás?\n\n" +
+"💡 *Uso:*.fakewpp <texto>\n" +
+"📝 *Ejemplo:*.fakewpp Hola, ¿cómo estás?\n\n" +
 "🕒 *Hora automática:* Se detecta tu zona horaria",
 m, ctxWarn
 )
