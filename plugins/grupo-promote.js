@@ -13,15 +13,17 @@ let handler = async (m, { conn, isAdmin, isBotAdmin, isOwner }) => {
       mentions: [user] 
     })
 
-    // --- Registrar en historial ---
+    // --- Registrar en historial solo si adminLog está activo ---
     const chatData = global.db.data.chats[m.chat] || {}
+    if (chatData.adminLog === false) return
+
     if (!chatData.adminHistory) chatData.adminHistory = []
 
     const rango = isOwner ? '👑 DUEÑO' : '🛡️ ADMIN'
     chatData.adminHistory.push({
       fecha: new Date().toLocaleString('es-UY', { timeZone: 'America/Montevideo', hour12: false }),
-      actor: m.sender,
-      target: user,
+      actor: m.sender,    // quien ejecuta el comando
+      target: user,       // a quien se promovió
       action: 'promovió a admin (por comando)',
       rango
     })
