@@ -528,3 +528,8 @@ return phoneUtil.isValidNumber(parsedNumber)
 } catch (error) {
 return false
 }}
+
+import logEntradas from './plugins/log-entradas.js'
+
+// Llama al plugin después de inicializar tu conexión (conn)
+logEntradas(conn)
