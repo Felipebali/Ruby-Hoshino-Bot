@@ -10,7 +10,7 @@ const handler = async (m, { conn, command }) => {
   if (!m.isGroup) return conn.sendMessage(m.chat, { text: '❗ Este comando solo funciona en grupos.' })
 
   const chatData = global.db.data.chats[m.chat] || {}
-  if (typeof chatData.joinLog !== 'boolean') chatData.joinLog = true // activo por defecto
+  if (typeof chatData.joinLog !== 'boolean') chatData.joinLog = true
 
   if (command === 'joinlog') {
     chatData.joinLog = !chatData.joinLog
@@ -28,13 +28,10 @@ const handler = async (m, { conn, command }) => {
 
     let texto = '📋 *Historial de Ingresos*\n━━━━━━━━━━━━━━━━━━━━━━━━\n\n'
     texto += history
-      .map((h, i) => {
-        return `✨ *${i + 1}.* [${h.fecha}]
+      .map((h, i) => `✨ *${i + 1}.* [${h.fecha}]
 🎉 @${h.user.split('@')[0]} se unió al grupo
 ➕ Agregado por: ${h.agregadoPor}
-━━━━━━━━━━━━━━━━━━━━━━━━`
-      })
-      .join('\n')
+━━━━━━━━━━━━━━━━━━━━━━━━`).join('\n')
 
     await conn.sendMessage(m.chat, { text: texto, mentions: history.flatMap(h => [h.user]) })
   }
@@ -52,7 +49,7 @@ handler.group = true
 handler.admin = false
 handler.owner = true
 
-// before hook para registrar ingresos de miembros
+// before hook para detectar ingresos de miembros
 handler.before = async (m, { conn }) => {
   if (!m.isGroup) return
   if (!m.messageStubType) return
@@ -61,7 +58,7 @@ handler.before = async (m, { conn }) => {
   if (chatData.joinLog === false) return
 
   try {
-    // 7 = agregado por admin, 8 = entró por link
+    // stubs que indican ingreso de usuario
     if (m.messageStubType === 7 || m.messageStubType === 8) {
       let user = m.messageStubParameters ? m.messageStubParameters[0] : m.participant
       user = normalizeJid(user)
