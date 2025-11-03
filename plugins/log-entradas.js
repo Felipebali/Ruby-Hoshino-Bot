@@ -10,7 +10,7 @@ const handler = async (m, { conn, command }) => {
   if (!m.isGroup) return conn.sendMessage(m.chat, { text: '❗ Este comando solo funciona en grupos.' })
 
   const chatData = global.db.data.chats[m.chat] || {}
-  if (typeof chatData.joinLog !== 'boolean') chatData.joinLog = true
+  if (typeof chatData.joinLog !== 'boolean') chatData.joinLog = true // activo por defecto
 
   if (command === 'joinlog') {
     chatData.joinLog = !chatData.joinLog
@@ -52,23 +52,26 @@ handler.group = true
 handler.admin = false
 handler.owner = true
 
-// ===== Plugin de log de entradas real =====
-export default async function joinLogger(conn) {
-  conn.ev.on('group-participants.update', async (update) => {
-    const { id: chatId, participants, action, invoker } = update
-    const chatData = global.db.data.chats[chatId] || {}
-    if (chatData.joinLog === false) return
-    if (action !== 'add') return
+// before hook para registrar ingresos de miembros
+handler.before = async (m, { conn }) => {
+  if (!m.isGroup) return
+  if (!m.messageStubType) return
 
-    for (let user of participants) {
-      const nombre = await conn.getName(user)
-      const agregadoPor = invoker ? await conn.getName(invoker) : 'link de invitación'
+  const chatData = global.db.data.chats[m.chat] || {}
+  if (chatData.joinLog === false) return
 
-      // Mensaje al grupo
-      await conn.sendMessage(chatId, {
-        text: `🎉 ¡@${user.split('@')[0]} se unió al grupo!\n➕ Agregado por: ${agregadoPor}`,
-        mentions: invoker ? [user, invoker] : [user]
-      })
+  try {
+    // 7 = agregado por admin, 8 = entró por link
+    if (m.messageStubType === 7 || m.messageStubType === 8) {
+      let user = m.messageStubParameters ? m.messageStubParameters[0] : m.participant
+      user = normalizeJid(user)
+
+      let agregadoPor = m.participant && m.participant !== user
+        ? await conn.getName(m.participant)
+        : 'link de invitación'
+
+      const texto = `🎉 ¡@${user.split('@')[0]} se unió al grupo!\n➕ Agregado por: ${agregadoPor}`
+      await conn.sendMessage(m.chat, { text: texto, mentions: [user] })
 
       // Guardar historial (últimas 20 entradas)
       if (!chatData.joinHistory) chatData.joinHistory = []
@@ -79,7 +82,11 @@ export default async function joinLogger(conn) {
       })
       if (chatData.joinHistory.length > 20) chatData.joinHistory.shift()
 
-      global.db.data.chats[chatId] = chatData
+      global.db.data.chats[m.chat] = chatData
     }
-  })
+  } catch (e) {
+    console.error('Error en joinlog.js:', e)
+  }
 }
+
+export default handler
