@@ -11,8 +11,8 @@ try {
 if (!text) {
 return await conn.reply(m.chat,
 "📱 *Crear Captura iPhone WhatsApp*\n\n" +
-"💡 *Uso:* ${usedPrefix}fakewspp <texto>\n" +
-"📝 *Ejemplo:* ${usedPrefix}fakewspp Hola, ¿cómo estás?\n\n" +
+"💡 *Uso:* ${usedPrefix}fakewpp <texto>\n" +
+"📝 *Ejemplo:* ${usedPrefix}fakewpp Hola, ¿cómo estás?\n\n" +
 "🕒 *Hora automática:* Se detecta tu zona horaria",
 m, ctxWarn
 )
@@ -82,7 +82,7 @@ let horaFormateada = new Date().toLocaleTimeString('es-ES', {
 let apiUrl = `https://api.zenzxz.my.id/api/maker/fakechatiphone?text=${encodeURIComponent(text)}&chatime=${encodeURIComponent(horaUsuario)}&statusbartime=${encodeURIComponent(horaUsuario)}`  
 
 // Enviar la imagen  
-await conn.sendFile(m.chat, apiUrl, 'fakewspp.jpg',  
+await conn.sendFile(m.chat, apiUrl, 'fakewpp.jpg',  
   `📱 *Captura iPhone WhatsApp*\n\n` +  
   `💬 *Mensaje:* ${text}\n` +  
   `🕒 *Hora:* ${horaFormateada}\n` +  
@@ -92,7 +92,7 @@ await conn.sendFile(m.chat, apiUrl, 'fakewspp.jpg',
 )  
 
 } catch (error) {
-console.error('Error en fakewspp:', error)
+console.error('Error en fakewpp:', error)
 await conn.reply(m.chat,
 "❌ *Error al crear captura*\n\n" +
 "🔧 *Detalle:* ${error.message}\n\n" +
@@ -102,8 +102,8 @@ m, ctxErr
 }
 }
 
-handler.help = ['fakewspp']
+handler.help = ['fakewpp']
 handler.tags = ['maker']
-handler.command = ['fakewspp', 'fakeiphone', 'fakewhatsapp', 'iphonefake']
+handler.command = ['fakewpp', 'fakeiphone', 'fakewhatsapp', 'iphonefake']
 
 export default handler
