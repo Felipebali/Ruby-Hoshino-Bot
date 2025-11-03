@@ -6,6 +6,7 @@ function normalizeJid(jid = '') {
 
 const ownerNumbers = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net']
 
+// Comandos: joinlog, joinh, joinclear
 const handler = async (m, { conn, command }) => {
   if (!m.isGroup) return conn.sendMessage(m.chat, { text: '❗ Este comando solo funciona en grupos.' })
 
@@ -49,40 +50,39 @@ handler.group = true
 handler.admin = false
 handler.owner = true
 
-// before hook para detectar ingresos de miembros
-handler.before = async (m, { conn }) => {
-  if (!m.isGroup) return
-  if (!m.messageStubType) return
+// ===== Plugin pro: detecta ingresos con ev.on =====
+handler.init = async (conn) => {
+  if (!conn.joinlogInit) {
+    conn.joinlogInit = true
+    conn.ev.on('group-participants.update', async (update) => {
+      const { id: chatId, participants, action, invoker } = update
+      if (action !== 'add') return
 
-  const chatData = global.db.data.chats[m.chat] || {}
-  if (chatData.joinLog === false) return
+      const chatData = global.db.data.chats[chatId] || {}
+      if (chatData.joinLog === false) return
 
-  try {
-    // stubs que indican ingreso de usuario
-    if (m.messageStubType === 7 || m.messageStubType === 8) {
-      let user = m.messageStubParameters ? m.messageStubParameters[0] : m.participant
-      user = normalizeJid(user)
+      for (let user of participants) {
+        const userJid = normalizeJid(user)
+        const agregadoPor = invoker ? await conn.getName(invoker) : 'link de invitación'
 
-      let agregadoPor = m.participant && m.participant !== user
-        ? await conn.getName(m.participant)
-        : 'link de invitación'
+        // Mensaje al grupo
+        await conn.sendMessage(chatId, {
+          text: `🎉 ¡@${userJid.split('@')[0]} se unió al grupo!\n➕ Agregado por: ${agregadoPor}`,
+          mentions: invoker ? [userJid, invoker] : [userJid]
+        })
 
-      const texto = `🎉 ¡@${user.split('@')[0]} se unió al grupo!\n➕ Agregado por: ${agregadoPor}`
-      await conn.sendMessage(m.chat, { text: texto, mentions: [user] })
+        // Guardar historial (últimas 20 entradas)
+        if (!chatData.joinHistory) chatData.joinHistory = []
+        chatData.joinHistory.push({
+          fecha: new Date().toLocaleString('es-UY', { timeZone: 'America/Montevideo', hour12: false }),
+          user: userJid,
+          agregadoPor
+        })
+        if (chatData.joinHistory.length > 20) chatData.joinHistory.shift()
 
-      // Guardar historial (últimas 20 entradas)
-      if (!chatData.joinHistory) chatData.joinHistory = []
-      chatData.joinHistory.push({
-        fecha: new Date().toLocaleString('es-UY', { timeZone: 'America/Montevideo', hour12: false }),
-        user,
-        agregadoPor
-      })
-      if (chatData.joinHistory.length > 20) chatData.joinHistory.shift()
-
-      global.db.data.chats[m.chat] = chatData
-    }
-  } catch (e) {
-    console.error('Error en joinlog.js:', e)
+        global.db.data.chats[chatId] = chatData
+      }
+    })
   }
 }
 
