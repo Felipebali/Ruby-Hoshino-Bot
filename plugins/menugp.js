@@ -1,62 +1,56 @@
 // plugins/menugp.js
 let handler = async (m, { conn, isAdmin, chat }) => {
-    try {
-        const chatData = global.db.data.chats[chat] || {};
-        const autoFraseEstado = chatData.autoFrase ? '🟢 Activado' : '🔴 Desactivado';
+  try {
+    const chatData = global.db.data.chats[chat] || {};
+    const autoFraseEstado = chatData.autoFrase ? '🟢 Activado' : '🔴 Desactivado';
 
-        let menuText = `
-╭━━━〔 🐾 MENÚ PARA ADMINS 🐾 〕━━━⬣
+    let menuText = `
+╭━━━┅┅ *🐾 MENÚ ADMINISTRADORES 🐾* ┅┅━━━╮
+┃
+┃ 👑 *Gestión del grupo y miembros*
+┃
+┃ 💠 *PROMOVER / DEGRADAR*
+┃  ├ 🐾 .p <@user> — Promover a admin 😺
+┃  └ 🐾 .d <@user> — Degradar admin 😿
+┃
+┃ 💠 *ELIMINAR USUARIOS*
+┃  ├ 🐾 .k <@user> — Expulsar usuario ✂️
+┃  └ 🐾  F — Expulsar un usuario al azar 🎯
+┃
+┃ 💠 *CERRAR / ABRIR GRUPO*
+┃  └ 🐾 .g — Alternar grupo 🔒 / 🔓
+┃
+┃ 💠 *SILENCIAR / DESILENCIAR*
+┃  ├ 🐾 .mute <@user> — Silenciar 🤫
+┃  └ 🐾 .unmute <@user> — Desilenciar 🗣️
+┃
+┃ 💠 *MENCIÓN GENERAL*
+┃  ├ 🐾 .tagall — Mencionar a todos 📣
+┃  ├ 🐾 .ht — Mención oculta 👻
+┃  └ 🐾  T — Ultra TagAll ⚔️ (sin prefijo)
+┃
+┃ 💠 *BORRAR MENSAJES*
+┃  └ 🐾 .del — Elimina mensaje respondido ❌
+┃
+┃ 💠 *ADVERTENCIAS*
+┃  ├ 🐾 .warn @user — Dar advertencia ⚠️
+┃  ├ 🐾 .unwarn @user — Quitar advertencia 🟢
+┃  └ 🐾 .warnlist — Ver lista de advertidos 📋
+┃
+┃ 🧩 *Funciones extra:*
+┃  └ AutoFrase: ${autoFraseEstado}
+┃
+╰━━━━━━━━━━━━━━━━━━━━━━━━━━━╯
+🐱 *FelixCat_Bot* — Siempre atento 🐾
+    `;
 
-╭━━━〔 🐱 PROMOVER / DEGRADAR 〕━━━⬣
-┃ 🐾 .p <@user> - Promover a admin 😺
-┃ 🐾 .d <@user> - Degradar admin 😿
-╰━━━━━━━━━━━━━━━━━━━━⬣
+    await conn.sendMessage(m.chat, { text: menuText.trim() }, { quoted: m });
 
-╭━━━〔 🔨 BAN / UNBAN CHAT 〕━━━⬣
-┃ 🐾 .banchat - Banear grupo 🚫
-┃ 🐾 .unbanchat - Desbanear grupo ✅
-╰━━━━━━━━━━━━━━━━━━━━⬣
-
-╭━━━〔 ❌ ELIMINAR USUARIOS 〕━━━⬣
-┃ 🐾 .k <@user> - Eliminar usuario ✂️
-┃ 🐾  F - Expulsar un usuario al azar 🎯
-╰━━━━━━━━━━━━━━━━━━━━⬣
-
-╭━━━〔 🚪 CERRAR / ABRIR GRUPO 〕━━━⬣
-┃ 🐾 .g - Cerrar / Abrir grupo 🔒🔓
-╰━━━━━━━━━━━━━━━━━━━━⬣
-
-╭━━━〔 🔇 SILENCIAR / DESILENCIAR 〕━━━⬣
-┃ 🐾 .mute <@user> - Silenciar usuario 🤫
-┃ 🐾 .unmute <@user> - Desilenciar usuario 🗣️
-╰━━━━━━━━━━━━━━━━━━━━⬣
-
-╭━━━〔 📢 MENCIÓN GENERAL 〕━━━⬣
-┃ 🐾 .tagall - Mencionar a todos 📣
-┃ 🐾 .ht - Mención oculta 👻
-┃ 🐾 .tagall2 - Ultra operativo x2 🚨⚔️
-╰━━━━━━━━━━━━━━━━━━━━⬣
-
-╭━━━〔 🗑️ BORRAR MENSAJE 〕━━━⬣
-┃ 🐾 .del - Elimina el mensaje respondido ✖️
-╰━━━━━━━━━━━━━━━━━━━━⬣
-
-╭━━━〔 ⚠️ ADVERTENCIAS 〕━━━⬣
-┃ 🐾 .warn @user - Dar advertencia ⚠️
-┃ 🐾 .unwarn @user - Quitar advertencia 🟢
-┃ 🐾 .warnlist - Lista de usuarios advertidos 📋
-╰━━━━━━━━━━━━━━━━━━━━⬣
-
-> 👑 Powered by FelixCat 🐾
-        `;
-
-        await conn.sendMessage(m.chat, { text: menuText }, { quoted: m });
-
-    } catch (e) {
-        console.error(e);
-        await m.reply('✖️ Error al mostrar el menú de grupo.');
-    }
-}
+  } catch (e) {
+    console.error(e);
+    await m.reply('✖️ Error al mostrar el menú de grupo.');
+  }
+};
 
 handler.command = ['menugp'];
 handler.group = true;
