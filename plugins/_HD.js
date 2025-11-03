@@ -2,12 +2,22 @@ import fetch from 'node-fetch'
 import FormData from 'form-data'
 
 const handler = async (m, { conn, usedPrefix }) => {
-const q = m.quoted || m
-const mime = (q.msg || q).mimetype || q.mediaType || ''
-if (!mime) return conn.reply(m.chat, '❀ Por favor, responde a una imagen con el comando.', m)
-if (!/image/(jpe?g|png)/.test(mime)) return conn.reply(m.chat, "ꕥ Formato no compatible (${mime}). Usa una imagen jpg o png.", m)
-const buffer = await q.download()
-if (!buffer || buffer.length < 1000) return conn.reply(m.chat, '⚠︎ Imagen no válida.', m)
+// Detectar imagen en mensaje directo o en respuesta
+let q = m.quoted || m
+let mime = (q.msg || q).mimetype || q.mediaType || ''
+
+// Si no tiene mime, intentar detectar imageMessage directamente  
+if (!mime && m.message?.imageMessage) {  
+    q = m  
+    mime = 'image/jpeg'  
+}  
+
+if (!mime || !/image\/(jpe?g|png)/.test(mime)) {  
+    return conn.reply(m.chat, '❀ Por favor, responde a una imagen o envía una imagen con el comando.', m)  
+}  
+
+const buffer = await q.download?.() || (q.message?.imageMessage ? await conn.downloadMediaMessage(q) : null)  
+if (!buffer || buffer.length < 1000) return conn.reply(m.chat, '⚠︎ Imagen no válida.', m)  
 
 await m.react('🕒')  
 
@@ -19,22 +29,26 @@ try {
     return conn.reply(m.chat, `⚠︎ Error subiendo imagen a Uguu:\n${e.message}`, m)  
 }  
 
+// Intentar motores secuencialmente para compatibilidad Node <18  
 const engines = [upscaleSiputzx, upscaleVreden]  
-const wrapped = engines.map(fn => fn(url)  
-    .then(res => ({ engine: fn.engineName, result: res }))  
-    .catch(err => Promise.reject({ engine: fn.engineName, error: err }))  
-)  
+let success = false  
+let fallback = []  
 
-try {  
-    const { engine, result } = await Promise.any(wrapped)  
-    await conn.sendFile(m.chat, Buffer.isBuffer(result) ? result : result, 'imagen.jpg', `❀ Imagen mejorada\n» Imagen procesada. Servidor: \`${engine}\``, m)  
-    await m.react('✔️')  
-} catch (err) {  
+for (const fn of engines) {  
+    try {  
+        const result = await fn(url)  
+        await conn.sendFile(m.chat, Buffer.isBuffer(result) ? result : result, 'imagen.jpg', `❀ Imagen mejorada\n» Servidor: \`${fn.engineName}\``, m)  
+        success = true  
+        await m.react('✔️')  
+        break  
+    } catch (err) {  
+        fallback.push(`• ${fn.engineName}: ${err?.message || err}`)  
+    }  
+}  
+
+if (!success) {  
     await m.react('✖️')  
-    const fallback = Array.isArray(err.errors)  
-        ? err.errors.map(e => `• ${e?.engine || 'Desconocido'}: ${e?.error?.message || e?.error || String(e)}`).join('\n')  
-        : `• ${err?.engine || 'Desconocido'}: ${err?.error?.message || err?.error || String(err)}`  
-    await conn.reply(m.chat, `⚠︎ No se pudo mejorar la imagen\n> Usa ${usedPrefix}report para informarlo\n\n${fallback}`, m)  
+    await conn.reply(m.chat, `⚠︎ No se pudo mejorar la imagen\n> Usa ${usedPrefix}report para informarlo\n\n${fallback.join('\n')}`, m)  
 }  
 
 }
@@ -61,6 +75,7 @@ throw new Error("Falló al parsear respuesta de Uguu.\n> ${text}")
 }
 
 async function upscaleSiputzx(url) {
+if (!global.APIs?.siputzx?.url) throw new Error('API Siputzx no definida')
 const res = await fetch("${global.APIs.siputzx.url}/api/iloveimg/upscale?image=${encodeURIComponent(url)}&scale=4")
 if (!res.ok) throw new Error("Siputzx falló con código ${res.status}")
 return Buffer.from(await res.arrayBuffer())
@@ -68,6 +83,7 @@ return Buffer.from(await res.arrayBuffer())
 upscaleSiputzx.engineName = 'Siputzx'
 
 async function upscaleVreden(url) {
+if (!global.APIs?.vreden?.url) throw new Error('API Vreden no definida')
 const res = await fetch("${global.APIs.vreden.url}/api/artificial/hdr?url=${encodeURIComponent(url)}&pixel=4")
 if (!res.ok) throw new Error("Vreden falló con código ${res.status}")
 const json = await res.json()
