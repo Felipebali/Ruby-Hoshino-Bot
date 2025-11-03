@@ -5,23 +5,30 @@ function normalizeJid(jid = '') {
 const ownerNumbers = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net']
 
 const handler = async (m, { conn, command }) => {
-  if (!m.isGroup) return m.reply('❗ Este comando solo funciona en grupos.')
+  if (!m.isGroup) return conn.sendMessage(m.chat, { text: '❗ Este comando solo funciona en grupos.' })
 
   const chatData = global.db.data.chats[m.chat] || {}
   if (typeof chatData.adminLog !== 'boolean') chatData.adminLog = true // activo por defecto
 
   if (command === 'adminlog') {
     chatData.adminLog = !chatData.adminLog
-    const estado = chatData.adminLog ? '✅ *activados*' : '❌ *desactivados*'
-    await m.reply(`Logs de admin ${estado} para este grupo.`)
+    const estado = chatData.adminLog
+      ? '✅ *LOGS ACTIVADOS*'
+      : '❌ *LOGS DESACTIVADOS*'
+    const emoji = chatData.adminLog ? '🟢' : '🔴'
+
+    await conn.sendMessage(m.chat, { text: `🎯 ${estado} para este grupo ${emoji}` })
+    await conn.sendMessage(m.chat, { react: { text: emoji, key: m.key } })
   }
 
   if (command === 'adminh') {
     const history = chatData.adminHistory || []
-    if (history.length === 0) return m.reply('📋 No hay historial de cambios de admin en este grupo.')
+    if (history.length === 0) return conn.sendMessage(m.chat, { text: '📋 No hay historial de cambios de admin en este grupo.' })
 
-    let texto = '*📋 Historial de cambios de administración:*\n\n'
-    texto += history.map((h, i) => `${i + 1}. [${h.fecha}] ${h.rango} @${h.actor.split('@')[0]} ${h.action} a @${h.target.split('@')[0]}`).join('\n')
+    let texto = '📋 *Historial de cambios de administración*\n\n'
+    texto += history
+      .map((h, i) => `✨ ${i + 1}. [${h.fecha}] ${h.rango} @${h.actor.split('@')[0]} *${h.action}* a @${h.target.split('@')[0]}`)
+      .join('\n')
 
     await conn.sendMessage(m.chat, { text: texto, mentions: history.flatMap(h => [h.actor, h.target]) })
   }
@@ -56,14 +63,14 @@ handler.before = async (m, { conn }) => {
     }
 
     const isOwner = ownerNumbers.includes(actor)
-    const rango = isOwner ? '👑 Dueño' : '🛡️ Administrador'
+    const rango = isOwner ? '👑 DUEÑO' : '🛡️ ADMIN'
     const emoji = isOwner ? '👑' : '⚙️'
 
-    const texto = `*Cambio de administración detectado*\n\n${rango} @${actor.split('@')[0]} *${action}* a @${target.split('@')[0]}`
+    const texto = `⚡ *CAMBIO DE ADMINISTRACIÓN DETECTADO*\n\n${rango} @${actor.split('@')[0]} *${action}* a @${target.split('@')[0]}`
     await conn.sendMessage(m.chat, { text: texto, mentions: [actor, target] })
     await conn.sendMessage(m.chat, { react: { text: emoji, key: m.key } })
 
-    // Guardar historial (manteniendo solo las últimas 20 acciones)
+    // Guardar historial (últimas 20 acciones)
     if (!chatData.adminHistory) chatData.adminHistory = []
     chatData.adminHistory.push({
       fecha: new Date().toLocaleString('es-UY', { timeZone: 'America/Montevideo', hour12: false }),
