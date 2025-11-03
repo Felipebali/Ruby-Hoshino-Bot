@@ -33,10 +33,15 @@ const handler = async (m, { conn, command }) => {
     await conn.sendMessage(m.chat, { text: texto, mentions: history.flatMap(h => [h.actor, h.target]) })
   }
 
+  if (command === 'adminclear') {
+    chatData.adminHistory = []
+    await conn.sendMessage(m.chat, { text: '🗑️ *Historial de admins borrado exitosamente.*' })
+  }
+
   global.db.data.chats[m.chat] = chatData
 }
 
-handler.command = ['adminlog', 'adminh']
+handler.command = ['adminlog', 'adminh', 'adminclear']
 handler.group = true
 handler.admin = false   // No cualquiera que sea admin podrá usarlo
 handler.owner = true    // Solo owners pueden ejecutar
