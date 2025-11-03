@@ -4,13 +4,42 @@ function normalizeJid(jid = '') {
 
 const ownerNumbers = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net']
 
-// Plugin para registrar cambios de admin
-export async function before(m, { conn }) {
+const handler = async (m, { conn, usedPrefix, command }) => {
+  if (!m.isGroup) return m.reply('❗ Este comando solo funciona en grupos.')
+
+  const chatData = global.db.data.chats[m.chat] || {}
+  if (!chatData.adminLog) chatData.adminLog = true // activo por defecto
+
+  if (command === 'adminlog') {
+    chatData.adminLog = !chatData.adminLog
+    const estado = chatData.adminLog ? '✅ *activados*' : '❌ *desactivados*'
+    await m.reply(`Logs de admin ${estado} para este grupo.`)
+  }
+
+  if (command === 'adminh') {
+    const history = chatData.adminHistory || []
+    if (history.length === 0) return m.reply('📋 No hay historial de cambios de admin en este grupo.')
+
+    let texto = '*📋 Historial de cambios de administración:*\n\n'
+    texto += history.map((h, i) => `${i + 1}. [${h.fecha}] ${h.rango} @${h.actor.split('@')[0]} ${h.action} a @${h.target.split('@')[0]}`).join('\n')
+
+    await conn.sendMessage(m.chat, { text: texto, mentions: history.flatMap(h => [h.actor, h.target]) })
+  }
+
+  global.db.data.chats[m.chat] = chatData
+}
+
+handler.command = ['adminlog', 'adminh']
+handler.group = true
+handler.admin = true
+
+// before hook para registrar cambios de admin
+handler.before = async (m, { conn }) => {
   if (!m.isGroup) return
   if (!m.messageStubType) return
 
   const chatData = global.db.data.chats[m.chat] || {}
-  if (chatData.adminLog === false) return // Si está desactivado, no hace nada
+  if (chatData.adminLog === false) return
 
   try {
     let action = ''
@@ -29,7 +58,6 @@ export async function before(m, { conn }) {
     const rango = isOwner ? '👑 Dueño' : '🛡️ Administrador'
     const emoji = isOwner ? '👑' : '⚙️'
 
-    // Mensaje de log
     const texto = `*Cambio de administración detectado*\n\n${rango} @${actor.split('@')[0]} *${action}* a @${target.split('@')[0]}`
     await conn.sendMessage(m.chat, { text: texto, mentions: [actor, target] })
     await conn.sendMessage(m.chat, { react: { text: emoji, key: m.key } })
@@ -43,6 +71,7 @@ export async function before(m, { conn }) {
       action,
       rango
     })
+
     global.db.data.chats[m.chat] = chatData
 
   } catch (e) {
@@ -50,38 +79,4 @@ export async function before(m, { conn }) {
   }
 }
 
-// Comando para alternar el log (toggle)
-export const handlerLog = async (m, { conn }) => {
-  if (!m.isGroup) return m.reply('❗ Este comando solo funciona en grupos.')
-
-  const chatData = global.db.data.chats[m.chat] || {}
-  chatData.adminLog = !chatData.adminLog // cambia true/false automáticamente
-
-  const estado = chatData.adminLog ? '✅ *activados*' : '❌ *desactivados*'
-  await m.reply(`Logs de admin ${estado} para este grupo.`)
-
-  global.db.data.chats[m.chat] = chatData
-}
-
-handlerLog.command = ['adminlog']
-handlerLog.group = true
-handlerLog.admin = true
-
-// Comando para ver historial
-export const handlerHist = async (m, { conn }) => {
-  if (!m.isGroup) return m.reply('❗ Este comando solo funciona en grupos.')
-
-  const chatData = global.db.data.chats[m.chat] || {}
-  const history = chatData.adminHistory || []
-
-  if (history.length === 0) return m.reply('📋 No hay historial de cambios de admin en este grupo.')
-
-  let texto = '*📋 Historial de cambios de administración:*\n\n'
-  texto += history.map((h, i) => `${i + 1}. [${h.fecha}] ${h.rango} @${h.actor.split('@')[0]} ${h.action} a @${h.target.split('@')[0]}`).join('\n')
-
-  await conn.sendMessage(m.chat, { text: texto, mentions: history.flatMap(h => [h.actor, h.target]) })
-}
-
-handlerHist.command = ['adminh']
-handlerHist.group = true
-handlerHist.admin = true
+export default handler
