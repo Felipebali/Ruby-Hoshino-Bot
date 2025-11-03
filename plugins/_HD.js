@@ -6,7 +6,7 @@ const handler = async (m, { conn, usedPrefix }) => {
 let q = m.quoted || m
 let mime = (q.msg || q).mimetype || q.mediaType || ''
 
-// Si no tiene mime, intentar detectar imageMessage directamente  
+// Intentar detectar imageMessage directamente  
 if (!mime && m.message?.imageMessage) {  
     q = m  
     mime = 'image/jpeg'  
@@ -21,34 +21,13 @@ if (!buffer || buffer.length < 1000) return conn.reply(m.chat, '⚠︎ Imagen no
 
 await m.react('🕒')  
 
-let url  
 try {  
-    url = await uploadToUguu(buffer)  
+    const url = await uploadToUguu(buffer)  
+    await conn.sendFile(m.chat, buffer, 'imagen.jpg', `❀ Imagen subida y lista para usar.\n» URL: ${url}`, m)  
+    await m.react('✔️')  
 } catch (e) {  
     await m.react('✖️')  
-    return conn.reply(m.chat, `⚠︎ Error subiendo imagen a Uguu:\n${e.message}`, m)  
-}  
-
-// Intentar motores secuencialmente para compatibilidad Node <18  
-const engines = [upscaleSiputzx, upscaleVreden]  
-let success = false  
-let fallback = []  
-
-for (const fn of engines) {  
-    try {  
-        const result = await fn(url)  
-        await conn.sendFile(m.chat, Buffer.isBuffer(result) ? result : result, 'imagen.jpg', `❀ Imagen mejorada\n» Servidor: \`${fn.engineName}\``, m)  
-        success = true  
-        await m.react('✔️')  
-        break  
-    } catch (err) {  
-        fallback.push(`• ${fn.engineName}: ${err?.message || err}`)  
-    }  
-}  
-
-if (!success) {  
-    await m.react('✖️')  
-    await conn.reply(m.chat, `⚠︎ No se pudo mejorar la imagen\n> Usa ${usedPrefix}report para informarlo\n\n${fallback.join('\n')}`, m)  
+    await conn.reply(m.chat, `⚠︎ No se pudo procesar la imagen\n> Usa ${usedPrefix}report para informarlo\n\n• Error: ${e.message}`, m)  
 }  
 
 }
@@ -73,22 +52,3 @@ return url.trim()
 throw new Error("Falló al parsear respuesta de Uguu.\n> ${text}")
 }
 }
-
-async function upscaleSiputzx(url) {
-if (!global.APIs?.siputzx?.url) throw new Error('API Siputzx no definida')
-const res = await fetch("${global.APIs.siputzx.url}/api/iloveimg/upscale?image=${encodeURIComponent(url)}&scale=4")
-if (!res.ok) throw new Error("Siputzx falló con código ${res.status}")
-return Buffer.from(await res.arrayBuffer())
-}
-upscaleSiputzx.engineName = 'Siputzx'
-
-async function upscaleVreden(url) {
-if (!global.APIs?.vreden?.url) throw new Error('API Vreden no definida')
-const res = await fetch("${global.APIs.vreden.url}/api/artificial/hdr?url=${encodeURIComponent(url)}&pixel=4")
-if (!res.ok) throw new Error("Vreden falló con código ${res.status}")
-const json = await res.json()
-const finalUrl = json?.resultado?.datos?.descargaUrls?.[0]
-if (!finalUrl || !finalUrl.startsWith('https://')) throw new Error('Respuesta inválida de Vreden')
-return finalUrl
-}
-upscaleVreden.engineName = 'Vreden'
