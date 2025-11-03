@@ -1,28 +1,42 @@
-// promote.js (.p)
 let handler = async (m, { conn, isAdmin, isBotAdmin, isOwner }) => {
-    if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.');
-    // Permitir admins o owners
-    if (!isAdmin && !isOwner) return m.reply('❌ Solo administradores o dueños pueden usar este comando.');
-    if (!isBotAdmin) return m.reply('❌ Necesito ser administrador para promover.');
+  if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.')
+  if (!isAdmin && !isOwner) return m.reply('❌ Solo administradores o dueños pueden usar este comando.')
+  if (!isBotAdmin) return m.reply('❌ Necesito ser administrador para promover.')
 
-    const user = (m.mentionedJid && m.mentionedJid[0]) || (m.quoted && m.quoted.sender);
-    if (!user) return m.reply('⚠️ Menciona o responde al usuario que deseas promover.');
+  const user = (m.mentionedJid && m.mentionedJid[0]) || (m.quoted && m.quoted.sender)
+  if (!user) return m.reply('⚠️ Menciona o responde al usuario que deseas promover.')
 
-    try {
-        await conn.groupParticipantsUpdate(m.chat, [user], 'promote');
-        await conn.sendMessage(m.chat, { 
-            text: `✅ @${user.split('@')[0]} lo lograste eres admin.`, 
-            mentions: [user] 
-        });
-    } catch (e) {
-        console.error(e);
-        m.reply('❌ Error al intentar promover al usuario.');
-    }
-};
+  try {
+    await conn.groupParticipantsUpdate(m.chat, [user], 'promote')
+    await conn.sendMessage(m.chat, { 
+      text: `✅ @${user.split('@')[0]} ahora es admin.`, 
+      mentions: [user] 
+    })
 
-handler.command = ['p'];
-handler.group = true;
-handler.admin = false; // Lo manejamos dentro del handler
-handler.botAdmin = true;
+    // --- Registrar en historial ---
+    const chatData = global.db.data.chats[m.chat] || {}
+    if (!chatData.adminHistory) chatData.adminHistory = []
 
-export default handler;
+    const rango = isOwner ? '👑 DUEÑO' : '🛡️ ADMIN'
+    chatData.adminHistory.push({
+      fecha: new Date().toLocaleString('es-UY', { timeZone: 'America/Montevideo', hour12: false }),
+      actor: m.sender,
+      target: user,
+      action: 'promovió a admin (por comando)',
+      rango
+    })
+    if (chatData.adminHistory.length > 20) chatData.adminHistory.shift()
+    global.db.data.chats[m.chat] = chatData
+
+  } catch (e) {
+    console.error(e)
+    m.reply('❌ Error al intentar promover al usuario.')
+  }
+}
+
+handler.command = ['p']
+handler.group = true
+handler.admin = false
+handler.botAdmin = true
+
+export default handler
