@@ -7,44 +7,61 @@ let handler = async (m, { conn }) => {
     })
 
     const menuText = `
-💼 *MENÚ OWNER - FELIXCAT_BOT*
-📅 ${fecha}
+╭━───╮
+┃ 💼 *MENÚ DEL DUEÑO* 💼
+╰━───╯
+🐾 *FelixCat_Bot – Panel Principal* 🐾
+📅 *Fecha:* ${fecha}
 
-*👮 ADMINISTRADORES*
-• .autoadmin – Dar admin al bot
-• .chetar – Activar modo pro
-• .deschetar – Desactivar modo pro
-• .dar – Dar admin a todos
-• .quitar – Quitar admin a todos
+━━━━━━━━━━━━━━━━━━━
+👮‍♂️ *ADMINISTRADORES*
+━━━━━━━━━━━━━━━━━━━
+🐾 .autoadmin — Dar admin al bot 🧩
+🐾 .dar — Dar admin a todos 🫡
+🐾 .quitar — Quitar admin a todos 🧹
+🐾 .chetar — Activar modo Pro ⚙️
+🐾 .deschetar — Desactivar modo Pro 💤
 
-*🚫 LISTA NEGRA*
-• .ln <@user> – Agregar a lista negra
-• .unln <@user> – Quitar de lista negra
-• .cln <@user> – Consultar usuario
-• .verln – Ver lista negra
-• .usln – Vaciar lista negra
-• .resetuser <@user> – Reiniciar datos del usuario
+━━━━━━━━━━━━━━━━━━━
+🚫 *LISTA NEGRA*
+━━━━━━━━━━━━━━━━━━━
+🐾 .ln <@user> — Agregar a lista negra ⚠️
+🐾 .unln <@user> — Quitar de lista negra ✅
+🐾 .cln <@user> — Consultar usuario 🔍
+🐾 .verln — Ver lista negra 📋
+🐾 .usln — Vaciar lista negra 🗑️
+🐾 .resetuser <@user> — Reiniciar datos del usuario 🔄
 
-*🤖 BOT*
-• .restart – Reiniciar el bot
-• .update – Actualizar el bot
-• .exec / .exec2 – Ejecutar código
-• .setcmd – Configurar comando
-• .setprefix – Cambiar prefijo
-• .dsowner – Quitar dueño
-• .join <link> – Unirse a grupo
+━━━━━━━━━━━━━━━━━━━
+🤖 *GESTIÓN DEL BOT*
+━━━━━━━━━━━━━━━━━━━
+🐾 .restart — Reiniciar el bot 🔁
+🐾 .update — Actualizar el bot 🆙
+🐾 .exec / .exec2 — Ejecutar código 💻
+🐾 .setcmd — Configurar comando ⚙️
+🐾 .setprefix — Cambiar prefijo ✏️
+🐾 .dsowner — Quitar dueño ❌
+🐾 .join <link> — Unirse a grupo 🔗
+🐾 .bc — *Banear grupo completo* 🚫
+🐾 .ba — *Desbanear grupo* ✅
 
-*💬 SIN PREFIJO*
-• a – Activa una alarma
-• buenas – Responde saludo
-• salir – El bot abandona el grupo
-• sh – Ejecuta comando shell
-• u – Menciona a todos (tagall)
+━━━━━━━━━━━━━━━━━━━
+💬 *COMANDOS SIN PREFIJO*
+━━━━━━━━━━━━━━━━━━━
+🐾 a — Activa una alarma ⏰  
+🐾 buenas — Saludo automático 🐱  
+🐾 salir — El bot abandona el grupo 🚪  
+🐾 sh — Ejecuta comando shell 💽  
+🐾 u — Menciona a todos (tagall) 📣  
 
-👑 FelixCat – Propietario
+━━━━━━━━━━━━━━━━━━━
+👑 *FelixCat – Propietario Supremo* 🐾
+💠 “Control total con estilo felino.” 💠
+━━━━━━━━━━━━━━━━━━━
 `.trim()
 
-    await conn.sendMessage(m.chat, { text: menuText }, { quoted: m })
+    const sentMsg = await conn.sendMessage(m.chat, { text: menuText }, { quoted: m })
+    await conn.sendMessage(m.chat, { react: { text: '👑', key: sentMsg.key } })
   } catch (e) {
     console.error(e)
     await m.reply('✖️ Error al mostrar el menú de owner.')
