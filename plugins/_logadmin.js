@@ -4,11 +4,11 @@ function normalizeJid(jid = '') {
 
 const ownerNumbers = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net']
 
-const handler = async (m, { conn, usedPrefix, command }) => {
+const handler = async (m, { conn, command }) => {
   if (!m.isGroup) return m.reply('❗ Este comando solo funciona en grupos.')
 
   const chatData = global.db.data.chats[m.chat] || {}
-  if (!chatData.adminLog) chatData.adminLog = true // activo por defecto
+  if (typeof chatData.adminLog !== 'boolean') chatData.adminLog = true // activo por defecto
 
   if (command === 'adminlog') {
     chatData.adminLog = !chatData.adminLog
@@ -62,7 +62,7 @@ handler.before = async (m, { conn }) => {
     await conn.sendMessage(m.chat, { text: texto, mentions: [actor, target] })
     await conn.sendMessage(m.chat, { react: { text: emoji, key: m.key } })
 
-    // Guardar historial en la base de datos
+    // Guardar historial (manteniendo solo las últimas 20 acciones)
     if (!chatData.adminHistory) chatData.adminHistory = []
     chatData.adminHistory.push({
       fecha: new Date().toLocaleString('es-UY', { timeZone: 'America/Montevideo', hour12: false }),
@@ -71,6 +71,7 @@ handler.before = async (m, { conn }) => {
       action,
       rango
     })
+    if (chatData.adminHistory.length > 20) chatData.adminHistory.shift()
 
     global.db.data.chats[m.chat] = chatData
 
