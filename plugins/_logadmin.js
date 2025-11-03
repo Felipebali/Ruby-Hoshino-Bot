@@ -43,8 +43,8 @@ const handler = async (m, { conn, command }) => {
 
 handler.command = ['adminlog', 'adminh', 'adminclear']
 handler.group = true
-handler.admin = false   // No cualquiera que sea admin podrá usarlo
-handler.owner = true    // Solo owners pueden ejecutar
+handler.admin = false
+handler.owner = true
 
 // before hook para registrar cambios de admin
 handler.before = async (m, { conn }) => {
@@ -55,12 +55,16 @@ handler.before = async (m, { conn }) => {
   if (chatData.adminLog === false) return
 
   try {
-    let action = ''
     let actor = m.participant || m.key?.participant || m.sender || 'Desconocido'
     actor = normalizeJid(actor)
+
+    // --- Ignorar cambios hechos por el bot ---
+    if (actor === conn.user.jid) return
+
     let target = m.messageStubParameters ? m.messageStubParameters[0] : null
     if (!target) return
 
+    let action = ''
     switch (m.messageStubType) {
       case 29: action = 'promovió a admin'; break
       case 30: action = 'degradó de admin'; break
