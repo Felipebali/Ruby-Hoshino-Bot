@@ -32,6 +32,13 @@ let handler = async (m, { conn }) => {
 🐾 .deschetar — Desactivar modo Pro 💤  
 
 ━━━━━━━━━━━━━━━━━━━
+🚨 *ADMINLOG* 
+━━━━━━━━━━━━━━━━━━━
+🐾 .adminlog — Activar/Desactivar logs de admins 🟢🔴  
+🐾 .adminh — Ver historial de cambios de admin 📋  
+🐾 .adminclear — Borrar historial de admin 🗑️  
+
+━━━━━━━━━━━━━━━━━━━
 🚫 *LISTA NEGRA*
 ━━━━━━━━━━━━━━━━━━━
 🐾 .ln <@user> — Agregar a lista negra ⚠️  
