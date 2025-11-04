@@ -40,7 +40,7 @@ handler.help = ['sortear']
 handler.tags = ['grupo']
 handler.command = ['sortear']
 handler.group = true
-handler.admin = false  // Lo manejamos dentro del handler
+handler.admin = true // Lo manejamos dentro del handler
 handler.rowner = false // Lo manejamos dentro del handler
 
 export default handler
