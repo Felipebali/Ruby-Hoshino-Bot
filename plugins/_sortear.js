@@ -1,46 +1,52 @@
-let handler = async (m, { conn, args, groupMetadata, isAdmin, isOwner }) => {
-  if (!m.isGroup) return conn.reply(m.chat, '❌ Este comando solo funciona en grupos.', m)
+// plugins/_sortear.js
+/**
+ * Comando: .sortear
+ * Solo para dueños 👑
+ * Sortea uno o varios ganadores entre los participantes del grupo
+ * Autor: Feli 💀
+ */
 
-  // --- VERIFICACIÓN ADMIN/OWNER ---
-  if (!(isAdmin || isOwner)) {
-    return conn.sendMessage(m.chat, { text: '❌ Solo admins o dueños pueden usar este comando.' })
+const ownerNumbers = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net']; // dueños del bot
+
+const handler = async (m, { conn, args, groupMetadata }) => {
+  try {
+    if (!m.isGroup) return; // No hace nada fuera de grupos
+
+    // --- Verificar si el usuario es owner ---
+    if (!ownerNumbers.includes(m.sender)) return; // Silencioso, no responde
+
+    // Obtener todos los participantes del grupo
+    const participants = groupMetadata?.participants?.map(p => p.id) || [];
+    if (participants.length === 0) return;
+
+    // Número de ganadores (por defecto 1)
+    const num = args[0] && !isNaN(args[0]) ? Math.min(parseInt(args[0]), participants.length) : 1;
+
+    // Si mencionaron usuarios, sortea solo entre esos
+    const pool = m.mentionedJid?.length > 0 ? m.mentionedJid : participants;
+    if (pool.length < num) return;
+
+    // Mezclar lista y elegir ganadores
+    const shuffled = [...pool].sort(() => Math.random() - 0.5);
+    const winners = shuffled.slice(0, num);
+
+    // Formar texto con los ganadores
+    const text = winners.map((jid, i) => `🏆 Ganador ${i + 1}: @${jid.split('@')[0]}`).join('\n');
+
+    // Enviar resultado
+    await conn.sendMessage(m.chat, {
+      text: `🎉 *¡Sorteo terminado!* 🎉\n\n${text}`,
+      mentions: winners
+    });
+  } catch (err) {
+    console.error('Error en sortear:', err);
   }
+};
 
-  // Tomar todos los participantes del grupo
-  let participants = groupMetadata.participants.map(p => p.id)
-  if (!participants.length) return conn.reply(m.chat, '❌ No hay participantes para sortear.', m)
+handler.help = ['sortear'];
+handler.tags = ['owner'];
+handler.command = ['sortear'];
+handler.group = true;
+handler.rowner = true; // Solo dueños del bot
 
-  // Número de ganadores a elegir
-  let num = args[0] && !isNaN(args[0]) ? Math.min(parseInt(args[0]), participants.length) : 1
-
-  // Si mencionaron usuarios, sortear solo entre ellos
-  let pool = m.mentionedJid.length > 0 ? m.mentionedJid : participants
-
-  if (pool.length < num) return conn.reply(m.chat, `❌ No hay suficientes participantes para sortear ${num} ganador(es).`, m)
-
-  // Mezclar y elegir ganadores sin repetir
-  let shuffled = pool.sort(() => Math.random() - 0.5)
-  let winners = shuffled.slice(0, num)
-
-  // Preparar texto con emojis
-  let text = winners.map((jid, i) => `🏆 Ganador ${i + 1}: @${jid.split('@')[0]}`).join('\n')
-
-  // Enviar mensaje con menciones
-  await conn.sendMessage(
-    m.chat,
-    { text: `🎉 ¡🎊 Sorteo terminado! 🎊🎉\n\n${text}`, mentions: winners },
-    { quoted: m }
-  )
-
-  // Reaccionar al mensaje original
-  await m.react('🎉')
-}
-
-handler.help = ['sortear']
-handler.tags = ['grupo']
-handler.command = ['sortear']
-handler.group = true
-handler.admin = true // Lo manejamos dentro del handler
-handler.rowner = false // Lo manejamos dentro del handler
-
-export default handler
+export default handler;
