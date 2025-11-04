@@ -1,4 +1,3 @@
-
 // 📂 plugins/radmin.js
 const ownerNumbers = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net']; // Dueños
 const specialNumber = '59895044754@s.whatsapp.net'; // Usuario con rango especial
@@ -34,40 +33,21 @@ const handler = async (m, { conn, participants }) => {
   // 🛡️ Texto principal
   let texto = `
 ╔════════════════════╗
-🛡️ REGLAS PARA ADMINISTRADORES 🐾
+🛡️ REGLAS DE ADMINISTRADORES 🐾
 ╚════════════════════╝
 
-📋 *Objetivo:* Mantener la armonía, el respeto y el buen funcionamiento del grupo con la ayuda de los administradores y FelixCat_Bot 😼
+📋 *Normas básicas para mantener el orden:*
 
-1️⃣ *Respeto ante todo:*  
-Trata con respeto a todos los miembros, sin insultos, acoso o discriminación. Los conflictos deben resolverse con calma y diálogo.
-
-2️⃣ *Uso responsable del bot:*  
-Los comandos administrativos deben usarse con criterio. Evita expulsar o silenciar sin razón válida. Recuerda que el bot guarda registros.
-
-3️⃣ *Evita agregar contactos sospechosos:*  
-No invites números desconocidos o sospechosos de spam, publicidad o contenido inapropiado. Si tienes dudas, consulta con un dueño.
-
-4️⃣ *Orden y convivencia:*  
-Evita saturar el chat con mensajes innecesarios, stickers o contenido fuera de tema. Mantén un ambiente agradable para todos.
-
-5️⃣ *Gestión del grupo:*  
-No cambies el nombre, descripción, foto o reglas del grupo sin autorización del dueño o consenso entre los administradores.
-
-6️⃣ *Moderación con justicia:*  
-Usa los comandos (.kick, .cerrar, .abrir, .warn, etc.) de forma justa. Toda acción debe tener una razón clara y sin favoritismos.
-
-7️⃣ *Colaboración con el bot:*  
-Ayuda a mantener el orden cuando el bot actúe (antilink, antispam, advertencias). No lo desactives sin permiso de los dueños.
-
-8️⃣ *Transparencia:*  
-Informa a los dueños sobre cualquier conflicto, spam o comportamiento extraño. La comunicación evita malentendidos.
-
-9️⃣ *Privacidad y seguridad:*  
-No compartas información privada del grupo ni de sus miembros fuera del mismo. Protege la identidad y el bienestar de todos.
-
-🔟 *Ejemplo positivo:*  
-Un buen administrador da el ejemplo con su comportamiento. Promueve la unión, el respeto y la diversión sana.
+1️⃣ Respetar a todos los miembros.  
+2️⃣ No abusar de los comandos ni del poder.  
+3️⃣ No agregar números desconocidos o sospechosos.  
+4️⃣ No quitar ni añadir admins sin permiso.  
+5️⃣ No cambiar nombre, foto o descripción sin autorización.  
+6️⃣ Mantener el grupo limpio de spam, links o contenido indebido.  
+7️⃣ Usar los comandos del bot con responsabilidad (.kick, .cerrar, .abrir, etc).  
+8️⃣ Apoyar a los dueños en la moderación del grupo.  
+9️⃣ Resolver conflictos con respeto.  
+🔟 Dar el ejemplo como administrador.
 
 ══════════════════════
 👑 *Administración de ${groupName}:*\n`;
@@ -90,7 +70,7 @@ Un buen administrador da el ejemplo con su comportamiento. Promueve la unión, e
 
   texto += `🛡️ *Administradores:*\n${adminText || 'Ninguno'}\n\n`;
   texto += `📢 *Comando ejecutado por:* @${sender.split('@')[0]}\n\n`;
-  texto += `🐾 *FelixCat_Bot vigilando y cuidando el grupo 😼*`;
+  texto += `🐾 *FelixCat_Bot vigilando el grupo 😼*`;
 
   // 🔖 Menciones
   const allMentions = [
