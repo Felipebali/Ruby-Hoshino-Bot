@@ -1,11 +1,13 @@
-// 📂 plugins/admin-reglas.js
-let handler = async (m, { conn }) => {
-  if (!m.isGroup) return conn.sendMessage(m.chat, { text: '❗ Este comando solo puede usarse en grupos.' }, { quoted: m })
+// 📂 plugins/readmins.js
+const handler = async (m, { conn }) => {
+  if (!m.isGroup) return conn.sendMessage(m.chat, { text: '❗ Este comando solo funciona en grupos.' }, { quoted: m })
 
-  // Obtener info del grupo
   const groupMetadata = await conn.groupMetadata(m.chat)
   const admins = groupMetadata.participants.filter(p => p.admin)
+  if (admins.length === 0) return conn.sendMessage(m.chat, { text: '⚠️ No hay administradores en este grupo.' }, { quoted: m })
+
   const adminMentions = admins.map(a => a.id)
+  const listaAdmins = admins.map(a => `• @${a.id.split('@')[0]}`).join('\n')
 
   const texto = `
 ╔════════════════════╗
@@ -40,7 +42,7 @@ let handler = async (m, { conn }) => {
 
 ══════════════════════
 👑 *Administradores del grupo:*
-${admins.map(a => `• @${a.id.split('@')[0]}`).join('\n')}
+${listaAdmins}
 
 ══════════════════════
 💬 _Cumplir estas reglas mantiene el grupo seguro y divertido._
@@ -48,16 +50,13 @@ ${admins.map(a => `• @${a.id.split('@')[0]}`).join('\n')}
 ══════════════════════
 `
 
-  // Enviar mensaje con menciones
   await conn.sendMessage(m.chat, { text: texto, mentions: adminMentions }, { quoted: m })
-
-  // Reaccionar al mensaje original
   await conn.sendMessage(m.chat, { react: { text: '🛡️', key: m.key } })
 }
 
 handler.help = ['readmins']
 handler.tags = ['grupo', 'admin']
-handler.command = /^readmins$/i
+handler.command = /^\.?readmins$/i  // acepta .readmins o readmins
 handler.group = true
 
-export default handler 
+export default handler
