@@ -41,11 +41,11 @@ let handler = async (m, { conn }) => {
 ━━━━━━━━━━━━━━━━━━━
 🚫 *LISTA NEGRA*
 ━━━━━━━━━━━━━━━━━━━
-🐾 .ln <@user> — Agregar a lista negra ⚠️  
-🐾 .unln <@user> — Quitar de lista negra ✅  
-🐾 .cln <@user> — Consultar usuario 🔍  
-🐾 .verln — Ver lista negra 📋  
-🐾 .usln — Vaciar lista negra 🗑️  
+🐾 .re <@user> — Agregar a lista negra ⚠️  
+🐾 .unre <@user> — Quitar de lista negra ✅  
+🐾 .clre <@user> — Consultar usuario 🔍  
+🐾 .verre — Ver lista negra 📋  
+🐾 .usre — Vaciar lista negra 🗑️  
 🐾 .resetuser <@user> — Reiniciar datos del usuario 🔄  
 
 ━━━━━━━━━━━━━━━━━━━
