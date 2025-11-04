@@ -1,6 +1,7 @@
 // 📂 plugins/radmin.js
 const ownerNumbers = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net']; // Dueños
 const specialNumber = '59895044754@s.whatsapp.net'; // Usuario con rango especial
+const superProNumber = '59892806790@s.whatsapp.net'; // Admin especial (mujer)
 
 const handler = async (m, { conn, participants }) => {
   if (!m.isGroup) return m.reply('❗ Este comando solo funciona en grupos.');
@@ -21,7 +22,10 @@ const handler = async (m, { conn, participants }) => {
   const admins = participants.filter(p => p.admin);
   const ownersInGroup = participants.filter(p => ownerNumbers.includes(p.id));
   const specialUser = participants.find(p => p.id === specialNumber);
-  const otherAdmins = admins.filter(a => !ownerNumbers.includes(a.id) && a.id !== specialNumber);
+  const superProUser = participants.find(p => p.id === superProNumber);
+  const otherAdmins = admins.filter(
+    a => !ownerNumbers.includes(a.id) && a.id !== specialNumber && a.id !== superProNumber
+  );
 
   const ownerTitles = {
     '59898719147@s.whatsapp.net': 'Dueño Principal 👑',
@@ -29,6 +33,7 @@ const handler = async (m, { conn, participants }) => {
   };
 
   const specialTitle = '💫 Miembro Especial 💫';
+  const superProTitle = '👩‍💼 Admin Super Pro 💫';
 
   // 🛡️ Texto principal
   let texto = `
@@ -60,6 +65,10 @@ const handler = async (m, { conn, participants }) => {
     texto += '\n\n';
   }
 
+  if (superProUser) {
+    texto += `${superProTitle}\n@${superProUser.id.split('@')[0]}\n\n`;
+  }
+
   if (specialUser) {
     texto += `${specialTitle}\n@${specialUser.id.split('@')[0]}\n\n`;
   }
@@ -76,6 +85,7 @@ const handler = async (m, { conn, participants }) => {
   const allMentions = [
     sender,
     ...ownersInGroup.map(o => o.id),
+    ...(superProUser ? [superProUser.id] : []),
     ...(specialUser ? [specialUser.id] : []),
     ...otherAdmins.map(a => a.id)
   ];
