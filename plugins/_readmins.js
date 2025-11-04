@@ -1,18 +1,12 @@
 // 📂 plugins/readmins.js
 const handler = async (m, { conn }) => {
   try {
-    if (!m.isGroup) {
-      await conn.sendMessage(m.chat, { text: '❗ Este comando solo funciona en grupos.' }, { quoted: m })
-      return
-    }
+    if (!m.isGroup) return conn.sendMessage(m.chat, { text: '❗ Este comando solo funciona en grupos.' }, { quoted: m })
 
     const groupMetadata = await conn.groupMetadata(m.chat)
     const groupName = groupMetadata.subject || 'este grupo'
     const admins = groupMetadata.participants.filter(p => p.admin)
-    if (admins.length === 0) {
-      await conn.sendMessage(m.chat, { text: '⚠️ No hay administradores en este grupo.' }, { quoted: m })
-      return
-    }
+    if (admins.length === 0) return conn.sendMessage(m.chat, { text: '⚠️ No hay administradores en este grupo.' }, { quoted: m })
 
     const adminMentions = admins.map(a => a.id)
     const listaAdmins = admins.map(a => `• @${a.id.split('@')[0]}`).join('\n')
@@ -63,15 +57,16 @@ ${listaAdmins}
 
     await conn.sendMessage(m.chat, { text: texto, mentions: [...adminMentions, m.sender] }, { quoted: m })
     await conn.sendMessage(m.chat, { react: { text: '🛡️', key: m.key } })
-  } catch (err) {
-    console.error(err)
+  } catch (e) {
+    console.error(e)
     await conn.sendMessage(m.chat, { text: '⚠️ Ocurrió un error al mostrar las reglas de administradores.' }, { quoted: m })
   }
 }
 
 handler.help = ['readmins']
 handler.tags = ['grupo', 'admin']
-handler.command = /^\.?readmins$/i
+// 👇 así lo detecta correctamente tu bot
+handler.command = ['readmins'] 
 handler.group = true
 
 export default handler
