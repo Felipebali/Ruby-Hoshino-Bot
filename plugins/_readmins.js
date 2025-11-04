@@ -1,48 +1,59 @@
 // 📂 plugins/readmins.js
 const handler = async (m, { conn }) => {
-  if (!m.isGroup) return conn.sendMessage(m.chat, { text: '❗ Este comando solo funciona en grupos.' }, { quoted: m })
+  try {
+    if (!m.isGroup) {
+      await conn.sendMessage(m.chat, { text: '❗ Este comando solo funciona en grupos.' }, { quoted: m })
+      return
+    }
 
-  const groupMetadata = await conn.groupMetadata(m.chat)
-  const admins = groupMetadata.participants.filter(p => p.admin)
-  if (admins.length === 0) return conn.sendMessage(m.chat, { text: '⚠️ No hay administradores en este grupo.' }, { quoted: m })
+    const groupMetadata = await conn.groupMetadata(m.chat)
+    const groupName = groupMetadata.subject || 'este grupo'
+    const admins = groupMetadata.participants.filter(p => p.admin)
+    if (admins.length === 0) {
+      await conn.sendMessage(m.chat, { text: '⚠️ No hay administradores en este grupo.' }, { quoted: m })
+      return
+    }
 
-  const adminMentions = admins.map(a => a.id)
-  const listaAdmins = admins.map(a => `• @${a.id.split('@')[0]}`).join('\n')
+    const adminMentions = admins.map(a => a.id)
+    const listaAdmins = admins.map(a => `• @${a.id.split('@')[0]}`).join('\n')
+    const ejecutor = `@${m.sender.split('@')[0]}`
 
-  const texto = `
+    const texto = `
 ╔════════════════════╗
 🛡️ *REGLAS PARA ADMINISTRADORES* 🐾
 ╚════════════════════╝
 
-1️⃣ *Respetar a todos los miembros.*  
+1️⃣ *Respetar a todos los miembros.*
    No insultar ni generar conflictos.
 
-2️⃣ *No abusar de los comandos del bot.*  
+2️⃣ *No abusar de los comandos del bot.*
    Usa .kick, .cerrar, .abrir, etc., solo cuando sea necesario.
 
-3️⃣ *Evitar agregar números sospechosos.*  
+3️⃣ *Evitar agregar números sospechosos.*
    El bot puede tener antilink o lista negra.
 
-4️⃣ *Mantener el orden del grupo.*  
+4️⃣ *Mantener el orden del grupo.*
    Elimina spam, evita lenguaje ofensivo y fomenta el respeto.
 
-5️⃣ *No quitar admins sin motivo.*  
+5️⃣ *No quitar admins sin motivo.*
    Solo el dueño del grupo o el bot pueden hacerlo.
 
-6️⃣ *Usar los comandos correctamente:*  
+6️⃣ *Usar los comandos correctamente:*
    • .kick @usuario → Expulsar con razón válida  
    • .cerrar / .abrir → Controlar acceso  
    • .silenciar / .desilenciar → Mantener orden
 
-7️⃣ *Colaborar con el bot.*  
+7️⃣ *Colaborar con el bot.*
    Si el bot da advertencias o bloqueos, no las ignores.
 
-8️⃣ *No modificar nombre o descripción del grupo*  
+8️⃣ *No modificar nombre o descripción del grupo*
    Sin permiso del dueño o administradores principales.
 
 ══════════════════════
-👑 *Administradores del grupo:*
+👑 *Administradores del grupo ${groupName}:*
 ${listaAdmins}
+
+📢 *Reglas solicitadas por:* ${ejecutor}
 
 ══════════════════════
 💬 _Cumplir estas reglas mantiene el grupo seguro y divertido._
@@ -50,13 +61,17 @@ ${listaAdmins}
 ══════════════════════
 `
 
-  await conn.sendMessage(m.chat, { text: texto, mentions: adminMentions }, { quoted: m })
-  await conn.sendMessage(m.chat, { react: { text: '🛡️', key: m.key } })
+    await conn.sendMessage(m.chat, { text: texto, mentions: [...adminMentions, m.sender] }, { quoted: m })
+    await conn.sendMessage(m.chat, { react: { text: '🛡️', key: m.key } })
+  } catch (err) {
+    console.error(err)
+    await conn.sendMessage(m.chat, { text: '⚠️ Ocurrió un error al mostrar las reglas de administradores.' }, { quoted: m })
+  }
 }
 
 handler.help = ['readmins']
 handler.tags = ['grupo', 'admin']
-handler.command = /^\.?readmins$/i  // acepta .readmins o readmins
+handler.command = /^\.?readmins$/i
 handler.group = true
 
 export default handler
