@@ -1,19 +1,19 @@
+
 // 📂 plugins/radmin.js
-const ownerNumbers = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net']; // Dueños del bot
+const ownerNumbers = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net']; // Dueños
 const specialNumber = '59895044754@s.whatsapp.net'; // Usuario con rango especial
 
 const handler = async (m, { conn, participants }) => {
-  if (!m.isGroup)
-    return conn.sendMessage(m.chat, { text: '❗ Este comando solo funciona en grupos.' }, { quoted: m });
+  if (!m.isGroup) return m.reply('❗ Este comando solo funciona en grupos.');
 
   const sender = m.sender;
   const isOwner = ownerNumbers.includes(sender);
   const senderData = participants.find(p => p.id === sender);
   const isAdmin = senderData?.admin;
 
-  // Solo admins o dueños pueden usar el comando
+  // Permiso solo para admins o dueños
   if (!isOwner && !isAdmin) {
-    return conn.sendMessage(m.chat, { text: '🚫 Solo los administradores o los dueños pueden usar este comando.' }, { quoted: m });
+    return m.reply('🚫 Solo los administradores o los dueños pueden usar este comando.');
   }
 
   const groupMetadata = await conn.groupMetadata(m.chat);
@@ -31,73 +31,66 @@ const handler = async (m, { conn, participants }) => {
 
   const specialTitle = '💫 Miembro Especial 💫';
 
-  // 🧱 Texto principal
+  // 🛡️ Texto principal
   let texto = `
-╔══════════════════════════╗
-🛡️ *REGLAMENTO DE ADMINISTRADORES* 🐾
-╚══════════════════════════╝
+╔════════════════════╗
+🛡️ REGLAS PARA ADMINISTRADORES 🐾
+╚════════════════════╝
 
-📋 *Reglas generales para mantener el orden:*
-───────────────────────────────
-1️⃣ *Respeto ante todo*  
-   Trata a todos los miembros con amabilidad y sin discriminación.
+📋 *Objetivo:* Mantener la armonía, el respeto y el buen funcionamiento del grupo con la ayuda de los administradores y FelixCat_Bot 😼
 
-2️⃣ *Uso responsable de comandos*  
-   Utiliza comandos como .kick, .cerrar o .silenciar solo cuando sea necesario.
+1️⃣ *Respeto ante todo:*  
+Trata con respeto a todos los miembros, sin insultos, acoso o discriminación. Los conflictos deben resolverse con calma y diálogo.
 
-3️⃣ *Evitar conflictos internos*  
-   No se permiten insultos, provocaciones o discusiones públicas.
+2️⃣ *Uso responsable del bot:*  
+Los comandos administrativos deben usarse con criterio. Evita expulsar o silenciar sin razón válida. Recuerda que el bot guarda registros.
 
-4️⃣ *Evita agregar números desconocidos o sospechosos.*  
-   Esto puede activar el sistema *antilink* o *lista negra* del bot.
+3️⃣ *Evita agregar contactos sospechosos:*  
+No invites números desconocidos o sospechosos de spam, publicidad o contenido inapropiado. Si tienes dudas, consulta con un dueño.
 
-5️⃣ *No modificar el grupo sin autorización*  
-   Cambiar el nombre, descripción o foto solo con permiso del dueño o del bot.
+4️⃣ *Orden y convivencia:*  
+Evita saturar el chat con mensajes innecesarios, stickers o contenido fuera de tema. Mantén un ambiente agradable para todos.
 
-6️⃣ *Apoyar la seguridad del grupo*  
-   Si hay spam, links extraños o contenido inapropiado, actúa rápido.
+5️⃣ *Gestión del grupo:*  
+No cambies el nombre, descripción, foto o reglas del grupo sin autorización del dueño o consenso entre los administradores.
 
-7️⃣ *Colaborar con el bot FelixCat_Bot*  
-   Si el bot advierte o expulsa, revisa el motivo antes de intervenir.
+6️⃣ *Moderación con justicia:*  
+Usa los comandos (.kick, .cerrar, .abrir, .warn, etc.) de forma justa. Toda acción debe tener una razón clara y sin favoritismos.
 
-8️⃣ *Mantén la calma y el ejemplo*  
-   Los administradores son el reflejo del grupo. Sé ejemplo de respeto.
+7️⃣ *Colaboración con el bot:*  
+Ayuda a mantener el orden cuando el bot actúe (antilink, antispam, advertencias). No lo desactives sin permiso de los dueños.
 
-───────────────────────────────
-📘 *Recomendaciones prácticas:*
-• Usa *.kick @usuario motivo* solo si hay razón válida.  
-• Usa *.silenciar / .desilenciar* para mantener el orden temporal.  
-• Usa *.cerrar / .abrir* para controlar el acceso en situaciones de caos.  
-• No elimines a otros administradores sin justificación.  
+8️⃣ *Transparencia:*  
+Informa a los dueños sobre cualquier conflicto, spam o comportamiento extraño. La comunicación evita malentendidos.
 
-───────────────────────────────
+9️⃣ *Privacidad y seguridad:*  
+No compartas información privada del grupo ni de sus miembros fuera del mismo. Protege la identidad y el bienestar de todos.
+
+🔟 *Ejemplo positivo:*  
+Un buen administrador da el ejemplo con su comportamiento. Promueve la unión, el respeto y la diversión sana.
+
+══════════════════════
 👑 *Administración de ${groupName}:*\n`;
 
-  // Dueños del grupo
   if (ownersInGroup.length > 0) {
-    texto += `👑 *Dueños del Grupo:*\n`;
+    texto += '👑 *Dueños del Grupo:*\n';
     texto += ownersInGroup
       .map(o => `${ownerTitles[o.id] || 'Dueño'} @${o.id.split('@')[0]}`)
       .join('\n');
-    texto += `\n\n`;
+    texto += '\n\n';
   }
 
-  // Miembro especial
   if (specialUser) {
     texto += `${specialTitle}\n@${specialUser.id.split('@')[0]}\n\n`;
   }
 
-  // Administradores
   const adminText = otherAdmins
     .map(a => `• @${a.id.split('@')[0]}`)
     .join('\n');
-  texto += `🛡️ *Administradores:*\n${adminText || 'Ninguno'}\n\n`;
 
-  // Ejecutor
-  texto += `📢 *Comando ejecutado por:* @${sender.split('@')[0]}\n`;
-  texto += `══════════════════════════\n`;
-  texto += `😼 *FelixCat_Bot vigilando siempre...*\n`;
-  texto += `══════════════════════════`;
+  texto += `🛡️ *Administradores:*\n${adminText || 'Ninguno'}\n\n`;
+  texto += `📢 *Comando ejecutado por:* @${sender.split('@')[0]}\n\n`;
+  texto += `🐾 *FelixCat_Bot vigilando y cuidando el grupo 😼*`;
 
   // 🔖 Menciones
   const allMentions = [
@@ -110,12 +103,11 @@ const handler = async (m, { conn, participants }) => {
   // 📤 Enviar mensaje
   await conn.sendMessage(m.chat, { text: texto, mentions: allMentions }, { quoted: m });
   await conn.sendMessage(m.chat, { react: { text: '🛡️', key: m.key } });
-
   console.log('✅ Comando .radmin ejecutado correctamente');
 };
 
 handler.command = ['radmin'];
-handler.tags = ['group', 'admin'];
+handler.tags = ['group'];
 handler.help = ['radmin'];
 handler.group = true;
 
