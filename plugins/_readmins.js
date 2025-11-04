@@ -1,5 +1,7 @@
-// 📂 plugins/readmins.js
+// 📂 plugins/radmin.js
 const handler = async (m, { conn }) => {
+  console.log('💬 Se detectó un mensaje, verificando si es .radmin...')
+
   try {
     if (!m.isGroup) {
       await conn.sendMessage(m.chat, { text: '❗ Este comando solo funciona en grupos.' }, { quoted: m })
@@ -60,18 +62,18 @@ ${listaAdmins}
 
     await conn.sendMessage(m.chat, { react: { text: '🛡️', key: m.key } })
 
-    console.log('✅ Comando .readmins ejecutado correctamente')
+    console.log('✅ Comando .radmin ejecutado correctamente')
   } catch (e) {
-    console.error('❌ Error en readmins:', e)
+    console.error('❌ Error en .radmin:', e)
     await conn.sendMessage(m.chat, { text: '⚠️ Ocurrió un error al ejecutar el comando.' }, { quoted: m })
   }
 }
 
-handler.help = ['readmins']
+handler.help = ['radmin']
 handler.tags = ['grupo', 'admin']
-handler.command = /^readmins$/i
+handler.command = /^\.?radmin$/i  // ✅ Detecta .radmin o radmin
 handler.group = true
 
 export default handler
 
-console.log('🟢 Plugin readmins.js cargado correctamente')
+console.log('🟢 Plugin radmin.js cargado correctamente')
