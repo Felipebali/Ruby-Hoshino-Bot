@@ -1,4 +1,4 @@
-// plugins/adivinanza.js
+// 📂 plugins/juegos-adivinanza.js
 const adivinanzas = [
   { pregunta: '🌕 ¿Qué cosa cuanto más grande menos se ve?', respuesta: 'oscuridad' },
   { pregunta: '🦴 ¿Qué se rompe sin tocarlo?', respuesta: 'silencio' },
@@ -9,69 +9,78 @@ const adivinanzas = [
   { pregunta: '⏳ ¿Qué corre pero nunca camina?', respuesta: 'tiempo' },
   { pregunta: '🔑 ¿Qué tiene llaves pero no puede abrir puertas?', respuesta: 'piano' },
   { pregunta: '🌳 ¿Qué tiene ramas pero no hojas ni tronco?', respuesta: 'árbol genealógico' },
-  { pregunta: '📦 ¿Qué tiene contenido pero está vacío?', respuesta: 'caja' },
   { pregunta: '🛏️ ¿Qué tiene una cama pero nunca duerme?', respuesta: 'río' },
   { pregunta: '🕰️ ¿Qué tiene manos pero no puede aplaudir?', respuesta: 'reloj' },
   { pregunta: '📚 ¿Qué tiene hojas pero no es un árbol?', respuesta: 'libro' },
-  { pregunta: '🏠 ¿Qué tiene puerta y ventanas pero no es casa?', respuesta: 'microondas' },
-  { pregunta: '🎈 ¿Qué se infla pero no es globo de helio?', respuesta: 'neumático' },
-  { pregunta: '👀 ¿Qué tiene ojos pero no puede ver?', respuesta: 'aguja' },
-  { pregunta: '🍳 ¿Qué se rompe al decir su nombre?', respuesta: 'silencio' },
-  { pregunta: '⚡ ¿Qué va rápido pero no tiene patas?', respuesta: 'electricidad' },
-  { pregunta: '🖊️ ¿Qué tiene tinta pero no es un calamar?', respuesta: 'bolígrafo' },
-  { pregunta: '🕳️ ¿Qué tiene un agujero pero sigue siendo útil?', respuesta: 'aguja' },
-  { pregunta: '🚪 ¿Qué se abre pero nunca se cierra?', respuesta: 'mañana' },
-  { pregunta: '🌊 ¿Qué siempre fluye pero nunca se detiene?', respuesta: 'agua' },
-  { pregunta: '🌬️ ¿Qué sopla pero no tiene boca?', respuesta: 'viento' },
-  { pregunta: '🍽️ ¿Qué se sirve pero nunca se come?', respuesta: 'mesa' },
-  { pregunta: '🛎️ ¿Qué suena pero nunca habla?', respuesta: 'campana' },
-  { pregunta: '🔒 ¿Qué se puede abrir y cerrar sin llave?', respuesta: 'cerradura' },
-  { pregunta: '💡 ¿Qué ilumina pero no es el sol?', respuesta: 'bombilla' },
-  { pregunta: '🎵 ¿Qué se puede escuchar pero no se ve?', respuesta: 'música' },
-  { pregunta: '🧩 ¿Qué encaja pero no es un rompecabezas?', respuesta: 'pieza' },
   { pregunta: '🕯️ ¿Qué se consume pero no se come?', respuesta: 'vela' }
 ];
 
-const handler = async (m, { conn }) => {
+// Normalizar texto (quita acentos y símbolos)
+function normalizeText(s) {
+  if (!s) return '';
+  s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return s.replace(/[^0-9a-zA-Z\s]/g, '').trim().toLowerCase();
+}
+
+let handler = async (m, { conn }) => {
   const chat = global.db.data.chats[m.chat] || {};
-  if (!chat.games) return m.reply('❌ Los mini-juegos están desactivados en este chat. Usa .juegos para activarlos.');
+  if (chat.games === false)
+    return conn.sendMessage(m.chat, { text: '⚠️ Los mini-juegos están desactivados. Usa *.juegos* para activarlos.' }, { quoted: m });
 
   const adivinanza = adivinanzas[Math.floor(Math.random() * adivinanzas.length)];
-  conn.adivinanza = conn.adivinanza || {};
-  conn.adivinanza[m.chat] = {
-    ...adivinanza,
-    timeout: setTimeout(() => {
-      if (conn.adivinanza[m.chat]) {
-        conn.sendMessage(m.chat, { text: `⏰ Tiempo terminado.\nLa respuesta era: *${adivinanza.respuesta}* 😸` });
-        delete conn.adivinanza[m.chat];
+
+  if (!global.riddleGame) global.riddleGame = {};
+
+  const msg = await conn.sendMessage(m.chat, {
+    text: `🧩 *ADIVINANZA FELIXCAT* 🐾\n\n${adivinanza.pregunta}\n\n💬 *Responde citando este mensaje con tu respuesta.*\n⏱️ *Tienes 30 segundos!*`
+  }, { quoted: m });
+
+  global.riddleGame[m.chat] = {
+    answer: adivinanza.respuesta,
+    answered: false,
+    messageId: msg?.key?.id,
+    timeout: setTimeout(async () => {
+      const game = global.riddleGame?.[m.chat];
+      if (game && !game.answered) {
+        await conn.sendMessage(m.chat, { text: `⏰ Tiempo terminado! La respuesta era *${game.answer}* 😺` }, { quoted: msg });
+        delete global.riddleGame[m.chat];
       }
     }, 30000)
   };
-
-  await conn.sendMessage(m.chat, {
-    text: `❓ *Adivinanza FelixCat* 🐾\n\n${adivinanza.pregunta}\n\n⌛ Tienes 30 segundos para responder.`
-  }, { quoted: m });
-}
+};
 
 handler.before = async (m, { conn }) => {
-  conn.adivinanza = conn.adivinanza || {};
-  const juego = conn.adivinanza[m.chat];
-  if (!juego) return;
+  const game = global.riddleGame?.[m.chat];
+  if (!game || game.answered || !m.text) return;
 
-  const respuestaUsuario = m.text.toLowerCase().trim();
-  const respuestaCorrecta = juego.respuesta.toLowerCase();
+  const quotedId = m.quoted?.key?.id || m.quoted?.id || null;
+  if (!quotedId || quotedId !== game.messageId) return;
 
-  if (respuestaUsuario === respuestaCorrecta) {
-    clearTimeout(juego.timeout);
-    await conn.sendMessage(m.chat, { text: `🎉 ¡Correcto, ${m.pushName}! Era *${juego.respuesta}* 😺` });
-    delete conn.adivinanza[m.chat];
+  const userAnswer = normalizeText(m.text);
+  const correctAnswer = normalizeText(game.answer);
+
+  if (userAnswer === correctAnswer) {
+    clearTimeout(game.timeout);
+    game.answered = true;
+    const winMsgs = [
+      `🎉 ¡Correcto, ${m.pushName}! Era *${game.answer}* 😺`,
+      `🏆 Muy bien, ${m.pushName}! La respuesta era *${game.answer}*!`,
+      `🔥 Genial, ${m.pushName}! Acertaste *${game.answer}*!`
+    ];
+    await conn.sendMessage(m.chat, { text: winMsgs[Math.floor(Math.random() * winMsgs.length)] }, { quoted: m });
+    delete global.riddleGame[m.chat];
   } else {
-    await conn.sendMessage(m.chat, { text: `❌ Incorrecto, ${m.pushName}. Intenta de nuevo.` });
+    const failMsgs = [
+      '❌ Incorrecto!',
+      '🤔 No es esa.',
+      '🙃 Casi, pero no.',
+      '💀 Fallaste!'
+    ];
+    await conn.sendMessage(m.chat, { text: failMsgs[Math.floor(Math.random() * failMsgs.length)] }, { quoted: m });
   }
+};
 
-  return true;
-}
-
-handler.command = ['adivinanza'];
+handler.command = ['adivinanza', 'riddle'];
 handler.group = true;
+
 export default handler;
