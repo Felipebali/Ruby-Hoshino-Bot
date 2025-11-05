@@ -1,6 +1,7 @@
-// plugins/capital.js
+// 📂 plugins/juegos-capital.js
 
-let capitales = {
+// Base de datos de países y capitales
+const capitales = {
   "Uruguay": "Montevideo",
   "Argentina": "Buenos Aires",
   "Brasil": "Brasilia",
@@ -33,52 +34,80 @@ let capitales = {
   "Grecia": "Atenas"
 };
 
-let partidas = {};
+// Normalizar texto (quita acentos y símbolos)
+function normalizeText(s) {
+  if (!s) return '';
+  s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return s.replace(/[^0-9a-zA-Z\s]/g, '').trim().toLowerCase();
+}
 
 let handler = async (m, { conn }) => {
-  const chat = global.db.data.chats[m.chat] || {};
-  if (!chat.games) return conn.reply(m.chat, '🎮 Los mini-juegos están desactivados en este grupo.\nUsa *.juegos* para activarlos.', m);
+  const chatSettings = global.db.data.chats[m.chat] || {};
+  if (chatSettings.games === false)
+    return conn.sendMessage(m.chat, { text: '🎮 Los mini-juegos están desactivados.\nUsa *.juegos* para activarlos.' }, { quoted: m });
 
-  let id = m.chat;
-  if (id in partidas) {
-    return conn.reply(m.chat, '⚠️ Ya hay una partida en curso. Espera que termine.', m);
-  }
+  if (!global.capitalGame) global.capitalGame = {};
 
-  let paises = Object.keys(capitales);
-  let pais = paises[Math.floor(Math.random() * paises.length)];
-  let capital = capitales[pais];
+  const paises = Object.keys(capitales);
+  const pais = paises[Math.floor(Math.random() * paises.length)];
+  const capital = capitales[pais];
 
-  conn.reply(m.chat, `🌍 ¿Cuál es la capital de *${pais}*?\nTienes 20 segundos para responder...`, m);
+  // Enviar pregunta principal
+  const msg = await conn.sendMessage(m.chat, {
+    text: `🌍 *ADIVINA LA CAPITAL*\n\n¿Cuál es la capital de *${pais}*?\n\n💬 *Responde citando este mensaje con tu respuesta.*\n⏱️ *Tienes 25 segundos!*`
+  }, { quoted: m });
 
-  partidas[id] = { capital, tiempo: setTimeout(() => {
-    if (partidas[id]) {
-      conn.reply(m.chat, `⏰ Se acabó el tiempo.\nLa capital correcta era *${capital}*.`, m);
-      delete partidas[id];
-    }
-  }, 20000) };
+  // Guardar la partida
+  global.capitalGame[m.chat] = {
+    country: pais,
+    answer: capital,
+    answered: false,
+    messageId: msg?.key?.id,
+    timeout: setTimeout(async () => {
+      const game = global.capitalGame?.[m.chat];
+      if (game && !game.answered) {
+        await conn.sendMessage(m.chat, { text: `⏰ Se acabó el tiempo! La capital de *${game.country}* era *${game.answer}* 🏙️` }, { quoted: msg });
+        delete global.capitalGame[m.chat];
+      }
+    }, 25000)
+  };
 };
 
+// Verificar respuestas citadas
 handler.before = async (m, { conn }) => {
-  const chat = global.db.data.chats[m.chat] || {};
-  if (!chat.games) return; // si los juegos están desactivados, no responde nada
+  const game = global.capitalGame?.[m.chat];
+  if (!game || game.answered || !m.text) return;
 
-  let id = m.chat;
-  if (!(id in partidas)) return;
+  const quotedId = m.quoted?.key?.id || m.quoted?.id || null;
+  if (!quotedId || quotedId !== game.messageId) return;
 
-  let respuesta = m.text?.trim().toLowerCase();
-  let correcta = partidas[id].capital.toLowerCase();
+  const userAnswer = normalizeText(m.text);
+  const correctAnswer = normalizeText(game.answer);
 
-  if (respuesta === correcta) {
-    conn.reply(m.chat, `✅ ¡Correcto! *${partidas[id].capital}* es la capital.`, m);
-    clearTimeout(partidas[id].tiempo);
-    delete partidas[id];
-  } else if (respuesta.length > 1) {
-    conn.reply(m.chat, `❌ Incorrecto. Intenta otra vez.`, m);
+  if (userAnswer === correctAnswer) {
+    clearTimeout(game.timeout);
+    game.answered = true;
+
+    const winMsgs = [
+      `🏆 ¡Correcto, ${m.pushName}! La capital de *${game.country}* es *${game.answer}*! 🇺🇳`,
+      `🎉 ¡Muy bien, ${m.pushName}! Era *${game.answer}*!`,
+      `🔥 Genial, ${m.pushName}! Acertaste: *${game.answer}*!`
+    ];
+
+    await conn.sendMessage(m.chat, { text: winMsgs[Math.floor(Math.random() * winMsgs.length)] }, { quoted: m });
+    delete global.capitalGame[m.chat];
+  } else {
+    const failMsgs = [
+      '❌ Incorrecto.',
+      '🤔 No es esa.',
+      '🙃 Casi, pero no.',
+      '💀 Fallaste!'
+    ];
+    await conn.sendMessage(m.chat, { text: failMsgs[Math.floor(Math.random() * failMsgs.length)] }, { quoted: m });
   }
 };
 
-handler.help = ['capital'];
-handler.tags = ['juegos'];
-handler.command = ['capital'];
+handler.command = ['capital', 'capitales'];
+handler.group = true;
 
 export default handler;
