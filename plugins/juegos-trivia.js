@@ -1,91 +1,73 @@
-// 📂 plugins/juegos-trivia.js
+// plugins/trivia.js
+let activeTrivia = {}
+
+const preguntasTrivia = [
+  { pregunta: "¿Cuál es el planeta más grande del sistema solar?", opciones: ["Marte", "Júpiter", "Saturno", "Neptuno"], respuesta: "Júpiter" },
+  { pregunta: "¿Quién pintó 'La última cena'?", opciones: ["Leonardo da Vinci", "Miguel Ángel", "Picasso", "Van Gogh"], respuesta: "Leonardo da Vinci" },
+  { pregunta: "¿Cuál es el río más largo del mundo?", opciones: ["Amazonas", "Nilo", "Yangtsé", "Misisipi"], respuesta: "Amazonas" },
+  { pregunta: "¿En qué año llegó el hombre a la Luna?", opciones: ["1965", "1969", "1971", "1959"], respuesta: "1969" },
+  { pregunta: "¿Cuál es el animal terrestre más veloz?", opciones: ["León", "Tigre", "Guepardo", "Lobo"], respuesta: "Guepardo" },
+  { pregunta: "¿Cuál es el océano más grande?", opciones: ["Atlántico", "Índico", "Pacífico", "Ártico"], respuesta: "Pacífico" },
+  { pregunta: "¿Qué gas respiramos para vivir?", opciones: ["Nitrógeno", "Oxígeno", "Dióxido de carbono", "Helio"], respuesta: "Oxígeno" },
+  { pregunta: "¿Cuál es la capital de Japón?", opciones: ["Seúl", "Tokio", "Kioto", "Osaka"], respuesta: "Tokio" },
+  { pregunta: "¿Quién escribió 'Cien años de soledad'?", opciones: ["Mario Vargas Llosa", "Gabriel García Márquez", "Pablo Neruda", "Julio Cortázar"], respuesta: "Gabriel García Márquez" },
+  { pregunta: "¿Cuál es el metal más ligero?", opciones: ["Aluminio", "Hierro", "Litio", "Mercurio"], respuesta: "Litio" },
+  { pregunta: "¿Qué país ganó el Mundial de fútbol 2022?", opciones: ["Francia", "Brasil", "Argentina", "España"], respuesta: "Argentina" },
+  { pregunta: "¿Cuál es el idioma más hablado del mundo?", opciones: ["Inglés", "Mandarín", "Español", "Hindi"], respuesta: "Mandarín" },
+  { pregunta: "¿Qué elemento químico tiene el símbolo ‘O’?", opciones: ["Oro", "Oxígeno", "Osmio", "Oxalato"], respuesta: "Oxígeno" },
+  { pregunta: "¿Qué país tiene forma de bota?", opciones: ["Portugal", "Italia", "Grecia", "España"], respuesta: "Italia" },
+  { pregunta: "¿Cuál es el inventor del teléfono?", opciones: ["Nikola Tesla", "Alexander Graham Bell", "Thomas Edison", "Einstein"], respuesta: "Alexander Graham Bell" },
+  { pregunta: "¿Cuál es la capital de Canadá?", opciones: ["Toronto", "Ottawa", "Vancouver", "Montreal"], respuesta: "Ottawa" },
+  { pregunta: "¿Qué vitamina se obtiene del sol?", opciones: ["Vitamina A", "Vitamina C", "Vitamina D", "Vitamina B12"], respuesta: "Vitamina D" },
+  { pregunta: "¿Cuál es el país más poblado del mundo?", opciones: ["China", "India", "Estados Unidos", "Indonesia"], respuesta: "India" },
+  { pregunta: "¿Qué órgano bombea la sangre en el cuerpo?", opciones: ["Pulmón", "Corazón", "Riñón", "Hígado"], respuesta: "Corazón" },
+  { pregunta: "¿Qué instrumento mide la temperatura?", opciones: ["Barómetro", "Termómetro", "Higrómetro", "Anemómetro"], respuesta: "Termómetro" }
+]
+
 let handler = async (m, { conn }) => {
-    const chatSettings = global.db?.data?.chats?.[m.chat] || {};
-    if (chatSettings.games === false) {
-        return conn.sendMessage(m.chat, { text: '⚠️ Los juegos están desactivados en este chat. Usa *.juegos* para activarlos.' }, { quoted: m });
+  const chat = global.db.data.chats[m.chat] || {}
+
+  // 🟡 Si los juegos están desactivados
+  if (!chat.games) {
+    return conn.reply(m.chat, "🚫 Los mini-juegos están desactivados en este grupo.\nUsa *.juegos* para activarlos.", m)
+  }
+
+  if (activeTrivia[m.chat]) return conn.reply(m.chat, "❗ Ya hay una trivia en curso. Espera a que termine.", m)
+
+  const pregunta = preguntasTrivia[Math.floor(Math.random() * preguntasTrivia.length)]
+  const texto = `🎯 *Trivia de Conocimiento* 🎯\n\n${pregunta.pregunta}\n\n${pregunta.opciones.map((o, i) => `${i + 1}) ${o}`).join('\n')}\n\n📝 *Responde escribiendo el nombre completo de la respuesta.*`
+
+  await conn.reply(m.chat, texto, m)
+  activeTrivia[m.chat] = { ...pregunta }
+
+  // ⏳ Tiempo límite
+  activeTrivia[m.chat].timeout = setTimeout(() => {
+    if (activeTrivia[m.chat]) {
+      conn.reply(m.chat, `⏰ Tiempo agotado. La respuesta correcta era: *${pregunta.respuesta}*.`)
+      delete activeTrivia[m.chat]
     }
-
-    const preguntasTrivia = [
-        { pregunta: "¿Cuál es el planeta más grande del sistema solar?", opciones: ["A) Marte", "B) Júpiter", "C) Saturno", "D) Neptuno"], respuesta: "B" },
-        { pregunta: "¿Quién pintó 'La última cena'?", opciones: ["A) Leonardo da Vinci", "B) Miguel Ángel", "C) Picasso", "D) Van Gogh"], respuesta: "A" },
-        { pregunta: "¿Cuál es el río más largo del mundo?", opciones: ["A) Amazonas", "B) Nilo", "C) Yangtsé", "D) Misisipi"], respuesta: "A" },
-        { pregunta: "¿En qué año llegó el hombre a la Luna?", opciones: ["A) 1965", "B) 1969", "C) 1971", "D) 1959"], respuesta: "B" },
-        { pregunta: "¿Cuál es el animal terrestre más veloz?", opciones: ["A) León", "B) Tigre", "C) Guepardo", "D) Lobo"], respuesta: "C" },
-        { pregunta: "¿Cuál es el océano más grande?", opciones: ["A) Atlántico", "B) Índico", "C) Pacífico", "D) Ártico"], respuesta: "C" },
-        { pregunta: "¿Qué gas respiramos para vivir?", opciones: ["A) Nitrógeno", "B) Oxígeno", "C) Dióxido de carbono", "D) Helio"], respuesta: "B" },
-        { pregunta: "¿Cuál es la capital de Japón?", opciones: ["A) Seúl", "B) Tokio", "C) Kioto", "D) Osaka"], respuesta: "B" },
-        { pregunta: "¿Quién escribió 'Cien años de soledad'?", opciones: ["A) Mario Vargas Llosa", "B) Gabriel García Márquez", "C) Pablo Neruda", "D) Julio Cortázar"], respuesta: "B" },
-        { pregunta: "¿Qué país ganó el Mundial de fútbol 2022?", opciones: ["A) Francia", "B) Brasil", "C) Argentina", "D) España"], respuesta: "C" }
-    ];
-
-    const question = preguntasTrivia[Math.floor(Math.random() * preguntasTrivia.length)];
-
-    const text = `🧠 *TRIVIA DE CONOCIMIENTO*\n\n${question.pregunta}\n\n${question.opciones.join('\n')}\n\nResponde *citando ESTE mensaje* con la letra correcta (A, B, C o D).\n⏱️ *Tienes 30 segundos!*`;
-
-    const msg = await conn.sendMessage(m.chat, { text });
-
-    if (!global.triviaGame) global.triviaGame = {};
-
-    global.triviaGame[m.chat] = {
-        answer: question.respuesta,
-        messageId: msg?.key?.id || null,
-        answered: false,
-        timeout: setTimeout(async () => {
-            const game = global.triviaGame?.[m.chat];
-            if (game && !game.answered) {
-                const failMsgs = [
-                    `⏰ Se acabó el tiempo! La respuesta correcta era *${game.answer}*`,
-                    `💀 Nadie acertó, la opción correcta era *${game.answer}*`
-                ];
-                await conn.sendMessage(m.chat, { text: failMsgs[Math.floor(Math.random() * failMsgs.length)] }, { quoted: msg });
-                delete global.triviaGame[m.chat];
-            }
-        }, 30000)
-    };
-};
-
-// 🔠 Normalizar texto
-function normalizeText(s) {
-    if (!s) return '';
-    return s.replace(/[^a-zA-Z]/g, '').trim().toUpperCase();
+  }, 30000)
 }
 
-// 📩 Capturar respuesta
-handler.before = async (m, { conn }) => {
-    const game = global.triviaGame?.[m.chat];
-    if (!game || game.answered || !m.text) return;
+handler.command = /^trivia$/i
+handler.group = true
+export default handler
 
-    const quotedId = m.quoted?.key?.id || m.quoted?.id || m.quoted?.stanzaId || null;
-    if (!quotedId || quotedId !== game.messageId) return;
+// 📩 Captura las respuestas de los usuarios
+handler.all = async function (m) {
+  const conn = global.conn
+  if (!m.text || !activeTrivia[m.chat]) return
+  const juego = activeTrivia[m.chat]
 
-    const userAnswer = normalizeText(m.text);
-    const correctAnswer = normalizeText(game.answer);
+  const respuestaUsuario = m.text.trim().toLowerCase()
+  const respuestaCorrecta = juego.respuesta.toLowerCase()
 
-    if (!['A', 'B', 'C', 'D'].includes(userAnswer)) return;
-
-    if (userAnswer === correctAnswer) {
-        clearTimeout(game.timeout);
-        game.answered = true;
-        const winMsgs = [
-            `✅ Correcto, *${m.pushName || 'usuario'}*! Era la opción *${game.answer}* 🎉`,
-            `🏆 Bien hecho, *${m.pushName || 'usuario'}*! Respuesta correcta: *${game.answer}*`,
-            `👏 Excelente! La opción *${game.answer}* era la correcta.`
-        ];
-        await conn.sendMessage(m.chat, { text: winMsgs[Math.floor(Math.random() * winMsgs.length)] }, { quoted: m });
-        delete global.triviaGame[m.chat];
-    } else {
-        const failMsgs = [
-            `❌ Incorrecto, *${m.pushName || 'usuario'}*!`,
-            `🙃 No era esa, *${m.pushName || 'usuario'}*!`,
-            `🤔 Fallaste, la respuesta no es *${userAnswer}*.`
-        ];
-        await conn.sendMessage(m.chat, { text: failMsgs[Math.floor(Math.random() * failMsgs.length)] }, { quoted: m });
-    }
-};
-
-handler.command = ['trivia'];
-handler.help = ['trivia'];
-handler.tags = ['juegos'];
-handler.group = false;
-
-export default handler;
+  // Si la respuesta coincide
+  if (respuestaUsuario === respuestaCorrecta) {
+    clearTimeout(juego.timeout)
+    await conn.reply(m.chat, `✅ ¡Correcto, ${m.pushName || "usuario"}! La respuesta era *${juego.respuesta}*.`)
+    delete activeTrivia[m.chat]
+  } else {
+    await conn.reply(m.chat, `❌ Incorrecto, ${m.pushName || "usuario"}. Intenta de nuevo.`)
+  }
+}
