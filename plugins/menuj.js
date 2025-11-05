@@ -1,19 +1,19 @@
-// plugins/menuj.js
+// 📂 plugins/menuj.js
 
 let handler = async (m, { conn }) => {
-    try {
-        const chatSettings = global.db.data.chats[m.chat] || {};
-        const gamesEnabled = chatSettings.games !== false; // Por defecto activados
+  try {
+    const chatSettings = global.db.data.chats[m.chat] || {};
+    const gamesEnabled = chatSettings.games !== false; // Por defecto activados
 
-        let menuText = `╔═════════════════════╗
+    let menuText = `╔═════════════════════╗
 🎮  MINI-JUEGOS FELIXCAT 🐾
 ╚═════════════════════╝
 Estado: ${gamesEnabled ? '🟢 Activados' : '🔴 Desactivados'}
 ────────────────────────────
 `;
 
-        if (gamesEnabled) {
-            menuText += `
+    if (gamesEnabled) {
+      menuText += `
 🎲 *Juegos Disponibles:*
 
 🧠 *.math* → Operaciones matemáticas
@@ -29,28 +29,31 @@ Estado: ${gamesEnabled ? '🟢 Activados' : '🔴 Desactivados'}
 👑 *.top10* → Top 10 divertidos del grupo
 🍽️ *.plato* → Adivina la opción correcta
    🟢 Puede ser comida, objetos o personajes
+
+💅 *.trolo <@user>* → Test de trolez (versión 2.1)
+🧢 *.cornudo <@user>* / *.cornuda <@user>* → Test de cornudez (versión 2.1)
+💔 *.infiel <@user>* → Test de infidelidad (versión 2.1)
 😈 *.puta <@user>* → Comando divertido/insulto gracioso
-😹 *.trolo <@user>* → Comando divertido/insulto gracioso
 🎉 *.sortear <número> [premio]* → Sortea participantes del grupo
 ────────────────────────────
 `;
-        } else {
-            menuText += `⚠️ *Mini-juegos desactivados.*  
+    } else {
+      menuText += `⚠️ *Mini-juegos desactivados.*  
 Menciona a un admin para activarlos 🔴
 ────────────────────────────
 `;
-        }
-
-        menuText += `👑 *Powered by FelixCat 🐾*`;
-
-        // Enviar solo el texto (sin imagen)
-        await conn.sendMessage(m.chat, { text: menuText }, { quoted: m });
-
-    } catch (e) {
-        console.error(e);
-        await conn.reply(m.chat, '✖️ Error al mostrar el menú de mini-juegos.', m);
     }
-}
+
+    menuText += `👑 *Powered by FelixCat 🐾*`;
+
+    // Enviar solo el texto (sin imagen)
+    await conn.sendMessage(m.chat, { text: menuText }, { quoted: m });
+
+  } catch (e) {
+    console.error(e);
+    await conn.reply(m.chat, '✖️ Error al mostrar el menú de mini-juegos.', m);
+  }
+};
 
 handler.command = ['menuj', 'mj'];
 handler.group = true;
