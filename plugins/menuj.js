@@ -33,6 +33,7 @@ Estado: ${gamesEnabled ? '🟢 Activados' : '🔴 Desactivados'}
 💅 *.trolo <@user>* → Test de trolez (versión 2.1)
 🧢 *.cornudo <@user>* / *.cornuda <@user>* → Test de cornudez (versión 2.1)
 💔 *.infiel <@user>* → Test de infidelidad (versión 2.1)
+🔥 *.zorra <@user>* / *.zorro <@user>* → Test de zorreada (versión 2.1)
 😈 *.puta <@user>* → Comando divertido/insulto gracioso
 🎉 *.sortear <número> [premio]* → Sortea participantes del grupo
 ────────────────────────────
