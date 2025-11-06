@@ -3,72 +3,126 @@ const botname = global.botname || '😸 FelixCat-Bot 😸';
 const creador = 'Felipe';
 const versionBot = '10.5.0';
 
-let tags = { 
-  'serbot': '🤖 SUB-BOTS 🐾',
-  'info': '🌀 INFOS 🐱',
-  'main': '📜 MENÚ FELINO 🐾',
-  'nable': '⚡ MODO AVANZADO 🐾',
-  'game': '🎮 JUEGOS GATUNOS 🐱',
-  'group': '📚 GRUPOS 🐾',
-  'downloader': '📥 DESCARGAS 😺',
-  'sticker': '🖼️ STICKERS 🐾',
-  'tools': '🧰 HERRAMIENTAS 😼',
-  'nsfw': '🔞 NSFW 🐾',
-  'especiales': '📂 MENÚS ESPECIALES 🐾'
+let handler = async (m, { conn }) => {
+  try {
+    const saludo = getSaludoGatuno();
+    const fecha = new Date().toLocaleString('es-UY', {
+      timeZone: 'America/Montevideo',
+      hour12: false
+    });
+
+    let menu = `
+╭━━━━━━━🐾━━━━━━━╮
+│ 😺 *${botname}* 😺
+│ 👑 *Creador:* ${creador}
+│ ⚙️ *Versión:* ${versionBot}
+│ ⏰ *Hora:* ${fecha}
+│ 💬 *${saludo}*
+╰━━━━━━━🐾━━━━━━━╯
+
+┏━━━ 🛡️ *SEGURIDAD DEL GRUPO* ━━━┓
+┃ 🔗 .antilink – Bloquea enlaces externos
+┃ 🧩 .antilink2 – Modo fuerte anti-links
+┃ 🚫 .antispam – Evita mensajes repetitivos
+┃ 🤖 .antibot – Expulsa otros bots
+┃ ☣️ .antitoxico – Frena lenguaje ofensivo
+┃ 👻 .antifake – Bloquea números falsos
+┗━━━━━━━━━━━━━━━━━━━━━┛
+
+┏━━━ 📥 *DESCARGAS* ━━━┓
+┃ 📲 .apk – Descarga apps APK
+┃ 🎧 .spotify – Música desde Spotify
+┃ 📘 .fb – Videos de Facebook
+┃ 📸 .ig – Reels o fotos de Instagram
+┃ 📂 .mediafire – Descarga archivos
+┃ 🎵 .tiktok – Videos o sonidos de TikTok
+┗━━━━━━━━━━━━━━━━━━━━━┛
+
+┏━━━ 🎶 *MÚSICA / VIDEOS* ━━━┓
+┃ 🎵 .play – Música desde YouTube
+┃ 🎶 .play2 – Alternativa de descarga
+┃ 🔊 .ytmp3 – Convierte a audio
+┃ 🎬 .ytmp4 – Descarga video completo
+┗━━━━━━━━━━━━━━━━━━━━━┛
+
+┏━━━ 🔍 *BUSCADOR* ━━━┓
+┃ 🖼️ .imagen – Busca imágenes
+┃ 🌐 .google – Busca en Google
+┗━━━━━━━━━━━━━━━━━━━━━┛
+
+┏━━━ 🎮 *GAMES FELINOS* ━━━┓
+┃ 🕹️ .juegos – Activa/desactiva juegos
+┃ ❓ .adivinanza – Adivina la respuesta
+┃ 🏴 .bandera – Adivina la bandera
+┃ 🏛️ .capital – Capital del país
+┃ 🧠 .pensar – Desafío mental
+┃ 🔢 .número – Adivina el número
+┃ 🐈‍⬛ .miau – Respuesta gatuna
+┃ 🏆 .top10 – Ranking aleatorio
+┃ 🍝 .plato – Adivina el plato
+┃ 💃 .dance – Haz bailar a alguien
+┃ 🎯 .trivia – Preguntas de cultura
+┃ 🧞 .consejo – Consejo aleatorio
+┃ 📱 .fakewpp – Crea perfil falso
+┃ 💔 .infiel – Test de infidelidad
+┃ 🦊 .zorro/a – Test del zorro
+┃ 🤡 .cornudo/a – Test de pareja
+┃ 💋 .puta – Versión traviesa 😳
+┃ 🏳️‍🌈 .trolo – Humor 💅
+┃ 💞 .kiss – Envía un beso 😽
+┗━━━━━━━━━━━━━━━━━━━━━┛
+
+┏━━━ 🧰 *ADMINS / STAFF* ━━━┓
+┃ 🗑️ .del – Borra mensaje citado
+┃ 👢 .k – Expulsa al usuario
+┃ 🅿️ .p – Promueve a admin
+┃ 🅳 .d – Quita admin
+┃ 🔇 .mute / .unmute – Silencia o reactiva a un usuario
+┃ 🚨 .reportar – Reporta usuario al staff
+┃ 🏷️ .tagall – Menciona a todos
+┃ 📣 .tag – Menciona a uno
+┃ 🧠 .ht – Mención oculta (sin alerta)
+┃ ⚙️ .g – Cierra o abre el grupo
+┗━━━━━━━━━━━━━━━━━━━━━┛
+
+┏━━━ 👑 *OWNER FELIPE* ━━━┓
+┃ 🛡️ .autoadmin – Te da admin automático
+┃ 🎯 .chetar / .deschetar – Modo VIP
+┃ 🕵️ .detectar – Analiza actividad sospechosa
+┃ 🔗 .join – Une el bot a otro grupo
+┃ 📜 .grouplist – Lista de grupos activos
+┃ 🔁 .resetuser – Reinicia usuario
+┃ ✏️ .setprefix – Cambia prefijo
+┃ 🧹 .resetprefix – Restaura prefijo
+┃ 🔄 .restart – Reinicia el bot
+┃ 💣 .wipe – Limpieza completa
+┃ 🪄 .resetlink – Restaura link del grupo
+┃ ⚙️ .update – Actualiza el bot
+┃ 👑 .owner – Info del creador
+┗━━━━━━━━━━━━━━━━━━━━━┛
+
+🐾 *FelixCat-Bot* siempre vigilante 😼  
+✨ _“Un maullido, una acción.”_
+`;
+
+    await conn.reply(m.chat, menu.trim(), m);
+    await conn.sendMessage(m.chat, { react: { text: '🐾', key: m.key } });
+
+  } catch (err) {
+    console.error(err);
+    await conn.reply(m.chat, `❌ Error al mostrar el menú\n${err}`, m);
+  }
 };
 
-let comandosPorCategoria = { 
-  'serbot': {'.qr':'🔗', '.code':'💻'},
-  'info': {'.creador':'👑', '.dash':'📊', '.status':'📈', '.estado':'📉', '.ping':'📶', '.infobot':'🤖', '.lid':'🆔'},
-  'main': {'.menu':'📜'},
-  'nable': { '.welcome':'👋', '.bv':'🎉', '.bienvenida':'🎊', '.antiprivado':'🚫', '.restrict':'🔒', '.autolevelup':'⬆️', '.autonivel':'⬆️', '.antibot':'🤖', '.autoaceptar':'✅', '.autorechazar':'❌', '.autoresponder':'💬', '.antisubbots':'🚫', '.modoadmin':'🛡️', '.soloadmin':'🛡️', '.autoread':'👀', '.autover':'📝', '.antiver':'📝', '.antiviewonce':'👁️', '.reaction':'❤️', '.emojis':'😺', '.nsfw':'🔞', '.antispam':'🚫', '.antidelete':'❌', '.delete':'🗑️', '.jadibotmd':'🤖', '.detect':'🕵️‍♂️', '.configuraciones':'⚙️', '.avisodegp':'📢', '.simi':'💬', '.antilink':'🔗', '.antitoxic':'☣️', '.antitraba':'🚫', '.antifake':'❌', '.antivirtuales':'👻', '.ruletaban':'🎯' },
-  'game': { '.math':'➗', '.dance *<@user>*':'💃', '.ppt':'✂️', '.adivinanza':'❓', '.bandera':'🏴', '.capital':'🏛️', '.trivia':'🎯','.miau':'🐈‍⬛' },
-  'group': {'.enable <opción>':'✅', '.disable <opción>':'❌'},
-  'downloader': { '.play <nombre de la canción>':'🎵', '.apk2 ':'📲', '.facebook ':'📘', '.ig ':'📸', '.play2 ':'🎶', '.ytmp3 ':'🎵', '.ytmp4 ':'🎬', '.mediafire ':'📥', '.spotify ':'🎧', '.tiktok ':'🎵', '.tiktoksearch ':'🔎' },
-  'sticker': {'.stiker ':'🖼️', '.sticker ':'🖼️'},
-  'tools': {'.invite':'📩', '.superinspect':'🔎', '.inspect':'🔍', '.reportar ':'🚨'},
-  'nsfw': { '.sixnine/69 @tag':'🍆', '.anal/culiar @tag':'🍑', '.blowjob/mamada @tag':'💦', '.follar @tag':'🔥', '.grabboobs/agarrartetas @tag':'👙', '.searchhentai':'🔞', '.hentaisearch':'🔎', '.penetrar @user':'🍑', '.sexo/sex @tag':'🔥', '.tetas':'👙' },
-  'especiales': { '.menuj':'🎮', '.menuhot':'🔥', '.menugp':'📚', '.menuow':'👑', '.menudl':'📥' } 
-};
-
-let handler = async (m, { conn }) => { 
-  try { 
-    let saludo = getSaludoGatuno();
-    let menuText = `╭━━━━━━━━━━━━━━━━━━━━╮
-│ 😸 *${botname}* 😸
-│ ❒ *Creador:* ${creador} 🐾
-│ ❒ *Versión:* ${versionBot} 😺
-│ ❒ *Saludo:* ${saludo} 🐱
-╰━━━━━━━━━━━━━━━━━━━━╯\n`;
-
-    for (let tag of Object.keys(tags)) {     
-      let comandos = comandosPorCategoria[tag];     
-      if (!comandos) continue;      
-      menuText += `\n╭━━━〔 ${tags[tag]} 〕━━━╮
-${Object.entries(comandos).map(([cmd, emoji]) => `│ ${emoji} ${cmd}`).join('\n')}
-╰━━━━━━━━━━━━━━━━━━━━╯\n`;
-    }
-
-    menuText += `\n✨ Powered by FelixCat 🥷🏽`;
-
-    // Envío solo texto (sin imagen)
-    await conn.reply(m.chat, menuText, m);
-
-  } catch (e) { 
-    console.error(e); 
-    await conn.reply(m.chat, `✖️ Error mostrando el menú\n\n${e}`, m); 
-  } 
-};
-
-handler.help = ['menu']; 
-handler.tags = ['main']; 
-handler.command = ['menu','allmenu','menú'];
+handler.help = ['menu', 'menú', 'allmenu'];
+handler.tags = ['main'];
+handler.command = ['menu', 'menú', 'allmenu'];
 
 export default handler;
 
-function getSaludoGatuno() { 
-  let hour = new Date().getHours(); 
-  if (hour >= 5 && hour < 12) return "🌅 Maullidos buenos días!"; 
-  if (hour >= 12 && hour < 18) return "☀️ Maullidos buenas tardes!"; 
-  return "🌙 Maullidos buenas noches!"; 
+function getSaludoGatuno() {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) return "🌅 Maullidos buenos días!";
+  if (hour >= 12 && hour < 18) return "☀️ Maullidos buenas tardes!";
+  return "🌙 Maullidos buenas noches!";
 }
