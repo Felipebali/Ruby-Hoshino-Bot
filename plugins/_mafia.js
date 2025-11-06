@@ -441,7 +441,7 @@ _El Don observa. Juega con cabeza y honor._`, [m.sender])
   }
 
   // ---------- TOP (leaderboard) ----------
-  if (command === 'topcasino' || command === 'top') {
+  if (command === 'topcasino' || command === 'mejores') {
     const usersObj = global.db.data.users || {}
     const usersArr = Object.keys(usersObj).map(k => ({ jid: k, coins: usersObj[k].coins || 0 }))
     usersArr.sort((a,b) => b.coins - a.coins)
@@ -458,7 +458,7 @@ _El Don observa. Juega con cabeza y honor._`, [m.sender])
 }
 
 // Comandos disponibles
-handler.help = ['mafioso','menucasino','saldo','daily','depositar','sacar','transferir','apuesta','ruleta','slots','robar','history','perfil','topcasino','top']
+handler.help = ['mafioso','menucasino','saldo','daily','depositar','sacar','transferir','apuesta','ruleta','slots','robar','history','perfil','topcasino','mejores']
 handler.tags = ['casino']
-handler.command = /^(mafioso|menucasino|saldo|daily|depositar|sacar|transferir|apuesta|ruleta|slots|robar|rob|history|perfil|topcasino|top)$/i
+handler.command = /^(mafioso|menucasino|saldo|daily|depositar|sacar|transferir|apuesta|ruleta|slots|robar|rob|history|perfil|topcasino|mejores)$/i
 export default handler
