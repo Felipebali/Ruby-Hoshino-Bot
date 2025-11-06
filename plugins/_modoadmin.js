@@ -3,7 +3,7 @@ let handler = async (m, { conn, isAdmin, isOwner }) => {
   if (!m.isGroup) return;
 
   const chat = global.db.data.chats[m.chat];
-  if (!chat || !chat.modoadmin) return; // si no está activado, no bloquea nada
+  if (!chat || !chat.modoadmin) return; // Si no está activado, no bloquea nada
 
   // Ignorar mensajes sin texto
   if (!m.text) return;
@@ -20,11 +20,12 @@ let handler = async (m, { conn, isAdmin, isOwner }) => {
 
     // Si no es admin ni owner → bloquea el comando y avisa
     if (!(isAdmin || isOwner)) {
-      await conn.sendMessage(m.chat, { 
-        text: `🚫 *Modo Admin Activado*\nSolo los administradores pueden usar comandos mientras este modo esté activo.\n\nComando bloqueado: *.${command}*`, 
-        mentions: [m.sender] 
-      });
-      throw false; // Detiene la ejecución del resto de comandos
+      await conn.reply(
+        m.chat,
+        `🚫 *Modo Admin Activado*\nSolo los administradores pueden usar comandos mientras este modo esté activo.\n\nComando bloqueado: *.${command}*`,
+        m
+      );
+      return !0; // Detiene la ejecución de otros comandos
     }
   }
 };
