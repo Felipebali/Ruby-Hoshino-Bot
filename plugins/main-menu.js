@@ -85,7 +85,7 @@ let handler = async (m, { conn }) => {
 ┃ ⚙️ .g – Cierra o abre el grupo
 ┗━━━━━━━━━━━━━━━━━━━━━┛
 
-┏━━━ 👑 *OWNER FELIPE* ━━━┓
+┏━━━ 👑 *OWNERS* ━━━┓
 ┃ 🛡️ .autoadmin – Te da admin automático
 ┃ 🎯 .chetar / .deschetar – Modo VIP
 ┃ 🕵️ .detectar – Analiza actividad sospechosa
