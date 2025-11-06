@@ -1,7 +1,6 @@
-// plugins/menu-owner.js
+// 📂 plugins/menu-owner.js
 let handler = async (m, { conn }) => {
   try {
-    // Reacciona al mensaje del comando
     await conn.sendMessage(m.chat, { react: { text: '👑', key: m.key } })
 
     const fecha = new Date().toLocaleString('es-UY', {
@@ -10,74 +9,58 @@ let handler = async (m, { conn }) => {
     })
 
     const menuText = `
-╭━───╮
-┃ 💼 *MENÚ DEL DUEÑO* 💼
-╰━───╯
-🐾 *FelixCat_Bot – Panel Principal* 🐾
-📅 *Fecha:* ${fecha}
+╭━━━〔 *🐾 PANEL DEL DUEÑO 🐾* 〕━━━╮
+┃ 👑 *FelixCat_Bot – Control Total*  
+┃ 📆 ${fecha}
+╰━━━━━━━━━━━━━━━━━━━━━━╯
+
+⚙️ *Gestión del Bot*
+• .restart — Reinicia el bot 🔁
+• .update — Actualiza el bot 🆙
+• .exec / .exec2 — Ejecuta código 💻
+• .setcmd — Configura comando ⚙️
+• .setprefix — Cambia prefijo ✏️
+• .dsowner — Quita dueño ❌
+• .join <link> — Unirse a grupo 🔗
+• .resetlink — Resetear link del grupo ♻️
+
+🛡️ *Administradores*
+• .autoadmin — Dar admin al bot 🧩
+• .dar — Dar admin a todos 🫡
+• .quitar — Quitar admin a todos 🧹
+• .chetar — Activar modo Pro ⚙️
+• .deschetar — Desactivar modo Pro 💤
+
+🚨 *AdminLog*
+• .adminlog — Activar/Desactivar logs 🟢🔴
+• .adminh — Ver historial 📋
+• .adminclear — Limpiar historial 🗑️
+
+🚫 *Lista Negra*
+• .re @user — Agregar ⚠️
+• .unre @user — Quitar ✅
+• .clre @user — Consultar 🔍
+• .verre — Ver lista 📋
+• .usre — Vaciar 🗑️
+• .resetuser @user — Reiniciar datos 🔄
+
+💬 *Comandos Útiles*
+• a — Activa una alarma ⏰
+• buenas — Saludo automático 🐱
+• salir — Bot abandona el grupo 🚪
+• sh — Ejecuta comando shell 💽
+• u — Menciona a todos 📣
 
 ━━━━━━━━━━━━━━━━━━━
-🚫 *GESTIÓN DE GRUPOS*
-━━━━━━━━━━━━━━━━━━━
-🐾 .bc — *Banear grupo completo* 🚫  
-🐾 .ba — *Desbanear grupo* ✅  
-
-━━━━━━━━━━━━━━━━━━━
-👮‍♂️ *ADMINISTRADORES*
-━━━━━━━━━━━━━━━━━━━
-🐾 .autoadmin — Dar admin al bot 🧩  
-🐾 .dar — Dar admin a todos 🫡  
-🐾 .quitar — Quitar admin a todos 🧹  
-🐾 .chetar — Activar modo Pro ⚙️  
-🐾 .deschetar — Desactivar modo Pro 💤  
-
-━━━━━━━━━━━━━━━━━━━
-🚨 *ADMINLOG* 
-━━━━━━━━━━━━━━━━━━━
-🐾 .adminlog — Activar/Desactivar logs de admins 🟢🔴  
-🐾 .adminh — Ver historial de cambios de admin 📋  
-🐾 .adminclear — Borrar historial de admin 🗑️  
-
-━━━━━━━━━━━━━━━━━━━
-🚫 *LISTA NEGRA*
-━━━━━━━━━━━━━━━━━━━
-🐾 .re <@user> — Agregar a lista negra ⚠️  
-🐾 .unre <@user> — Quitar de lista negra ✅  
-🐾 .clre <@user> — Consultar usuario 🔍  
-🐾 .verre — Ver lista negra 📋  
-🐾 .usre — Vaciar lista negra 🗑️  
-🐾 .resetuser <@user> — Reiniciar datos del usuario 🔄  
-
-━━━━━━━━━━━━━━━━━━━
-🤖 *GESTIÓN DEL BOT*
-━━━━━━━━━━━━━━━━━━━
-🐾 .restart — Reiniciar el bot 🔁  
-🐾 .update — Actualizar el bot 🆙  
-🐾 .exec / .exec2 — Ejecutar código 💻  
-🐾 .setcmd — Configurar comando ⚙️  
-🐾 .setprefix — Cambiar prefijo ✏️  
-🐾 .dsowner — Quitar dueño ❌  
-🐾 .join <link> — Unirse a grupo 🔗  
-
-━━━━━━━━━━━━━━━━━━━
-💬 *COMANDOS SIN PREFIJO*
-━━━━━━━━━━━━━━━━━━━
-🐾 a — Activa una alarma ⏰  
-🐾 buenas — Saludo automático 🐱  
-🐾 salir — El bot abandona el grupo 🚪  
-🐾 sh — Ejecuta comando shell 💽  
-🐾 u — Menciona a todos (tagall) 📣  
-
-━━━━━━━━━━━━━━━━━━━
-👑 *FelixCat – Propietario Supremo* 🐾  
-💠 “Control total con estilo felino.” 💠
+🐾 *FelixCat – Propietario Supremo*
+💠 "Control total con estilo felino." 💠
 ━━━━━━━━━━━━━━━━━━━
 `.trim()
 
     await conn.sendMessage(m.chat, { text: menuText }, { quoted: m })
   } catch (e) {
     console.error(e)
-    await m.reply('✖️ Error al mostrar el menú de owner.')
+    await m.reply('✖️ Error al mostrar el menú del dueño.')
   }
 }
 
