@@ -1,7 +1,7 @@
 // plugins/menu.js
 const botname = global.botname || '😸 FelixCat-Bot 😸';
 const creador = 'Balkoszky🇵🇱';
-const versionBot = '10.5.0';
+const versionBot = '10.6.0';
 
 let handler = async (m, { conn }) => {
   try {
@@ -19,6 +19,15 @@ let handler = async (m, { conn }) => {
 │ ⏰ *Hora:* ${fecha}
 │ 💬 *${saludo}*
 ╰━━━━━━━🐾━━━━━━━╯
+
+┏━━━ 📚 *TIPOS DE MENÚ* ━━━┓
+┃ 👤 .menuser – Comandos para todos los usuarios
+┃ 🎮 .menuj – Juegos y entretenimiento
+┃ ✨ .menuespecial – Funciones premium / raras
+┃ 👥 .menugp – Herramientas para grupos
+┃ 🔥 .menuhot – Humor y diversión +18 😳
+┃ 👑 .menuowner – Panel del dueño
+┗━━━━━━━━━━━━━━━━━━━━━┛
 
 ┏━━━ 🛡️ *SEGURIDAD DEL GRUPO* ━━━┓
 ┃ 🔗 .antilink – Bloquea enlaces externos
