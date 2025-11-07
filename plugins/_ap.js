@@ -3,13 +3,11 @@ let handler = async (m, { conn, isAdmin }) => {
   const owners = ['59896026646', '59898719147']
   const sender = m.sender.split('@')[0]
 
-  // Verificación de permisos
   if (!isAdmin && !owners.includes(sender)) {
     return conn.reply(m.chat, '🚫 Solo los administradores o el dueño pueden aprobar solicitudes.', m)
   }
 
   try {
-    // Obtener lista de solicitudes pendientes
     const pendingList = await conn.groupRequestParticipantsList(m.chat)
 
     if (!pendingList || pendingList.length === 0) {
@@ -22,15 +20,17 @@ let handler = async (m, { conn, isAdmin }) => {
       try {
         await conn.groupRequestParticipantsUpdate(m.chat, [user.jid], 'approve')
         aprobadas++
+        console.log(`✅ Aprobado: ${user.jid}`)
+        await new Promise(r => setTimeout(r, 2500)) // espera 2.5s entre cada aprobación
       } catch (err) {
-        console.log('Error al aprobar a:', user.jid, err)
+        console.log('❌ Error al aprobar a:', user.jid, err)
       }
     }
 
     await conn.reply(m.chat, `🎉 Se aprobaron ${aprobadas} solicitudes pendientes.`, m)
   } catch (err) {
     console.error('Error general al aprobar solicitudes:', err)
-    await conn.reply(m.chat, '⚠️ Ocurrió un error al intentar aprobar las solicitudes. Asegurate de que el bot sea administrador y que el grupo use aprobación manual.', m)
+    await conn.reply(m.chat, '⚠️ Ocurrió un error al intentar aprobar las solicitudes. Asegurate de que el bot sea administrador.', m)
   }
 }
 
