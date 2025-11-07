@@ -1,3 +1,4 @@
+
 // 📂 plugins/menuj.js
 let handler = async (m, { conn }) => {
   try {
@@ -28,6 +29,7 @@ Estado: ${gamesEnabled ? '🟢 Activados' : '🔴 Desactivados'}
 👑 *.top10* → Top 10 divertidos del grupo
 🍽️ *.plato* → Adivina la opción correcta
 ❤️ *.match* → Empareja dos personas al azar 💞
+💢 *.enemigo* → Enfrenta a dos personas al azar 😾
 ────────────────────────────
 
 💅 *.trolo <@user>* → Test de trolez (versión 2.1)
