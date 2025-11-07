@@ -1,5 +1,4 @@
 // 📂 plugins/menuj.js
-
 let handler = async (m, { conn }) => {
   try {
     const chatSettings = global.db.data.chats[m.chat] || {};
@@ -28,7 +27,8 @@ Estado: ${gamesEnabled ? '🟢 Activados' : '🔴 Desactivados'}
 🔢 *.numero* → Genera un número aleatorio
 👑 *.top10* → Top 10 divertidos del grupo
 🍽️ *.plato* → Adivina la opción correcta
-   🟢 Puede ser comida, objetos o personajes
+❤️ *.match* → Empareja dos personas al azar 💞
+────────────────────────────
 
 💅 *.trolo <@user>* → Test de trolez (versión 2.1)
 🧢 *.cornudo <@user>* / *.cornuda <@user>* → Test de cornudez (versión 2.1)
@@ -47,7 +47,6 @@ Menciona a un admin para activarlos 🔴
 
     menuText += `👑 *Powered by FelixCat 🐾*`;
 
-    // Enviar solo el texto (sin imagen)
     await conn.sendMessage(m.chat, { text: menuText }, { quoted: m });
 
   } catch (e) {
