@@ -1,4 +1,4 @@
-// 🐾 plugins/giftMaker.js — FelixCat_Bot 🎁 Convierte imagen o video en sticker animado tipo gift
+// 🐾 plugins/giftMaker.js — FelixCat_Bot 🎁 Convierte imagen o video en sticker real tipo gift
 import { sticker } from '../lib/sticker.js'
 
 let handler = async (m, { conn, usedPrefix, command }) => {
@@ -6,22 +6,26 @@ let handler = async (m, { conn, usedPrefix, command }) => {
   let mime = (q.msg || q).mimetype || ''
   
   if (!/image|video/.test(mime))
-    return m.reply(`🎁 Envía o responde a una *imagen o video* con:\n\n${usedPrefix + command}`)
+    return m.reply(`🎁 Envía o responde a una *imagen o video corto (menos de 8s)* con:\n\n${usedPrefix + command}`)
   
-  m.reply('⏳ Procesando tu gift, espera un momento... 😺')
-
+  await m.react('⏳') // reacción mientras procesa
+  
   try {
     let media = await q.download()
-    let out = await sticker(media, false, {
+    let stiker = await sticker(media, false, {
       pack: '🎁 FelixCat Gift',
       author: 'FelixCat_Bot 🐾'
     })
     
-    await conn.sendFile(m.chat, out, 'gift.webp', '', m, true, { asSticker: true })
-    m.reply('🎉 ¡Listo! Aquí tienes tu gift sticker 🐱✨')
+    if (stiker) {
+      await conn.sendMessage(m.chat, { sticker: stiker }, { quoted: m })
+      await m.react('✅')
+    } else {
+      await m.reply('😿 No se pudo generar el gift sticker.')
+    }
   } catch (err) {
     console.error(err)
-    m.reply('😿 Ocurrió un error al crear el gift.')
+    await m.reply('❌ Error al crear el gift. Asegúrate de que el video o imagen sea válido.')
   }
 }
 
@@ -29,4 +33,4 @@ handler.help = ['gift']
 handler.tags = ['sticker']
 handler.command = ['gift']
 
-export default handler 
+export default handler
