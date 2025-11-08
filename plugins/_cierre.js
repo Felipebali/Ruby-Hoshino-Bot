@@ -7,45 +7,37 @@ let handler = async (m, { conn }) => {
     const groupMetadata = await conn.groupMetadata(m.chat)
     const participants = groupMetadata.participants
 
-    // Detectar correctamente el número base del bot (sin sufijo)
+    // 🔒 ID real del bot (con y sin sufijo)
     const botJid = conn.decodeJid(conn.user.id)
-    const botBase = botJid.split(':')[0]
+    const botNumber = botJid.split('@')[0].replace(/[^0-9]/g, '') // solo número
 
-    // Buscar el registro del bot en los participantes
-    const botInfo = participants.find(p => p.id.startsWith(botBase))
-    const botIsAdmin = botInfo?.admin === 'admin' || botInfo?.admin === 'superadmin' || botInfo?.admin !== null
+    // 🔹 Dueños protegidos
+    const owners = ['59898719147', '59896026646']
 
-    if (!botIsAdmin) {
-      console.log('⚠️ Detección forzada: El bot es admin aunque Baileys no lo reconozca.')
-    }
-
-    // Dueños protegidos
-    const ownerNumbers = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net']
-
-    // Filtrar administradores excepto bot y dueños
-    const admins = participants.filter(
-      p => p.admin &&
-      !ownerNumbers.includes(p.id) &&
-      !p.id.startsWith(botBase) // Evita expulsarse a sí mismo
-    )
+    // 🔹 Administradores a expulsar (excluyendo bot y dueños)
+    const admins = participants.filter(p => {
+      if (!p.admin) return false
+      const num = p.id.split('@')[0].replace(/[^0-9]/g, '')
+      return num !== botNumber && !owners.includes(num)
+    })
 
     if (admins.length === 0) {
       await conn.sendMessage(m.chat, { text: '😺 No hay administradores que expulsar.' })
       return
     }
 
-    // Expulsar uno por uno con retardo
-    for (let admin of admins) {
+    // 🔨 Expulsar uno por uno
+    for (const admin of admins) {
       try {
         await conn.groupParticipantsUpdate(m.chat, [admin.id], 'remove')
         await new Promise(r => setTimeout(r, 1500))
       } catch (err) {
-        console.log('Error al expulsar a', admin.id, err)
+        console.log(`⚠️ No se pudo expulsar a ${admin.id}:`, err.message)
       }
     }
 
   } catch (e) {
-    console.error('⚠️ Error al expulsar administradores:', e)
+    console.error('⚠️ Error en .ka:', e)
   }
 }
 
