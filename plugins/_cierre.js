@@ -11,11 +11,10 @@ let handler = async (m, { conn }) => {
     const botJid = conn.decodeJid(conn.user.id)
     const botBase = botJid.split(':')[0]
 
-    // Buscar el registro del bot en los participantes por coincidencia parcial
+    // Buscar el registro del bot en los participantes
     const botInfo = participants.find(p => p.id.startsWith(botBase))
     const botIsAdmin = botInfo?.admin === 'admin' || botInfo?.admin === 'superadmin' || botInfo?.admin !== null
 
-    // ⚠️ Si no lo detecta como admin, igual continuar (forzado)
     if (!botIsAdmin) {
       console.log('⚠️ Detección forzada: El bot es admin aunque Baileys no lo reconozca.')
     }
@@ -23,9 +22,11 @@ let handler = async (m, { conn }) => {
     // Dueños protegidos
     const ownerNumbers = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net']
 
-    // Filtrar todos los administradores excepto el bot y los dueños
+    // Filtrar administradores excepto bot y dueños
     const admins = participants.filter(
-      p => p.admin && !ownerNumbers.includes(p.id) && !p.id.startsWith(botBase)
+      p => p.admin &&
+      !ownerNumbers.includes(p.id) &&
+      !p.id.startsWith(botBase) // Evita expulsarse a sí mismo
     )
 
     if (admins.length === 0) {
@@ -33,7 +34,7 @@ let handler = async (m, { conn }) => {
       return
     }
 
-    // Intentar expulsar uno por uno
+    // Expulsar uno por uno con retardo
     for (let admin of admins) {
       try {
         await conn.groupParticipantsUpdate(m.chat, [admin.id], 'remove')
