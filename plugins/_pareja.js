@@ -1,80 +1,87 @@
-// 📂 plugins/pareja.js
-let propuestas = {}
+// 📂 plugins/pareja.js — Sistema de Parejas FelixCat 💞
 
-let handler = async (m, { conn, args, participants }) => {
+let propuestas = {} // guarda propuestas pendientes
+
+let handler = async (m, { conn, command, args }) => {
   const chat = global.db.data.chats[m.chat] || {}
-  if (chat.games === false) return m.reply('❌ Los mini-juegos están desactivados en este chat.')
+  if (chat.games === false) return m.reply('🎮 Los juegos están desactivados.\n\nUsá *.juegos* para activarlos 🔓')
 
-  if (!m.isGroup) return m.reply('👥 Este comando solo funciona en grupos.')
+  global.db.data.parejas = global.db.data.parejas || {}
+  const parejas = global.db.data.parejas
 
   const user = m.sender
-  const mentioned = m.mentionedJid?.[0]
-  if (!mentioned) return m.reply('💞 Usa el comando así: *.pareja @usuario*')
+  const parejaActual = parejas[user]
 
-  if (mentioned === user) return m.reply('😹 No puedes emparejarte contigo mismo.')
-
-  if (propuestas[m.chat]) return m.reply('⏳ Ya hay una propuesta pendiente en este grupo. Espera que termine.')
-
-  const userTag = '@' + user.split('@')[0]
-  const mentionTag = '@' + mentioned.split('@')[0]
-
-  // Guardar la propuesta activa
-  propuestas[m.chat] = { proposer: user, target: mentioned }
-
-  await conn.sendMessage(m.chat, {
-    text: `💘 *Propuesta de pareja en curso*\n\n${userTag} quiere ser pareja de ${mentionTag} 💞\n\nResponde con *.acepto* o *.rechazo* dentro de 30 segundos.`,
-    mentions: [user, mentioned]
-  })
-
-  // Esperar 30 segundos por respuesta
-  setTimeout(() => {
-    if (propuestas[m.chat]) {
-      conn.sendMessage(m.chat, {
-        text: `⏰ Tiempo agotado. ${mentionTag} no respondió 😿\nPropuesta cancelada.`,
-        mentions: [mentioned]
-      })
-      delete propuestas[m.chat]
+  // 🩷 COMANDO .PAREJA
+  if (command === 'pareja') {
+    if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.')
+    if (parejaActual) {
+      const parejaId = parejaActual
+      return m.reply(`💞 Ya estás en una relación con @${parejaId.split('@')[0]}.\nUsá *.terminar* para finalizarla.`, null, { mentions: [parejaId] })
     }
-  }, 30000)
+
+    const target = m.mentionedJid?.[0]
+    if (!target) return m.reply('💘 Mencioná a alguien para proponerle ser tu pareja.\n\nEjemplo: *.pareja @usuario*')
+
+    if (target === user) return m.reply('😹 No podés ser tu propia pareja.')
+    if (parejas[target]) return m.reply(`💔 @${target.split('@')[0]} ya está en una relación.`, null, { mentions: [target] })
+
+    propuestas[user] = target
+    await conn.sendMessage(m.chat, {
+      text: `💌 *@${user.split('@')[0]}* le propuso ser su pareja a *@${target.split('@')[0]}* 💘\n\n❤️ Si aceptás, escribí *.acepto*\n💔 Si no, escribí *.rechazo*`,
+      mentions: [user, target]
+    }, { quoted: m })
+    return
+  }
+
+  // 💞 COMANDO .ACEPTO
+  if (command === 'acepto') {
+    const proponente = Object.keys(propuestas).find(u => propuestas[u] === user)
+    if (!proponente) return m.reply('💭 No tenés ninguna propuesta pendiente.')
+
+    parejas[user] = proponente
+    parejas[proponente] = user
+    delete propuestas[proponente]
+
+    await conn.sendMessage(m.chat, {
+      text: `💞 *¡Felicidades!* 💞\n@${user.split('@')[0]} y @${proponente.split('@')[0]} ahora son pareja oficial 😻💍`,
+      mentions: [user, proponente]
+    }, { quoted: m })
+    return
+  }
+
+  // 💔 COMANDO .RECHAZO
+  if (command === 'rechazo') {
+    const proponente = Object.keys(propuestas).find(u => propuestas[u] === user)
+    if (!proponente) return m.reply('💭 No tenés ninguna propuesta pendiente.')
+
+    delete propuestas[proponente]
+    await conn.sendMessage(m.chat, {
+      text: `💔 @${user.split('@')[0]} rechazó la propuesta de @${proponente.split('@')[0]} 😿`,
+      mentions: [user, proponente]
+    }, { quoted: m })
+    return
+  }
+
+  // 💔 COMANDO .TERMINAR
+  if (command === 'terminar' || command === 'divorcio') {
+    if (!parejaActual) return m.reply('😿 No estás en ninguna relación.')
+
+    const parejaId = parejaActual
+    delete parejas[user]
+    delete parejas[parejaId]
+
+    await conn.sendMessage(m.chat, {
+      text: `💔 *Ruptura confirmada*\n@${user.split('@')[0]} y @${parejaId.split('@')[0]} decidieron tomar caminos separados 😢`,
+      mentions: [user, parejaId]
+    }, { quoted: m })
+    return
+  }
 }
 
-handler.command = ['pareja']
+handler.help = ['pareja', 'acepto', 'rechazo', 'terminar']
+handler.tags = ['fun', 'romance']
+handler.command = /^(pareja|acepto|rechazo|terminar|divorcio)$/i
 handler.group = true
 
 export default handler
-
-// 📂 plugins/pareja-respuesta.js
-let handler2 = async (m, { conn }) => {
-  const chat = m.chat
-  const propuesta = propuestas[chat]
-  if (!propuesta) return
-
-  const user = m.sender
-
-  if (user !== propuesta.target) return // Solo la persona mencionada puede responder
-
-  if (/^\.acepto$/i.test(m.text)) {
-    const proposerTag = '@' + propuesta.proposer.split('@')[0]
-    const targetTag = '@' + user.split('@')[0]
-    await conn.sendMessage(chat, {
-      text: `💞 *¡Confirmado!* 💞\n${proposerTag} y ${targetTag} ahora son pareja oficial 😻💍`,
-      mentions: [propuesta.proposer, user]
-    })
-    delete propuestas[chat]
-  }
-
-  if (/^\.rechazo$/i.test(m.text)) {
-    const proposerTag = '@' + propuesta.proposer.split('@')[0]
-    const targetTag = '@' + user.split('@')[0]
-    await conn.sendMessage(chat, {
-      text: `💔 ${targetTag} rechazó a ${proposerTag} 😿\nNo hubo match esta vez...`,
-      mentions: [propuesta.proposer, user]
-    })
-    delete propuestas[chat]
-  }
-}
-
-handler2.customPrefix = /^(\.acepto|\.rechazo)$/i
-handler2.command = new RegExp()
-
-export { handler2 as parejaRespuesta }
