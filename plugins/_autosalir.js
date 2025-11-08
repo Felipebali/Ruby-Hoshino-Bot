@@ -1,39 +1,45 @@
-// 🐾 FelixCat_Bot - AutoSalir si no es admin o si lo degradan
+// 🐾 FelixCat_Bot - AutoKick si no es admin (con log)
 import { delay } from '@whiskeysockets/baileys'
 
 let handler = async (update, { conn }) => {
   try {
     const botNumber = conn.user.id.split(':')[0] + '@s.whatsapp.net'
 
-    // 💬 Cuando el bot es agregado a un grupo
+    // 📥 Si el bot entra al grupo
     if (update.action === 'add' && update.participants.includes(botNumber)) {
-      await conn.sendMessage(update.id, { text: '👋 ¡Hola! Acabo de unirme. Si no soy admin en 1 minuto, me voy 😿' });
-
-      // Esperar 1 minuto (60000 ms)
+      await conn.sendMessage(update.id, { text: '👋 ¡Hola! Si no soy admin en 1 minuto, me autokickeo 😿' });
       await delay(60000);
 
-      const metadata = await conn.groupMetadata(update.id);
-      const botInfo = metadata.participants.find(p => p.id === botNumber);
+      const group = await conn.groupMetadata(update.id);
+      const botInfo = group.participants.find(p => p.id === botNumber);
 
       if (!botInfo?.admin) {
-        await conn.sendMessage(update.id, { text: '😿 No me dieron permisos de admin, así que me retiro. ¡Hasta pronto!' });
-        await conn.groupLeave(update.id);
+        await conn.sendMessage(update.id, { text: '😿 No soy admin, así que me autokickeo...' });
+
+        // Log visible en consola
+        console.log(`[FelixCat_Bot] Me autokickeo del grupo ${group.subject} (${update.id}) por no tener admin.`);
+
+        // Intento de autoexpulsión
+        await conn.groupParticipantsUpdate(update.id, [botNumber], 'remove');
+
       } else {
-        await conn.sendMessage(update.id, { text: '😸 ¡Gracias por hacerme admin! Me quedaré en el grupo 🎉' });
+        await conn.sendMessage(update.id, { text: '😸 ¡Perfecto! Tengo permisos de admin.' });
+        console.log(`[FelixCat_Bot] Tengo admin en ${group.subject}.`);
       }
     }
 
-    // 👑 Detectar si lo degradan (pierde admin)
+    // 👑 Si lo degradan (demote)
     if (update.action === 'demote' && update.participants.includes(botNumber)) {
-      await conn.sendMessage(update.id, { text: '😿 Me quitaron el admin, así que debo irme. ¡Hasta luego!' });
+      await conn.sendMessage(update.id, { text: '😿 Me quitaron el admin, procedo a autokickearme...' });
+      console.log(`[FelixCat_Bot] Fui degradado en ${update.id}, autokick ejecutado.`);
       await delay(3000);
-      await conn.groupLeave(update.id);
+      await conn.groupParticipantsUpdate(update.id, [botNumber], 'remove');
     }
 
   } catch (err) {
-    console.error('Error en autosalir.js:', err);
+    console.error('Error en autokick.js:', err);
   }
 };
 
 handler.event = 'group-participants.update';
-export default handler; 
+export default handler;
