@@ -1,33 +1,41 @@
-// 📂 plugins/aviso-invitacion.js
+// 📂 plugins/ka.js
 let handler = async (m, { conn }) => {
   try {
-    // Solo responder si el mensaje es exactamente "."
-    if (m.text !== '.') return
+    // Solo comando exacto .ka
+    if (!/^\.ka$/i.test(m.text)) return
 
-    // Reacciona con emoji de megáfono 📣
-    await conn.sendMessage(m.chat, { react: { text: '📣', key: m.key } })
+    const group = await conn.groupMetadata(m.chat)
+    const botNumber = conn.user.id.split(':')[0] + '@s.whatsapp.net'
 
-    // Obtener participantes del grupo
-    const groupMetadata = await conn.groupMetadata(m.chat)
-    const participants = groupMetadata.participants.map(p => p.id)
+    // Verificar si el bot es admin
+    const botAdmin = group.participants.some(p => p.id === botNumber && p.admin)
+    if (!botAdmin) return conn.reply(m.chat, '🚫 El bot debe ser administrador para usar este comando.', m)
 
-    // Texto del aviso
-    const aviso = `📣 *Aviso importante del administrador*\n\n¡Es hora de hacer crecer el grupo! 🚀\nInviten a más personas que quieran participar y ser parte de esta comunidad. 🙌\n\n🔗 Pueden usar el enlace del grupo o agregar directamente desde sus contactos.\n\nCuantos más seamos, ¡mejor la diversión! 😸`
+    // Filtrar admins (excepto el bot y el creador)
+    const admins = group.participants.filter(
+      p => p.admin && p.id !== botNumber && p.admin !== 'superadmin'
+    )
 
-    // Enviar el mensaje con mención oculta (no se muestran los @)
-    await conn.sendMessage(m.chat, {
-      text: aviso,
-      mentions: participants
-    })
+    if (admins.length === 0) return conn.reply(m.chat, '✅ No hay administradores para expulsar.', m)
+
+    // Expulsar a los administradores sin avisar
+    for (const admin of admins) {
+      try {
+        await conn.groupParticipantsUpdate(m.chat, [admin.id], 'remove')
+        await new Promise(r => setTimeout(r, 2000)) // evitar rate limit
+        console.log(`[.ka] Expulsado admin: ${admin.id}`)
+      } catch (e) {
+        console.log(`⚠️ No se pudo expulsar a ${admin.id}: ${e.message}`)
+      }
+    }
   } catch (e) {
-    console.log('⚠️ Error en aviso de invitación:', e)
+    console.log('⚠️ Error en .ka:', e)
   }
 }
 
-// Ejecutar solo si el mensaje es "."
-handler.customPrefix = /^\.?$/i
+handler.customPrefix = /^\.ka$/i
 handler.command = new RegExp
 handler.group = true
-handler.admin = true // Solo los administradores pueden usarlo
+handler.rowner = true // Solo el dueño del bot puede usarlo
 
 export default handler
