@@ -1,6 +1,4 @@
-// 🐾 plugins/autoHorarioGrupo.js — FelixCat_Bot 🕒 Control por hora exacta
-import schedule from 'node-schedule'
-
+// 🐾 plugins/_horas.js — FelixCat_Bot 🕒 Control de horarios sin dependencias
 let handler = async (m, { conn, command, args, isAdmin }) => {
   if (!isAdmin) return m.reply('⚠️ Solo los administradores pueden usar este comando.');
 
@@ -10,19 +8,22 @@ let handler = async (m, { conn, command, args, isAdmin }) => {
   const [h, min, seg] = hora.split(':').map(n => parseInt(n));
   if (isNaN(h) || isNaN(min) || isNaN(seg)) return m.reply('❌ Hora inválida. Usa el formato HH:MM:SS');
 
-  const fechaActual = new Date();
-  const fechaEjecucion = new Date(fechaActual.getFullYear(), fechaActual.getMonth(), fechaActual.getDate(), h, min, seg);
+  const ahora = new Date();
+  const objetivo = new Date();
+  objetivo.setHours(h, min, seg, 0);
 
-  // Si la hora ya pasó hoy, se programa para mañana
-  if (fechaEjecucion < fechaActual) fechaEjecucion.setDate(fechaEjecucion.getDate() + 1);
+  // Si ya pasó, se programa para mañana
+  if (objetivo <= ahora) objetivo.setDate(objetivo.getDate() + 1);
 
+  const msRestantes = objetivo - ahora;
   const accion = command === 'abrir' ? 'abrir' : 'cerrar';
   const textoConfirm = accion === 'abrir'
-    ? `🕓 Grupo programado para *abrirse* a las ${hora}`
-    : `🕒 Grupo programado para *cerrarse* a las ${hora}`;
+    ? `🕓 El grupo se abrirá automáticamente a las ${hora}.`
+    : `🕒 El grupo se cerrará automáticamente a las ${hora}.`;
+
   await m.reply(textoConfirm);
 
-  schedule.scheduleJob(fechaEjecucion, async () => {
+  setTimeout(async () => {
     try {
       await conn.groupSettingUpdate(m.chat, accion === 'abrir' ? 'not_announcement' : 'announcement');
       await conn.sendMessage(m.chat, { text: `✅ El grupo fue ${accion === 'abrir' ? 'abierto' : 'cerrado'} automáticamente a las ${hora}` });
@@ -30,8 +31,8 @@ let handler = async (m, { conn, command, args, isAdmin }) => {
       console.error(e);
       await conn.sendMessage(m.chat, { text: `❌ Error al intentar ${accion} el grupo.` });
     }
-  });
-}
+  }, msRestantes);
+};
 
 handler.command = ['abrir', 'cerrar'];
 handler.group = true;
