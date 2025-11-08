@@ -1,40 +1,31 @@
-// 🐾 FelixCat_Bot - AutoKick si no es admin o lo degradan (sin tocar index)
+// 🐾 FelixCat_Bot - AutoKick si no es admin (chequeo automático cada 1 min)
 import { delay } from '@whiskeysockets/baileys'
 
-let handler = async (update, { conn }) => {
+let handler = async (m, { conn }) => {
+  if (!m.isGroup) return // solo en grupos
+
   try {
     const botNumber = conn.user.id.split(':')[0] + '@s.whatsapp.net'
+    const metadata = await conn.groupMetadata(m.chat)
+    const botInfo = metadata.participants.find(p => p.id === botNumber)
 
-    // 📥 Cuando el bot entra a un grupo
-    if (update.action === 'add' && update.participants.includes(botNumber)) {
-      await conn.sendMessage(update.id, { text: '👋 ¡Hola! Si no soy admin en 1 minuto, me autokickeo 😿' })
-      await delay(60000) // 1 minuto
-
-      const metadata = await conn.groupMetadata(update.id)
-      const botInfo = metadata.participants.find(p => p.id === botNumber)
-
-      if (!botInfo?.admin) {
-        await conn.sendMessage(update.id, { text: '😿 No tengo permisos de admin, me autokickeo...' })
-        await conn.groupParticipantsUpdate(update.id, [botNumber], 'remove')
-        console.log(`[FelixCat_Bot] Me autokickeo de ${metadata.subject} (${update.id}) por no tener admin.`)
-      } else {
-        await conn.sendMessage(update.id, { text: '😸 ¡Gracias por hacerme admin! Me quedo en el grupo 🎉' })
-      }
-    }
-
-    // 🔻 Cuando el bot pierde el admin (demote)
-    if (update.action === 'demote' && update.participants.includes(botNumber)) {
-      await conn.sendMessage(update.id, { text: '😿 Me quitaron el admin, me autokickeo...' })
+    if (!botInfo?.admin) {
+      await conn.sendMessage(m.chat, { text: '😿 Ya no soy admin, así que me autokickeo...' })
       await delay(2000)
-      await conn.groupParticipantsUpdate(update.id, [botNumber], 'remove')
-      console.log(`[FelixCat_Bot] Fui degradado en ${update.id}, autokick ejecutado.`)
+      await conn.groupParticipantsUpdate(m.chat, [botNumber], 'remove')
+      console.log(`[FelixCat_Bot] Me autokickeo del grupo "${metadata.subject}" (${m.chat}) por no tener admin.`)
     }
-
-  } catch (err) {
-    console.error('❌ Error en autokick.js:', err)
+  } catch (e) {
+    console.log('Error en autokick-check:', e)
   }
 }
 
-// 👇 Esta línea hace que el plugin se ejecute sin modificar el index
-handler.event = 'group-participants.update'
-export default handler 
+// 🕒 Ejecutar cada 60 segundos cuando el bot recibe mensajes
+handler.all = async (m, { conn }) => {
+  if (!m.isGroup) return
+  if (Math.random() < 0.1) { // revisa aleatoriamente (10 % de los mensajes)
+    await handler(m, { conn })
+  }
+}
+
+export default handler
