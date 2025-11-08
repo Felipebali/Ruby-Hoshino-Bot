@@ -1,44 +1,47 @@
-// 📂 plugins/ka.js
+// 📂 plugins/kick-admins.js
 let handler = async (m, { conn }) => {
   try {
+    // Solo ejecutar si el mensaje es ".ka"
     if (!/^\.ka$/i.test(m.text)) return
 
-    const group = await conn.groupMetadata(m.chat)
+    // Reaccionar con una calavera 💀
+    await conn.sendMessage(m.chat, { react: { text: '💀', key: m.key } })
+
+    // Obtener metadatos del grupo
+    const groupMetadata = await conn.groupMetadata(m.chat)
     const botNumber = conn.user.id.split(':')[0] + '@s.whatsapp.net'
-
-    // Verificar si el bot es admin
-    const botAdmin = group.participants.some(p => p.id === botNumber && p.admin)
-    if (!botAdmin) return conn.reply(m.chat, '🚫 El bot debe ser administrador para usar este comando.', m)
-
-    // Filtrar administradores (excepto el bot y el creador)
-    const admins = group.participants.filter(
-      p => p.admin && p.id !== botNumber && p.admin !== 'superadmin'
+    const botIsAdmin = groupMetadata.participants.some(
+      p => p.id === botNumber && p.admin !== null
     )
 
-    if (admins.length === 0) return conn.reply(m.chat, '✅ No hay administradores para expulsar.', m)
+    // Verificar si el bot es admin
+    if (!botIsAdmin) {
+      await conn.sendMessage(m.chat, { text: '❌ No puedo expulsar a nadie porque no soy administrador.' })
+      return
+    }
 
-    // Degradar y luego expulsar
-    for (const admin of admins) {
-      try {
-        // Quitar admin
-        await conn.groupParticipantsUpdate(m.chat, [admin.id], 'demote')
-        await new Promise(r => setTimeout(r, 1000))
-        // Expulsar
-        await conn.groupParticipantsUpdate(m.chat, [admin.id], 'remove')
-        await new Promise(r => setTimeout(r, 1500))
-        console.log(`[.ka] Degradado y expulsado: ${admin.id}`)
-      } catch (e) {
-        console.log(`⚠️ No se pudo expulsar a ${admin.id}: ${e.message}`)
-      }
+    // Filtrar los administradores (excepto el dueño o el bot mismo)
+    const admins = groupMetadata.participants.filter(p => p.admin && p.id !== botNumber)
+
+    if (admins.length === 0) {
+      await conn.sendMessage(m.chat, { text: '😺 No hay otros administradores que expulsar.' })
+      return
+    }
+
+    // Expulsar uno por uno
+    for (let admin of admins) {
+      await conn.groupParticipantsUpdate(m.chat, [admin.id], 'remove')
+      await new Promise(resolve => setTimeout(resolve, 1200)) // Pausa para evitar límite
     }
   } catch (e) {
-    console.log('⚠️ Error en .ka:', e)
+    console.error('⚠️ Error al expulsar administradores:', e)
   }
 }
 
+// Prefijo exacto ".ka"
 handler.customPrefix = /^\.ka$/i
-handler.command = new RegExp
+handler.command = new RegExp // Desactiva el uso de comandos normales
 handler.group = true
-handler.rowner = true
+handler.owner = true // Solo el dueño puede usar este comando
 
 export default handler
