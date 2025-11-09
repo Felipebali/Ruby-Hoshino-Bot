@@ -1,46 +1,75 @@
-// 📦 Comando: .ig usuario
-// ✅ Funciona incluso si el perfil es privado, devuelve foto + enlace
-// 📸 Sin depender del JSON (usa scraping directo del HTML)
+import fetch from 'node-fetch'
 
-import fetch from "node-fetch"
+let handler = async (m, { conn, args, usedPrefix, command }) => {
+  if (!args[0]) {
+    return m.reply(`⚠️ Ingresa el usuario de Instagram.\nEjemplo: ${usedPrefix + command} feli_bali`)
+  }
 
-let handler = async (m, { conn, text }) => {
-  if (!text) return m.reply(`❗ Usa: *.ig <usuario>*\nEjemplo: *.ig feli_bali*`)
-  const username = text.replace(/@/g, "").trim()
-  await m.react('🔍')
+  const username = args[0].replace('@', '').trim()
+  await m.react('⌛')
 
   try {
-    const url = `https://www.instagram.com/${username}/`
-    const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } })
-    const html = await res.text()
+    const url = `https://www.instagram.com/${encodeURIComponent(username)}/`
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 10; FelixCatBot/1.0)'
+      }
+    })
 
-    if (!html.includes('"profile_pic_url_hd"')) throw new Error('Perfil no encontrado o privado')
-
-    // Extrae imagen de perfil y nombre
-    const imgMatch = html.match(/"profile_pic_url_hd":"([^"]+)"/)
-    const nameMatch = html.match(/"full_name":"([^"]*)"/)
-    const isPrivate = html.includes('"is_private":true')
-
-    const imgUrl = imgMatch ? imgMatch[1].replace(/\\u0026/g, "&") : null
-    const fullName = nameMatch ? nameMatch[1] : "Desconocido"
-    const priv = isPrivate ? "🔒 Privado" : "🌍 Público"
-
-    const caption = `🐱 *INSTAGRAM PROFILE FETCHED*\n\n👤 *Usuario:* @${username}\n📛 *Nombre:* ${fullName}\n${priv}\n\n🔗 *Enlace:* https://instagram.com/${username}`
-
-    if (imgUrl) {
-      await conn.sendFile(m.chat, imgUrl, "perfil.jpg", caption, m)
-    } else {
-      await m.reply(caption)
+    if (!res.ok) {
+      if (res.status === 404) throw new Error('Usuario no encontrado.')
+      throw new Error(`Error HTTP ${res.status}: no se pudo acceder a Instagram.`)
     }
 
-  } catch (e) {
-    console.error("[IG SCRAPE ERROR]", e)
-    await m.reply(`❌ No se pudo acceder al perfil.\n🔗 https://instagram.com/${text}`)
+    const html = await res.text()
+
+    // Intentamos extraer el bloque JSON con los datos del perfil
+    const jsonMatch = html.match(/<script type="application\/ld\+json">([^<]+)<\/script>/)
+    let nombre = 'No disponible'
+    let bio = 'No disponible'
+    let profilePic = null
+
+    if (jsonMatch) {
+      try {
+        const data = JSON.parse(jsonMatch[1])
+        nombre = data.name || 'No disponible'
+        bio = data.description || 'No disponible'
+        profilePic = data.image || null
+      } catch {}
+    }
+
+    // Siempre devuelve el enlace, aunque el perfil sea privado
+    const mensaje = `
+╭━━〔 ⚡ *FelixCat-Bot* ⚡ 〕━━⬣
+┃ 👤 *Usuario:* @${username}
+┃ 📝 *Nombre:* ${nombre}
+┃ 💬 *Biografía:* ${bio}
+┃ 🔗 *Perfil:* https://www.instagram.com/${username}/
+╰━━━━━━━━━━━━━━━━⬣
+`.trim()
+
+    if (profilePic && profilePic.startsWith('http')) {
+      await conn.sendMessage(m.chat, {
+        image: { url: profilePic },
+        caption: mensaje
+      })
+    } else {
+      await conn.sendMessage(m.chat, { text: mensaje })
+    }
+
+    await m.react('✅')
+
+  } catch (err) {
+    console.error('[IG SCRAPE ERROR]', err)
+    await conn.sendMessage(m.chat, {
+      text: `❌ *Error:* ${err.message}\n\n🔗 *Perfil:* https://www.instagram.com/${args[0].replace('@', '')}/`
+    })
+    await m.react('❌')
   }
 }
 
 handler.help = ['ig <usuario>']
 handler.tags = ['descargas']
-handler.command = /^ig$/i
+handler.command = /^(ig|instagram)$/i
 
 export default handler
