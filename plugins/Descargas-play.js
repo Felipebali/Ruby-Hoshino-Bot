@@ -70,22 +70,11 @@ const handler = async (m, { conn, text, command }) => {
 
         const audioUrl = json.result.download.url
         const titulo = json.result.metadata.title || title
-        const cover = json.result.metadata.thumbnail || thumbnail
 
         await conn.sendMessage(m.chat, {
           audio: { url: audioUrl },
           mimetype: 'audio/mpeg',
-          fileName: `${titulo}.mp3`,
-          contextInfo: {
-            externalAdReply: {
-              title: titulo,
-              body: '',
-              mediaType: 1,
-              thumbnailUrl: cover,
-              sourceUrl: url,
-              renderLargerThumbnail: false
-            }
-          }
+          fileName: `${titulo}.mp3`
         }, { quoted: m })
 
         await m.react('🎶')
