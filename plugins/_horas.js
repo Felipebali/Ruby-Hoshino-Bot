@@ -1,23 +1,46 @@
-// 🐾 plugins/_horas.js — FelixCat_Bot 🕒 Control de horarios automáticos con cancelación
-const programaciones = {}; // Guardará los temporizadores por grupo
+// 🐾 plugins/_horas.js — FelixCat_Bot 🕒 Control total de horarios automáticos
+const programaciones = {}; // { idGrupo: { accion, hora, timeout } }
 
 let handler = async (m, { conn, command, args, isAdmin }) => {
   if (!isAdmin) return m.reply('⚠️ Solo los administradores pueden usar este comando.');
-
   const idGrupo = m.chat;
 
-  // --- COMANDO CANCELAR ---
+  // --- CANCELAR ---
   if (command === 'cancelar') {
     if (programaciones[idGrupo]) {
-      clearTimeout(programaciones[idGrupo]);
+      clearTimeout(programaciones[idGrupo].timeout);
       delete programaciones[idGrupo];
-      return m.reply('❌ Se canceló la programación automática de apertura/cierre para este grupo.');
+      return m.reply('❌ Se canceló la programación automática para este grupo.');
     } else {
       return m.reply('ℹ️ No hay ninguna programación activa para este grupo.');
     }
   }
 
-  // --- COMANDO ABRIR / CERRAR ---
+  // --- LISTAR PROGRAMACIONES ---
+  if (command === 'listahoras') {
+    const keys = Object.keys(programaciones);
+    if (keys.length === 0) return m.reply('📭 No hay horarios automáticos programados.');
+
+    let texto = '🕒 *Programaciones activas:*\n\n';
+    for (const grupoId of keys) {
+      const { accion, hora } = programaciones[grupoId];
+      const groupName = (await conn.groupMetadata(grupoId).catch(() => ({ subject: 'Grupo desconocido' }))).subject;
+      texto += `• *${groupName}*\n   → ${accion === 'abrir' ? '🟢 Abrir' : '🔒 Cerrar'} a las *${hora}*\n\n`;
+    }
+
+    return m.reply(texto.trim());
+  }
+
+  // --- LIMPIAR TODAS ---
+  if (command === 'limpiarhoras') {
+    for (const g in programaciones) {
+      clearTimeout(programaciones[g].timeout);
+      delete programaciones[g];
+    }
+    return m.reply('🧹 Todas las programaciones automáticas fueron eliminadas.');
+  }
+
+  // --- PROGRAMAR ABRIR / CERRAR ---
   if (!args[0]) return m.reply(`⏰ Uso correcto:\n\n.${command} HH:MM:SS\n\nEjemplo:\n.${command} 22:30:00`);
 
   const hora = args[0];
@@ -27,8 +50,6 @@ let handler = async (m, { conn, command, args, isAdmin }) => {
   const ahora = new Date();
   const objetivo = new Date();
   objetivo.setHours(h, min, seg, 0);
-
-  // Si ya pasó la hora, se programa para mañana
   if (objetivo <= ahora) objetivo.setDate(objetivo.getDate() + 1);
 
   const msRestantes = objetivo - ahora;
@@ -39,31 +60,35 @@ let handler = async (m, { conn, command, args, isAdmin }) => {
 
   await m.reply(textoConfirm);
 
-  // Cancelar cualquier programación anterior antes de crear una nueva
-  if (programaciones[idGrupo]) clearTimeout(programaciones[idGrupo]);
+  // Cancelar programación anterior de este grupo si existe
+  if (programaciones[idGrupo]) clearTimeout(programaciones[idGrupo].timeout);
 
-  // Crear nueva programación
-  programaciones[idGrupo] = setTimeout(async () => {
-    try {
-      await conn.groupSettingUpdate(
-        m.chat,
-        accion === 'abrir' ? 'not_announcement' : 'announcement'
-      );
-      await conn.sendMessage(m.chat, {
-        text: `✅ El grupo fue ${accion === 'abrir' ? 'abierto' : 'cerrado'} automáticamente a las ${hora}`
-      });
-      delete programaciones[idGrupo]; // Limpia al ejecutarse
-    } catch (e) {
-      console.error(e);
-      await conn.sendMessage(m.chat, {
-        text: `❌ Error al intentar ${accion} el grupo automáticamente.`
-      });
-      delete programaciones[idGrupo];
-    }
-  }, msRestantes);
+  // Guardar nueva programación
+  programaciones[idGrupo] = {
+    accion,
+    hora,
+    timeout: setTimeout(async () => {
+      try {
+        await conn.groupSettingUpdate(
+          m.chat,
+          accion === 'abrir' ? 'not_announcement' : 'announcement'
+        );
+        await conn.sendMessage(m.chat, {
+          text: `✅ El grupo fue ${accion === 'abrir' ? 'abierto' : 'cerrado'} automáticamente a las ${hora}`
+        });
+        delete programaciones[idGrupo];
+      } catch (e) {
+        console.error(e);
+        await conn.sendMessage(m.chat, {
+          text: `❌ Error al intentar ${accion} el grupo automáticamente.`
+        });
+        delete programaciones[idGrupo];
+      }
+    }, msRestantes)
+  };
 };
 
-handler.command = ['abrir', 'cerrar', 'cancelar'];
+handler.command = ['abrir', 'cerrar', 'cancelar', 'listahoras', 'limpiarhoras'];
 handler.group = true;
 
 export default handler;
