@@ -9,37 +9,40 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
   await m.react('⌛')
 
   try {
-    const url = `https://api.sylphy.xyz/instagram?username=${encodeURIComponent(username)}&apikey=sylphy-fbb9`
-    const res = await fetch(url)
+    const url = `https://www.instagram.com/${encodeURIComponent(username)}/?__a=1&__d=dis`
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 10) FelixCatBot/1.0'
+      }
+    })
 
-    if (!res.ok) throw new Error(`Error HTTP ${res.status}: no se pudo acceder a la API.`)
-
-    const text = await res.text()
-    let data
-
-    try {
-      data = JSON.parse(text)
-    } catch {
-      throw new Error('❌ La API devolvió un formato inválido o está fuera de servicio.')
+    if (!res.ok) {
+      if (res.status === 404) throw new Error('Usuario no encontrado.')
+      throw new Error(`Error HTTP ${res.status}: no se pudo acceder a Instagram.`)
     }
 
-    if (!data.status || !data.result) throw new Error('⚠️ Usuario no encontrado o el perfil es privado.')
+    const data = await res.json()
+    const user = data.graphql?.user || data.data?.user
 
-    const user = data.result
+    if (!user) throw new Error('No se pudo obtener la información del usuario.')
+
     const mensaje = `
 ╭━━〔 ⚡ *FelixCat-Bot* ⚡ 〕━━⬣
 ┃ 👤 *Usuario:* @${user.username}
 ┃ 📝 *Nombre:* ${user.full_name || 'No disponible'}
 ┃ 💬 *Biografía:* ${user.biography || 'No disponible'}
-┃ 👥 *Seguidores:* ${user.followers || 'No disponible'}
-┃ 👣 *Siguiendo:* ${user.following || 'No disponible'}
+┃ 👥 *Seguidores:* ${user.edge_followed_by?.count || 'No disponible'}
+┃ 👣 *Siguiendo:* ${user.edge_follow?.count || 'No disponible'}
+┃ 📸 *Publicaciones:* ${user.edge_owner_to_timeline_media?.count || 0}
 ┃ 🔗 *Perfil:* https://www.instagram.com/${user.username}/
 ╰━━━━━━━━━━━━━━━━⬣
 `.trim()
 
-    if (user.profile_pic && user.profile_pic.startsWith('http')) {
+    const profilePic = user.profile_pic_url_hd || user.profile_pic_url || null
+
+    if (profilePic) {
       await conn.sendMessage(m.chat, {
-        image: { url: user.profile_pic },
+        image: { url: profilePic },
         caption: mensaje
       })
     } else {
@@ -47,8 +50,9 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
     }
 
     await m.react('✅')
+
   } catch (err) {
-    console.error('[IG ERROR]', err)
+    console.error('[IG SCRAPE ERROR]', err)
     await m.reply(`❌ *Error:* ${err.message}`)
     await m.react('❌')
   }
