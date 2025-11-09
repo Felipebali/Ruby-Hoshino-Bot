@@ -1,75 +1,75 @@
-import fetch from 'node-fetch'
+// 📦 Comando: .ig usuario
+// ✅ Muestra info de perfil IG (si es público) o al menos la foto + link si es privado.
 
-let handler = async (m, { conn, args, usedPrefix, command }) => {
-  if (!args[0]) {
-    return m.reply(`⚠️ Ingresa el usuario de Instagram.\nEjemplo: ${usedPrefix + command} feli_bali`)
-  }
+import fetch from "node-fetch"
 
-  const username = args[0].replace('@', '').trim()
-  await m.react('⌛')
-
+let handler = async (m, { conn, text, command }) => {
   try {
-    const url = `https://www.instagram.com/${encodeURIComponent(username)}/`
-    const res = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Linux; Android 10; FelixCatBot/1.0)'
-      }
-    })
+    if (!text) return m.reply(`❗ Usa: *.ig <usuario>*\nEjemplo: *.ig feli_bali*`)
+    const username = text.replace(/@/g, "").trim()
 
-    if (!res.ok) {
-      if (res.status === 404) throw new Error('Usuario no encontrado.')
-      throw new Error(`Error HTTP ${res.status}: no se pudo acceder a Instagram.`)
-    }
+    await m.react('🔍')
 
-    const html = await res.text()
+    // Primero intenta la API oficial pública de Instagram
+    let url = `https://www.instagram.com/${username}/?__a=1&__d=dis`
+    let res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } })
 
-    // Intentamos extraer el bloque JSON con los datos del perfil
-    const jsonMatch = html.match(/<script type="application\/ld\+json">([^<]+)<\/script>/)
-    let nombre = 'No disponible'
-    let bio = 'No disponible'
-    let profilePic = null
+    if (!res.ok) throw new Error("Perfil no encontrado o privado.")
+    let data = await res.json()
 
-    if (jsonMatch) {
-      try {
-        const data = JSON.parse(jsonMatch[1])
-        nombre = data.name || 'No disponible'
-        bio = data.description || 'No disponible'
-        profilePic = data.image || null
-      } catch {}
-    }
+    // Algunos perfiles privados igual muestran el avatar en el JSON
+    let user = data.graphql?.user || data.data?.user
+    if (!user) throw new Error("No se pudo extraer información del perfil.")
 
-    // Siempre devuelve el enlace, aunque el perfil sea privado
-    const mensaje = `
-╭━━〔 ⚡ *FelixCat-Bot* ⚡ 〕━━⬣
-┃ 👤 *Usuario:* @${username}
-┃ 📝 *Nombre:* ${nombre}
-┃ 💬 *Biografía:* ${bio}
-┃ 🔗 *Perfil:* https://www.instagram.com/${username}/
-╰━━━━━━━━━━━━━━━━⬣
-`.trim()
+    let fullName = user.full_name || "Desconocido"
+    let bio = user.biography || "Sin biografía."
+    let followers = user.edge_followed_by?.count || "?"
+    let following = user.edge_follow?.count || "?"
+    let posts = user.edge_owner_to_timeline_media?.count || "?"
+    let privateAcc = user.is_private ? "🔒 Privado" : "🌍 Público"
+    let verified = user.is_verified ? "✅ Verificado" : "❌ No verificado"
+    let profilePic = user.profile_pic_url_hd || user.profile_pic_url || null
 
-    if (profilePic && profilePic.startsWith('http')) {
-      await conn.sendMessage(m.chat, {
-        image: { url: profilePic },
-        caption: mensaje
-      })
+    let caption = `🐱 *INSTAGRAM PROFILE FETCHED*\n\n👤 *Usuario:* @${username}\n📛 *Nombre:* ${fullName}\n${verified}\n${privateAcc}\n📸 *Publicaciones:* ${posts}\n👥 *Seguidores:* ${followers}\n➡️ *Siguiendo:* ${following}\n📝 *Bio:* ${bio}\n\n🔗 *Enlace:* https://instagram.com/${username}`
+
+    if (profilePic) {
+      await conn.sendFile(m.chat, profilePic, "profile.jpg", caption, m)
     } else {
-      await conn.sendMessage(m.chat, { text: mensaje })
+      await m.reply(caption)
     }
-
-    await m.react('✅')
 
   } catch (err) {
-    console.error('[IG SCRAPE ERROR]', err)
-    await conn.sendMessage(m.chat, {
-      text: `❌ *Error:* ${err.message}\n\n🔗 *Perfil:* https://www.instagram.com/${args[0].replace('@', '')}/`
-    })
-    await m.react('❌')
+    console.error("[IG SCRAPE ERROR]", err)
+
+    // Si el perfil es privado o la API falla, mostramos al menos el enlace y la imagen pública
+    const username = text?.replace(/@/g, "").trim()
+    if (username) {
+      try {
+        let fallback = await fetch(`https://www.instagram.com/${username}/?__a=1&__d=dis`, {
+          headers: { "User-Agent": "Mozilla/5.0" },
+        })
+        let fallbackData = await fallback.json()
+        let avatar = fallbackData.graphql?.user?.profile_pic_url_hd || fallbackData.graphql?.user?.profile_pic_url
+        if (avatar) {
+          return await conn.sendFile(
+            m.chat,
+            avatar,
+            "perfil.jpg",
+            `🔒 *Perfil privado o restringido*\n\n🔗 https://instagram.com/${username}`,
+            m
+          )
+        }
+      } catch (e) {
+        console.error("[IG FALLBACK ERROR]", e)
+      }
+    }
+
+    await m.reply(`❌ Error: No se pudo obtener información.\n🔗 https://instagram.com/${text}`)
   }
 }
 
 handler.help = ['ig <usuario>']
 handler.tags = ['descargas']
-handler.command = /^(ig|instagram)$/i
+handler.command = /^ig$/i
 
 export default handler
