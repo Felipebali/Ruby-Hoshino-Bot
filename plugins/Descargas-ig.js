@@ -1,3 +1,8 @@
+// 📸 Comando: .ig <usuario>
+// 🧠 Extrae info desde el HTML de Instagram (sin API externa)
+// ✅ Funciona con perfiles privados y públicos
+// 🐱 FelixCat-Bot by Feli
+
 import fetch from 'node-fetch'
 
 let handler = async (m, { conn, args, usedPrefix, command }) => {
@@ -11,9 +16,7 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
   try {
     const url = `https://www.instagram.com/${encodeURIComponent(username)}/`
     const res = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Linux; Android 10; FelixCatBot/1.0)'
-      }
+      headers: { 'User-Agent': 'Mozilla/5.0 (Linux; Android 10; FelixCatBot/1.0)' }
     })
 
     if (!res.ok) {
@@ -23,22 +26,24 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
 
     const html = await res.text()
 
-    // Intentamos extraer el bloque JSON con los datos del perfil
-    const jsonMatch = html.match(/<script type="application\/ld\+json">([^<]+)<\/script>/)
+    // Extraemos el bloque JSON con los datos del perfil
+    const jsonMatch = html.match(/<script type="application\/ld\+json">({[^<]+})<\/script>/)
+    if (!jsonMatch) throw new Error('No se encontró información en el perfil.')
+
     let nombre = 'No disponible'
     let bio = 'No disponible'
     let profilePic = null
 
-    if (jsonMatch) {
-      try {
-        const data = JSON.parse(jsonMatch[1])
-        nombre = data.name || 'No disponible'
-        bio = data.description || 'No disponible'
-        profilePic = data.image || null
-      } catch {}
+    try {
+      const data = JSON.parse(jsonMatch[1])
+      nombre = data.name || 'No disponible'
+      bio = (data.description || 'No disponible').replace(/\\n/g, '\n')
+      profilePic = data.image || null
+    } catch {
+      throw new Error('Error al procesar los datos del perfil.')
     }
 
-    // Siempre devuelve el enlace, aunque el perfil sea privado
+    // Mensaje final
     const mensaje = `
 ╭━━〔 ⚡ *FelixCat-Bot* ⚡ 〕━━⬣
 ┃ 👤 *Usuario:* @${username}
@@ -62,7 +67,7 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
   } catch (err) {
     console.error('[IG SCRAPE ERROR]', err)
     await conn.sendMessage(m.chat, {
-      text: `❌ *Error:* ${err.message}\n\n🔗 *Perfil:* https://www.instagram.com/${args[0].replace('@', '')}/`
+      text: `❌ *Error:* ${err.message}\n\n🔗 *Perfil:* https://www.instagram.com/${username}/`
     })
     await m.react('❌')
   }
