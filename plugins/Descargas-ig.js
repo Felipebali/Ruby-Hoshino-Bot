@@ -9,33 +9,34 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
   await m.react('⌛')
 
   try {
-    // Petición al sitio público de análisis de Instagram
-    const res = await fetch('https://instasupersave.com/api/ig/userInfoByUsername/' + encodeURIComponent(username), {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json'
-      }
-    })
+    // Petición a un servicio que devuelve datos públicos
+    const res = await fetch(`https://snapinsta.app/api/userinfo?username=${encodeURIComponent(username)}`)
+    if (!res.ok) throw new Error(`Error HTTP ${res.status}: no se pudo acceder al servidor.`)
 
-    if (!res.ok) throw new Error(`Error HTTP ${res.status}: no se pudo acceder a la fuente.`)
+    const text = await res.text()
+    let data
+    try {
+      data = JSON.parse(text)
+    } catch {
+      throw new Error('La fuente devolvió una respuesta no válida o cambió el formato.')
+    }
 
-    const data = await res.json()
-    if (!data || !data.result || !data.result.user) throw new Error('Usuario no encontrado o perfil privado.')
+    if (!data.user || !data.user.username) throw new Error('Usuario no encontrado o perfil privado.')
 
-    const user = data.result.user
+    const user = data.user
     const mensaje = `
 ╭━━〔 ⚡ *FelixCat-Bot* ⚡ 〕━━⬣
 ┃ 👤 *Usuario:* @${user.username}
 ┃ 📝 *Nombre:* ${user.full_name || 'No disponible'}
 ┃ 💬 *Biografía:* ${user.biography || 'No disponible'}
-┃ 👥 *Seguidores:* ${user.edge_followed_by?.count || 'No disponible'}
-┃ 👣 *Siguiendo:* ${user.edge_follow?.count || 'No disponible'}
-┃ 📸 *Publicaciones:* ${user.edge_owner_to_timeline_media?.count || 0}
+┃ 👥 *Seguidores:* ${user.followers || 'No disponible'}
+┃ 👣 *Siguiendo:* ${user.following || 'No disponible'}
+┃ 📸 *Publicaciones:* ${user.posts || 0}
 ┃ 🔗 *Perfil:* https://www.instagram.com/${user.username}/
 ╰━━━━━━━━━━━━━━━━⬣
 `.trim()
 
-    const profilePic = user.profile_pic_url_hd || user.profile_pic_url || null
+    const profilePic = user.profile_pic || user.profile_pic_hd || null
 
     if (profilePic) {
       await conn.sendMessage(m.chat, {
