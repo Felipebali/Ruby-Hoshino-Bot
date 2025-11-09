@@ -9,23 +9,20 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
   await m.react('⌛')
 
   try {
-    const url = `https://www.instagram.com/${encodeURIComponent(username)}/?__a=1&__d=dis`
-    const res = await fetch(url, {
+    // Petición al sitio público de análisis de Instagram
+    const res = await fetch('https://instasupersave.com/api/ig/userInfoByUsername/' + encodeURIComponent(username), {
+      method: 'POST',
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Linux; Android 10) FelixCatBot/1.0'
+        'content-type': 'application/json'
       }
     })
 
-    if (!res.ok) {
-      if (res.status === 404) throw new Error('Usuario no encontrado.')
-      throw new Error(`Error HTTP ${res.status}: no se pudo acceder a Instagram.`)
-    }
+    if (!res.ok) throw new Error(`Error HTTP ${res.status}: no se pudo acceder a la fuente.`)
 
     const data = await res.json()
-    const user = data.graphql?.user || data.data?.user
+    if (!data || !data.result || !data.result.user) throw new Error('Usuario no encontrado o perfil privado.')
 
-    if (!user) throw new Error('No se pudo obtener la información del usuario.')
-
+    const user = data.result.user
     const mensaje = `
 ╭━━〔 ⚡ *FelixCat-Bot* ⚡ 〕━━⬣
 ┃ 👤 *Usuario:* @${user.username}
