@@ -1,54 +1,61 @@
-import fetch from 'node-fetch';
+import fetch from 'node-fetch'
 
-let handler = async (m, { conn, args, usedPrefix }) => {
-  if (!args[0]) return m.reply(`⚠️ Ingresa el usuario de Instagram.\nEjemplo: ${usedPrefix}ig feli_bali`);
+let handler = async (m, { conn, args, usedPrefix, command }) => {
+  if (!args[0]) {
+    return m.reply(`⚠️ Ingresa el usuario de Instagram.\nEjemplo: ${usedPrefix + command} feli_bali`)
+  }
 
-  const username = args[0].replace('@', '').trim();
-  await m.react('⌛');
+  const username = args[0].replace('@', '').trim()
+  await m.react('⌛')
 
   try {
-    const res = await fetch(`https://api.sylphy.xyz/instagram?username=${username}&apikey=sylphy-fbb9`);
-    const text = await res.text(); // obtenemos como texto para revisar si es JSON
+    const url = `https://api.sylphy.xyz/instagram?username=${encodeURIComponent(username)}&apikey=sylphy-fbb9`
+    const res = await fetch(url)
 
-    let data;
+    if (!res.ok) throw new Error(`Error HTTP ${res.status}: no se pudo acceder a la API.`)
+
+    const text = await res.text()
+    let data
+
     try {
-      data = JSON.parse(text); // intentamos parsear JSON
+      data = JSON.parse(text)
     } catch {
-      throw new Error('La API no respondió JSON válido. Puede estar caída o la clave API es incorrecta.');
+      throw new Error('❌ La API devolvió un formato inválido o está fuera de servicio.')
     }
 
-    if (!data.status) throw new Error('Usuario no encontrado o privado');
+    if (!data.status || !data.result) throw new Error('⚠️ Usuario no encontrado o el perfil es privado.')
 
-    const user = data.result;
-
+    const user = data.result
     const mensaje = `
-╭━━〔 ⚡ FelixCat-Bot ⚡ 〕━━⬣
-┃ 👤 Usuario: @${user.username}
-┃ 📝 Nombre: ${user.full_name || 'No disponible'}
-┃ 💬 Bio: ${user.biography || 'No disponible'}
-┃ 👥 Seguidores: ${user.followers || 'No disponible'}
-┃ 👣 Siguiendo: ${user.following || 'No disponible'}
-┃ 🔗 Link: https://www.instagram.com/${user.username}/
+╭━━〔 ⚡ *FelixCat-Bot* ⚡ 〕━━⬣
+┃ 👤 *Usuario:* @${user.username}
+┃ 📝 *Nombre:* ${user.full_name || 'No disponible'}
+┃ 💬 *Biografía:* ${user.biography || 'No disponible'}
+┃ 👥 *Seguidores:* ${user.followers || 'No disponible'}
+┃ 👣 *Siguiendo:* ${user.following || 'No disponible'}
+┃ 🔗 *Perfil:* https://www.instagram.com/${user.username}/
 ╰━━━━━━━━━━━━━━━━⬣
-`.trim();
+`.trim()
 
-    if (user.profile_pic) {
-      await conn.sendMessage(m.chat, { image: { url: user.profile_pic }, caption: mensaje });
+    if (user.profile_pic && user.profile_pic.startsWith('http')) {
+      await conn.sendMessage(m.chat, {
+        image: { url: user.profile_pic },
+        caption: mensaje
+      })
     } else {
-      await conn.sendMessage(m.chat, { text: mensaje });
+      await conn.sendMessage(m.chat, { text: mensaje })
     }
 
-    await m.react('✅');
-
+    await m.react('✅')
   } catch (err) {
-    console.error(err);
-    await m.reply(`❌ Error: ${err.message}`);
-    await m.react('❌');
+    console.error('[IG ERROR]', err)
+    await m.reply(`❌ *Error:* ${err.message}`)
+    await m.react('❌')
   }
-};
+}
 
-handler.help = ['ig <usuario>'];
-handler.tags = ['descargas'];
-handler.command = /^(ig|instagram)$/i;
+handler.help = ['ig <usuario>']
+handler.tags = ['descargas']
+handler.command = /^(ig|instagram)$/i
 
-export default handler;
+export default handler
