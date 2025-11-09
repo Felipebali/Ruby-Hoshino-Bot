@@ -23,27 +23,32 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
 
     const html = await res.text()
 
-    // Buscamos los datos incrustados en la página (window._sharedData o graphql)
+    // Intentamos extraer el bloque JSON con los datos del perfil
     const jsonMatch = html.match(/<script type="application\/ld\+json">([^<]+)<\/script>/)
-    if (!jsonMatch) throw new Error('No se pudo extraer información (perfil privado o bloqueado).')
+    let nombre = 'No disponible'
+    let bio = 'No disponible'
+    let profilePic = null
 
-    const data = JSON.parse(jsonMatch[1])
+    if (jsonMatch) {
+      try {
+        const data = JSON.parse(jsonMatch[1])
+        nombre = data.name || 'No disponible'
+        bio = data.description || 'No disponible'
+        profilePic = data.image || null
+      } catch {}
+    }
 
-    const nombre = data.name || 'No disponible'
-    const bio = data.description || 'No disponible'
-    const perfil = data.mainEntityofPage?.['@id'] || `https://www.instagram.com/${username}/`
-    const profilePic = data.image || null
-
+    // Siempre devuelve el enlace, aunque el perfil sea privado
     const mensaje = `
 ╭━━〔 ⚡ *FelixCat-Bot* ⚡ 〕━━⬣
 ┃ 👤 *Usuario:* @${username}
 ┃ 📝 *Nombre:* ${nombre}
 ┃ 💬 *Biografía:* ${bio}
-┃ 🔗 *Perfil:* ${perfil}
+┃ 🔗 *Perfil:* https://www.instagram.com/${username}/
 ╰━━━━━━━━━━━━━━━━⬣
 `.trim()
 
-    if (profilePic) {
+    if (profilePic && profilePic.startsWith('http')) {
       await conn.sendMessage(m.chat, {
         image: { url: profilePic },
         caption: mensaje
@@ -56,7 +61,9 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
 
   } catch (err) {
     console.error('[IG SCRAPE ERROR]', err)
-    await m.reply(`❌ *Error:* ${err.message}`)
+    await conn.sendMessage(m.chat, {
+      text: `❌ *Error:* ${err.message}\n\n🔗 *Perfil:* https://www.instagram.com/${args[0].replace('@', '')}/`
+    })
     await m.react('❌')
   }
 }
