@@ -30,7 +30,7 @@ const handler = async (m, { conn, text, command }) => {
     // 💀 --- REACCIÓN ESPECIAL RAMMSTEIN ---
     if (/rammstein/i.test(text)) {
       await m.react('🔥')
-      await conn.reply(m.chat, '⚡ *¡Du... Du hast mich!* 😈', m)
+      await conn.reply(m.chat, '🇩🇪 *Deutschland über alles* ⚡', m)
     }
 
     // 🔎 Reacción mientras busca
