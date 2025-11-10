@@ -1,4 +1,5 @@
-// 📂 plugins/propietario-re.js
+// 📂 plugins/propietario-listanegra.js
+
 function normalizeJid(jid = '') {
   if (!jid) return null
   return jid.replace(/@c\.us$/, '@s.whatsapp.net').replace(/@s\.whatsapp\.net$/, '@s.whatsapp.net')
@@ -9,7 +10,7 @@ const handler = async (m, { conn, command, text }) => {
   const done = '✅'
   const db = global.db.data.users || (global.db.data.users = {})
 
-  const reactions = { re: '✅', unre: '☢️', clre: '👀', verre: '📜', usre: '🧹' }
+  const reactions = { addn: '✅', remn: '☢️', clrn: '🧹', listn: '📜', seen: '👀' }
   if (reactions[command]) await conn.sendMessage(m.chat, { react: { text: reactions[command], key: m.key } })
 
   // --- DETECTAR USUARIO ---
@@ -35,13 +36,13 @@ const handler = async (m, { conn, command, text }) => {
   if (!reason) reason = 'No especificado'
 
   // --- VALIDAR USUARIO ---
-  if (!userJid && !['verre', 'usre'].includes(command))
+  if (!userJid && !['listn', 'clrn', 'seen'].includes(command))
     return conn.reply(m.chat, `${emoji} Debes responder, mencionar o escribir el número del usuario.`, m)
 
   if (userJid && !db[userJid]) db[userJid] = {}
 
   // --- AGREGAR A LISTA NEGRA ---
-  if (command === 're') {
+  if (command === 'addn') {
     db[userJid].banned = true
     db[userJid].banReason = reason
     db[userJid].bannedBy = m.sender
@@ -79,7 +80,7 @@ const handler = async (m, { conn, command, text }) => {
   }
 
   // --- QUITAR DE LISTA NEGRA ---
-  else if (command === 'unre') {
+  else if (command === 'remn') {
     if (!db[userJid]?.banned)
       return conn.sendMessage(m.chat, { text: `${emoji} @${userJid.split('@')[0]} no está en la lista negra.`, mentions: [userJid] })
 
@@ -90,10 +91,10 @@ const handler = async (m, { conn, command, text }) => {
     await conn.sendMessage(m.chat, { text: `${done} @${userJid.split('@')[0]} fue eliminado de la lista negra.`, mentions: [userJid] })
   }
 
-  // --- CONSULTAR ESTADO ---
-  else if (command === 'clre') {
-    if (!db[userJid]?.banned)
-      return conn.sendMessage(m.chat, { text: `✅ @${userJid.split('@')[0]} no está en la lista negra.`, mentions: [userJid] })
+  // --- CONSULTAR USUARIO ---
+  else if (command === 'seen') {
+    if (!userJid || !db[userJid]?.banned)
+      return conn.sendMessage(m.chat, { text: `✅ @${userJid?.split('@')[0] || 'Usuario'} no está en la lista negra.`, mentions: [userJid] })
 
     await conn.sendMessage(m.chat, {
       text: `${emoji} @${userJid.split('@')[0]} está en la lista negra.\n📝 Motivo: ${db[userJid].banReason || 'No especificado'}`,
@@ -102,7 +103,7 @@ const handler = async (m, { conn, command, text }) => {
   }
 
   // --- VER LISTA COMPLETA ---
-  else if (command === 'verre') {
+  else if (command === 'listn') {
     const bannedUsers = Object.entries(db).filter(([_, data]) => data?.banned)
     if (bannedUsers.length === 0)
       return conn.sendMessage(m.chat, { text: `${done} No hay usuarios en la lista negra.` })
@@ -119,7 +120,7 @@ const handler = async (m, { conn, command, text }) => {
   }
 
   // --- VACIAR LISTA ---
-  else if (command === 'usre') {
+  else if (command === 'clrn') {
     for (const jid in db) {
       if (db[jid]?.banned) {
         db[jid].banned = false
@@ -186,9 +187,9 @@ handler.participantsUpdate = async function (event) {
   }
 }
 
-handler.help = ['re', 'unre', 'clre', 'verre', 'usre']
+handler.help = ['addn', 'remn', 'clrn', 'listn', 'seen']
 handler.tags = ['owner']
-handler.command = ['re', 'unre', 'clre', 'verre', 'usre']
+handler.command = ['addn', 'remn', 'clrn', 'listn', 'seen']
 handler.rowner = true
 
 export default handler
