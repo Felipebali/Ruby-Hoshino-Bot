@@ -9,7 +9,7 @@ const handler = async (m, { conn, text, command }) => {
     // --- COOLDOWN 2 MIN ---
     const now = Date.now()
     const lastUsed = cooldowns[m.sender] || 0
-    const waitTime = 2 * 60 * 1000 // 2 minutos en ms
+    const waitTime = 2 * 60 * 1000 // 2 minutos
 
     if (now - lastUsed < waitTime) {
       const remaining = Math.ceil((waitTime - (now - lastUsed)) / 1000)
@@ -19,6 +19,12 @@ const handler = async (m, { conn, text, command }) => {
 
     if (!text?.trim())
       return conn.reply(m.chat, `⚽ *Por favor, ingresa el nombre o enlace del video.*`, m)
+
+    // 💀 --- REACCIÓN ESPECIAL RAMMSTEIN ---
+    if (/rammstein/i.test(text)) {
+      await m.react('🔥')
+      await conn.reply(m.chat, '⚡ *¡Du... Du hast mich!* 😈', m)
+    }
 
     // 🔎 Reacción mientras busca
     await m.react('🔎')
