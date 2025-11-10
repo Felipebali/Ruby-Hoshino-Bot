@@ -37,11 +37,11 @@ let handler = async (m, { conn }) => {
 • .adminclear — Limpiar historial 🗑️
 
 🚫 *Lista Negra*
-• .re @user — Agregar ⚠️
-• .unre @user — Quitar ✅
-• .clre @user — Consultar 🔍
-• .verre — Ver lista 📋
-• .usre — Vaciar 🗑️
+• .addn @user — Agregar ⚠️
+• .remn @user — Quitar ✅
+• .listn — Ver lista 📋
+• .clrn — Limpiar lista 🗑️
+• .seen @user — Consultar usuario 🔍
 • .resetuser @user — Reiniciar datos 🔄
 
 💬 *Comandos Útiles*
