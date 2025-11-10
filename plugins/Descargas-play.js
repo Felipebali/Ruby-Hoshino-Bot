@@ -4,6 +4,9 @@ import yts from "yt-search"
 const youtubeRegexID = /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/
 const cooldowns = {} // Aquí guardaremos los timestamps de cada usuario
 
+// 🧠 Agregamos lista de owners
+const owners = ["59896026646@s.whatsapp.net", "59898719147@s.whatsapp.net"]
+
 const handler = async (m, { conn, text, command }) => {
   try {
     // --- COOLDOWN 2 MIN ---
@@ -11,11 +14,15 @@ const handler = async (m, { conn, text, command }) => {
     const lastUsed = cooldowns[m.sender] || 0
     const waitTime = 2 * 60 * 1000 // 2 minutos
 
-    if (now - lastUsed < waitTime) {
-      const remaining = Math.ceil((waitTime - (now - lastUsed)) / 1000)
-      return conn.reply(m.chat, `⏳ Por favor espera ${remaining} segundos antes de usar otro video.`, m)
+    // 🧩 Saltar cooldown si es owner
+    const isOwner = owners.includes(m.sender)
+    if (!isOwner) {
+      if (now - lastUsed < waitTime) {
+        const remaining = Math.ceil((waitTime - (now - lastUsed)) / 1000)
+        return conn.reply(m.chat, `⏳ Por favor espera ${remaining} segundos antes de usar otro video.`, m)
+      }
+      cooldowns[m.sender] = now
     }
-    cooldowns[m.sender] = now
 
     if (!text?.trim())
       return conn.reply(m.chat, `⚽ *Por favor, ingresa el nombre o enlace del video.*`, m)
