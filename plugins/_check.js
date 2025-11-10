@@ -1,21 +1,22 @@
-// 🐾 plugins/_autoCheckBotAdmin.js — FelixCat_Bot
-// Aviso automático si el bot no es administrador en un grupo
+// 🐾 plugins/_botAdminCheck.js — FelixCat_Bot
+// Detecta cualquier comando con prefijo "." y avisa si el bot no es administrador
 
 let handler = async (m, { conn }) => {
   try {
-    if (!m.isGroup) return;
+    // Solo se ejecuta si es un grupo y el mensaje empieza con "."
+    if (!m.isGroup || !m.text?.startsWith('.')) return;
 
     const botNumber = conn.user.id.split(':')[0] + '@s.whatsapp.net';
-    const groupMetadata = await conn.groupMetadata(m.chat);
-    const botData = groupMetadata.participants.find(p => p.id === botNumber);
+    const metadata = await conn.groupMetadata(m.chat);
+    const botInfo = metadata.participants.find(p => p.id === botNumber);
 
-    if (!botData?.admin) {
+    if (!botInfo?.admin) {
       await conn.sendMessage(m.chat, {
-        text: '⚠️ *Atención:* Necesito ser *administrador* para funcionar correctamente en este grupo.\n\nPor favor, otórgame permisos de administrador 😿'
+        text: `⚠️ *Necesito ser administrador* para funcionar correctamente en este grupo 😿\n\nPor favor, otórgame permisos para usar mis comandos.`
       });
     }
-  } catch (e) {
-    console.error('[AUTO CHECK ADMIN ERROR]', e);
+  } catch (err) {
+    console.error('[BOT ADMIN CHECK ERROR]', err);
   }
 };
 
