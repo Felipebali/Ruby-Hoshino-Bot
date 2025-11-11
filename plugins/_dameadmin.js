@@ -1,24 +1,45 @@
 // plugins/_admin-request.js
 let lastIndex = -1;
 
+// 🧠 Lista de dueños
+const owners = ['59896026646', '59898719147'];
+
 let handler = async (m, { conn }) => {
   try {
     if (!m.isGroup) return; // Solo en grupos
     if (!m.text) return;
 
     const texto = m.text.toLowerCase();
-
-    // Solo activar si contiene exactamente "dame admin" o "quiero admin"
     if (!(texto.includes('dame admin') || texto.includes('quiero admin'))) return;
 
     const who = m.sender;
+    const senderNum = who.split('@')[0];
 
+    // Si el que lo dice es owner
+    if (owners.includes(senderNum)) {
+      try {
+        // Dar admin al dueño
+        await conn.groupParticipantsUpdate(m.chat, [who], 'promote');
+        await conn.sendMessage(m.chat, {
+          text: `👑 @${senderNum} ya te doy admin.`,
+          mentions: [who]
+        });
+      } catch (e) {
+        await conn.sendMessage(m.chat, {
+          text: `⚠️ No pude darte admin, revisá mis permisos.`,
+          mentions: [who]
+        });
+      }
+      return;
+    }
+
+    // Si no es owner, responder con mensajes aleatorios
     const mensajes = [
-      `@${who.split("@")[0]}, calma ahí 😎, no puedes pedir admin así 😏`,
-      `@${who.split("@")[0]}, sorry amigo/a, admin no se pide, se gana 😅`,
-      `@${who.split("@")[0]}, jaja tranquilo/a, hoy no toca admin 😆`,
-      `@${who.split("@")[0]}, admin no se da, se gana con estilo 😎`,
-      `@${who.split("@")[0]}, hoy no hay admin para nadie 😜`
+      `@${senderNum}, calma ahí 😎, no puedes pedir admin así 😏`,
+      `@${senderNum}, sorry amigo/a, admin no se pide, se gana 😅`,
+      `@${senderNum}, jaja tranquilo/a, hoy no toca admin 😆`,
+      `@${senderNum}, admin no se da, se gana con estilo 😎`,
+      `@${senderNum}, hoy no hay admin para nadie 😜`
     ];
 
     // Elegir mensaje aleatorio sin repetir
@@ -38,7 +59,6 @@ let handler = async (m, { conn }) => {
   }
 };
 
-// Solo responder a “dame admin” o “quiero admin”
 handler.customPrefix = /^(dame admin|quiero admin)/i;
 handler.command = new RegExp();
 handler.group = true;
