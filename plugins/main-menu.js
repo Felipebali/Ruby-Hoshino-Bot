@@ -20,6 +20,10 @@ let handler = async (m, { conn }) => {
 │ 💬 *${saludo}*
 ╰━━━━━━━🐾━━━━━━━╯
 
+💡 *Sugerencias:*
+┃ ✉️ *.sug* – Envía una sugerencia (1 cada 24h)
+┗━━━━━━━━━━━━━━━━━━━━━┛
+
 ┏━━━ 📚 *TIPOS DE MENÚ* ━━━┓
 ┃ 👤 *.menuser* – Comandos para todos los usuarios
 ┃ 🎮 *.menuj* – Juegos y entretenimiento
