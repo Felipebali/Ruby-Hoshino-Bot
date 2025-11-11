@@ -1,83 +1,126 @@
-import axios from "axios"
-import fetch from "node-fetch"
+import fetch from 'node-fetch'
+import Jimp from 'jimp'
+import baileys from '@whiskeysockets/baileys'
+const { proto } = baileys
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
   if (!text)
-    return conn.reply(
-      m.chat,
-      `🎋 Por favor, proporciona el nombre de una canción o artista.\nEjemplo: ${usedPrefix}${command} <nombre>`,
-      m
+    return m.reply(
+      `🍂 *Uso correcto:*\n\n✦ \`${usedPrefix + command}\` <url o nombre de canción>\n\n🍬 Ejemplo:\n${usedPrefix + command} https://open.spotify.com/track/2ROQe6QkIXODJRx0y8UjzV`
     )
 
+  await conn.sendMessage(m.chat, { react: { text: '🕓', key: m.key } })
+
   try {
-    // 🔍 Buscamos la canción en la API Delirius
-    let searchUrl = `https://api.delirius.store/search/spotify?q=${encodeURIComponent(text)}&limit=1`
-    let searchRes = await axios.get(searchUrl, { timeout: 15000 })
-    let result = searchRes.data?.data?.[0]
+    let spotifyUrl = text.includes('spotify.com/track') ? text : null
 
-    if (!result)
-      return conn.reply(m.chat, `❌ No se encontraron resultados para: *${text}*`, m)
-
-    let { title, artist, url: spotifyUrl, image } = result
-
-    // ⚙️ Intentamos descargar desde varias APIs seguras
-    const apis = [
-      `https://api.nekolabs.my.id/downloader/spotify/v1?url=${encodeURIComponent(spotifyUrl)}`,
-      `https://api.sylphy.xyz/download/spotify?url=${encodeURIComponent(spotifyUrl)}&apikey=sylphy-c519`,
-      `https://api.neoxr.eu/api/spotify?url=${encodeURIComponent(spotifyUrl)}&apikey=russellxz`
-    ]
-
-    let downloadUrl = null
-
-    for (let api of apis) {
-      try {
-        let res = await axios.get(api, { timeout: 20000 })
-        let data = res.data
-        if (data?.result?.downloadUrl) downloadUrl = data.result.downloadUrl
-        if (data?.data?.dl_url) downloadUrl = data.data.dl_url
-        if (data?.data?.url) downloadUrl = data.data.url
-        if (downloadUrl) break
-      } catch (err) {
-        console.log(`❌ Falló: ${api}`)
-      }
+    if (!spotifyUrl) {
+      const search = await fetch(`https://api.yupra.my.id/api/search/spotify?q=${encodeURIComponent(text)}`)
+      if (!search.ok) throw 'Error al buscar en Yupra.'
+      const sdata = await search.json()
+      const first = sdata.result?.[0]
+      if (!first) throw '❌ No se encontraron resultados en Spotify.'
+      spotifyUrl = first.spotify_preview || first.url
     }
 
-    if (!downloadUrl)
-      return conn.reply(m.chat, `❌ No se encontró un link de descarga válido.`, m)
+    const res = await fetch(`https://api.stellarwa.xyz/dl/spotifyv2?url=${encodeURIComponent(spotifyUrl)}&key=stellar-3j2706f1`)
+    if (!res.ok) throw 'Error al conectar con la API de Stellar.'
+    const data = await res.json()
+    if (!data.status || !data.data?.dl) throw '❌ No pude obtener la descarga del audio.'
 
-    // 🎵 Descargamos el audio
-    let audio = await fetch(downloadUrl)
-    let buffer = await audio.buffer()
+    const d = data.data
+    const song = {
+      title: d.title,
+      artist: d.artist,
+      album: d.album,
+      release: d.release_date,
+      duration: d.duration,
+      image: d.image,
+      card: d.card,
+      download: d.dl,
+      spotify: spotifyUrl,
+    }
+
+    let thumb = null
+    try {
+      const img = await Jimp.read(song.image)
+      img.resize(300, Jimp.AUTO)
+      thumb = await img.getBufferAsync(Jimp.MIME_JPEG)
+    } catch {}
+
+    const caption = `
+🎧 *${song.title}*
+👤 *${song.artist}*
+💽 ${song.album}
+📆 ${song.release}
+⏱️ ${song.duration}
+🔗 [Spotify](${song.spotify})
+`
 
     await conn.sendMessage(
       m.chat,
       {
-        audio: buffer,
-        mimetype: "audio/mpeg",
-        fileName: `${title}.mp3`,
-        ptt: false,
+        document: { url: song.download },
+        mimetype: 'audio/mpeg',
+        fileName: `${song.title}.mp3`,
+        caption,
         contextInfo: {
           externalAdReply: {
-            title: title,
-            body: artist,
-            thumbnailUrl: image,
-            sourceUrl: spotifyUrl,
-            mediaType: 1,
+            title: song.title,
+            body: song.artist,
+            thumbnailUrl: song.card || song.image,
+            mediaType: 2,
             renderLargerThumbnail: true,
+            sourceUrl: song.spotify,
+          },
+
+          mentionedJid: [m.sender],
+          forwardingScore: 999,
+          isForwarded: true,
+          businessMessageForwardInfo: {},
+          messageAd: true,
+          externalReply: true,
+          buttonParamsJson: JSON.stringify({
+            display_text: '🎵 ᴇsᴄᴜᴄʜᴀʀ ᴇɴ sᴘᴏᴛɪғʏ',
+            url: song.spotify,
+          }),
+        },
+      },
+      { quoted: m }
+    )
+
+    await conn.sendMessage(
+      m.chat,
+      {
+        audio: { url: song.download },
+        mimetype: 'audio/mpeg',
+        fileName: `${song.title}.mp3`,
+        contextInfo: {
+          externalAdReply: {
+            title: song.title,
+            body: song.artist,
+            thumbnailUrl: song.card || song.image,
+            mediaType: 2,
+            renderLargerThumbnail: true,
+            sourceUrl: song.spotify,
           },
         },
       },
       { quoted: m }
     )
-  } catch (e) {
-    console.error(e)
-    await conn.reply(m.chat, `❌ Error al buscar o descargar la canción.`, m)
+
+    await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
+  } catch (err) {
+    console.error(err)
+    await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
+    m.reply('❌ Error al procesar la descarga de Spotify.')
   }
 }
 
-handler.help = ["spotify"]
-handler.tags = ["download"]
-handler.command = ["spotify", "splay"]
+handler.help = ['music <url|nombre>']
+handler.tags = ['download']
+handler.command = ['music', 'spotifydl']
 handler.group = true
+handler.register = true
 
 export default handler
