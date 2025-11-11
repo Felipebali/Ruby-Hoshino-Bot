@@ -1,4 +1,4 @@
-// plugins/aprobar.js
+// 📂 plugins/aprobar.js
 let handler = async (m, { conn, isAdmin }) => {
   const owners = ['59896026646', '59898719147']
   const sender = m.sender.split('@')[0]
@@ -14,12 +14,9 @@ let handler = async (m, { conn, isAdmin }) => {
       return conn.reply(m.chat, '✅ No hay solicitudes pendientes de aprobación.', m)
     }
 
-    let aprobadas = 0
-
     for (const user of pendingList) {
       try {
         await conn.groupRequestParticipantsUpdate(m.chat, [user.jid], 'approve')
-        aprobadas++
         console.log(`✅ Aprobado: ${user.jid}`)
         await new Promise(r => setTimeout(r, 2500)) // espera 2.5s entre cada aprobación
       } catch (err) {
@@ -27,10 +24,10 @@ let handler = async (m, { conn, isAdmin }) => {
       }
     }
 
-    await conn.reply(m.chat, `🎉 Se aprobaron ${aprobadas} solicitudes pendientes.`, m)
+    await conn.reply(m.chat, '🎉 Todas las solicitudes pendientes fueron aprobadas.', m)
   } catch (err) {
     console.error('Error general al aprobar solicitudes:', err)
-    await conn.reply(m.chat, '⚠️ Ocurrió un error al intentar aprobar las solicitudes. Asegurate de que el bot sea administrador.', m)
+    await conn.reply(m.chat, '⚠️ Ocurrió un error al intentar aprobar las solicitudes. Asegúrate de que el bot sea administrador.', m)
   }
 }
 
