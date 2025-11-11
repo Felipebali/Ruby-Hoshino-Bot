@@ -7,7 +7,7 @@ const handler = async (m, { conn, text, command }) => {
   try {
     if (!text?.trim()) return conn.reply(m.chat, `⚽ *Por favor, ingresa el nombre o enlace del video.*`, m)
 
-    // 🔹 Definir fkontak para evitar ReferenceError
+    // 🔹 fkontak para evitar ReferenceError
     const fkontak = {
       key: {
         participant: '0@s.whatsapp.net',
@@ -21,6 +21,7 @@ const handler = async (m, { conn, text, command }) => {
       }
     }
 
+    // 🔍 Buscar video
     let videoIdMatch = text.match(youtubeRegexID)
     let search = await yts(videoIdMatch ? 'https://youtu.be/' + videoIdMatch[1] : text)
     let video = videoIdMatch
@@ -69,16 +70,36 @@ const handler = async (m, { conn, text, command }) => {
 
     // 🎧 Descargar audio
     if (command === 'playaudio') {
-      const apiUrl = `https://api.vreden.my.id/api/v1/download/youtube/audio?url=${encodeURIComponent(url)}&quality=128`
-      const res = await fetch(apiUrl)
-      const json = await res.json()
+      let audioUrl, titulo, thumbUrl, autor
 
-      if (!json.status || !json.result?.download?.url)
-        throw '*⚠ No se obtuvo un enlace de audio válido.*'
+      try {
+        // 🔹 API principal
+        const apiUrl = `https://api.vreden.my.id/api/v1/download/youtube/audio?url=${encodeURIComponent(url)}&quality=128`
+        const res = await fetch(apiUrl)
+        const json = await res.json()
 
-      const data = json.result
-      const audioUrl = data.download.url
-      const titulo = data.metadata.title
+        if (json.status && json.result?.download?.url) {
+          audioUrl = json.result.download.url
+          titulo = json.result.metadata.title
+          thumbUrl = json.result.metadata.thumbnail
+          autor = json.result.metadata.author?.name || canal
+        } else {
+          throw new Error("Primera API falló")
+        }
+      } catch {
+        // 🔸 API de respaldo
+        const apiUrl2 = `https://api.ryzendesu.vip/api/downloader/ytmp3?url=${encodeURIComponent(url)}`
+        const res2 = await fetch(apiUrl2)
+        const json2 = await res2.json()
+
+        if (!json2.status || !json2.result?.url)
+          throw '*⚠ No se obtuvo un enlace de audio válido (API caída o video bloqueado).*'
+
+        audioUrl = json2.result.url
+        titulo = json2.result.title || title
+        thumbUrl = json2.result.thumbnail
+        autor = json2.result.author || canal
+      }
 
       await conn.sendMessage(m.chat, {
         audio: { url: audioUrl },
@@ -88,10 +109,10 @@ const handler = async (m, { conn, text, command }) => {
         contextInfo: {
           externalAdReply: {
             title: titulo,
-            body: data.metadata.author?.name || canal,
+            body: autor,
             mediaType: 1,
-            thumbnailUrl: data.metadata.thumbnail,
-            sourceUrl: data.metadata.url,
+            thumbnailUrl: thumbUrl,
+            sourceUrl: url,
             renderLargerThumbnail: false
           }
         }
@@ -144,6 +165,7 @@ handler.help = ['playaudio', 'playvideo']
 handler.tags = ['download']
 export default handler
 
+// 🔢 Formatear vistas
 function formatViews(views) {
   if (views === undefined) return "No disponible"
   if (views >= 1e9) return `${(views / 1e9).toFixed(1)}B (${views.toLocaleString()})`
