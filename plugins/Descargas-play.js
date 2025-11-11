@@ -7,6 +7,20 @@ const handler = async (m, { conn, text, command }) => {
   try {
     if (!text?.trim()) return conn.reply(m.chat, `⚽ *Por favor, ingresa el nombre o enlace del video.*`, m)
 
+    // 🔹 Definir fkontak para evitar ReferenceError
+    const fkontak = {
+      key: {
+        participant: '0@s.whatsapp.net',
+        ...(m.chat ? { remoteJid: m.chat } : {})
+      },
+      message: {
+        contactMessage: {
+          displayName: m.pushName,
+          vcard: `BEGIN:VCARD\nVERSION:3.0\nN:${m.pushName}\nFN:${m.pushName}\nitem1.TEL;waid=${m.sender.split('@')[0]}:${m.sender.split('@')[0]}\nEND:VCARD`
+        }
+      }
+    }
+
     let videoIdMatch = text.match(youtubeRegexID)
     let search = await yts(videoIdMatch ? 'https://youtu.be/' + videoIdMatch[1] : text)
     let video = videoIdMatch
@@ -53,6 +67,7 @@ const handler = async (m, { conn, text, command }) => {
       }
     }, { quoted: m })
 
+    // 🎧 Descargar audio
     if (command === 'playaudio') {
       const apiUrl = `https://api.vreden.my.id/api/v1/download/youtube/audio?url=${encodeURIComponent(url)}&quality=128`
       const res = await fetch(apiUrl)
@@ -85,6 +100,7 @@ const handler = async (m, { conn, text, command }) => {
       await m.react('🎧')
     }
 
+    // 🎥 Descargar video
     if (command === 'playvideo') {
       const apiUrl = `https://api.yupra.my.id/api/downloader/ytmp4?url=${encodeURIComponent(url)}`
       const res = await fetch(apiUrl)
