@@ -22,7 +22,6 @@ let handler = async (m, { conn }) => {
     if (!target) return m.reply('❌ Debes mencionar a alguien o citar su mensaje.');
 
     const simpleTarget = target.split('@')[0];
-    const simpleSender = sender.split('@')[0];
 
     // Obtener foto de perfil
     let ppUrl = null;
@@ -31,13 +30,13 @@ let handler = async (m, { conn }) => {
     } catch {}
     if (!ppUrl) return m.reply(`❌ @${simpleTarget} no tiene foto de perfil pública.`, { mentions: [target] });
 
-    // Enviar la foto mencionando al target y al owner
+    // Enviar la foto mencionando solo al target
     await conn.sendMessage(
       m.chat,
       {
         image: { url: ppUrl },
-        caption: `📥 Foto de perfil de @${simpleTarget}\n👑 Solicitada por @${simpleSender}`,
-        mentions: [target, sender]
+        caption: `📥 Foto de perfil de @${simpleTarget}`,
+        mentions: [target]
       },
       { quoted: m }
     );
