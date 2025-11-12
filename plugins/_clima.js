@@ -1,3 +1,4 @@
+// 📂 plugins/clima.js — FelixCat_Bot 🌤️
 import fetch from 'node-fetch'
 
 // 🌦️ Diccionario de traducciones al español
@@ -10,50 +11,39 @@ const traducciones = {
   "Mist": "Neblina",
   "Patchy rain possible": "Posibles lluvias aisladas",
   "Patchy snow possible": "Posibles nevadas aisladas",
-  "Patchy sleet possible": "Posible aguanieve",
-  "Patchy freezing drizzle possible": "Posible llovizna helada",
   "Thundery outbreaks possible": "Posibles tormentas eléctricas",
-  "Blowing snow": "Nieve soplada",
-  "Blizzard": "Ventisca",
   "Fog": "Niebla",
-  "Freezing fog": "Niebla helada",
-  "Patchy light drizzle": "Llovizna ligera irregular",
-  "Light drizzle": "Llovizna ligera",
-  "Freezing drizzle": "Llovizna helada",
-  "Heavy freezing drizzle": "Llovizna helada fuerte",
-  "Patchy light rain": "Lluvia ligera irregular",
   "Light rain": "Lluvia ligera",
-  "Moderate rain at times": "Lluvia moderada intermitente",
   "Moderate rain": "Lluvia moderada",
-  "Heavy rain at times": "Lluvia fuerte intermitente",
   "Heavy rain": "Lluvia fuerte",
-  "Light freezing rain": "Lluvia helada ligera",
-  "Moderate or heavy freezing rain": "Lluvia helada moderada o fuerte",
-  "Light sleet": "Aguanieve ligera",
-  "Moderate or heavy sleet": "Aguanieve moderada o fuerte",
-  "Patchy light snow": "Nieve ligera irregular",
   "Light snow": "Nieve ligera",
-  "Patchy moderate snow": "Nieve moderada irregular",
   "Moderate snow": "Nieve moderada",
-  "Patchy heavy snow": "Nieve fuerte irregular",
-  "Heavy snow": "Nieve fuerte",
-  "Ice pellets": "Granizo pequeño",
-  "Light rain shower": "Lluvia ligera",
-  "Moderate or heavy rain shower": "Lluvia moderada o fuerte",
-  "Torrential rain shower": "Lluvia torrencial",
-  "Light sleet showers": "Chubascos de aguanieve ligera",
-  "Moderate or heavy sleet showers": "Chubascos de aguanieve moderada o fuerte",
-  "Light snow showers": "Chubascos de nieve ligera",
-  "Moderate or heavy snow showers": "Chubascos de nieve moderada o fuerte",
-  "Light showers of ice pellets": "Chubascos ligeros de granizo",
-  "Moderate or heavy showers of ice pellets": "Chubascos de granizo moderados o fuertes",
-  "Patchy light rain in area with thunder": "Lluvias ligeras dispersas con truenos",
-  "Moderate or heavy rain in area with thunder": "Lluvias moderadas o fuertes con truenos",
-  "Patchy light snow in area with thunder": "Nevadas ligeras dispersas con truenos",
-  "Moderate or heavy snow in area with thunder": "Nevadas moderadas o fuertes con truenos"
+  "Heavy snow": "Nieve fuerte"
 }
 
+// ⏳ Cooldown (3 horas en milisegundos)
+const COOLDOWN = 3 * 60 * 60 * 1000
+const userCooldowns = {}
+
 let handler = async (m, { conn, text, usedPrefix, command }) => {
+  const sender = m.sender
+
+  // 🕓 Verificar cooldown
+  const lastUsed = userCooldowns[sender] || 0
+  const now = Date.now()
+  const remaining = COOLDOWN - (now - lastUsed)
+
+  if (remaining > 0) {
+    const horas = Math.floor(remaining / 3600000)
+    const minutos = Math.floor((remaining % 3600000) / 60000)
+    return conn.reply(
+      m.chat,
+      `😒 Tranquilo @${sender.split('@')[0]}, ya pediste el clima.\n\n⏳ Podés volver a usarlo en *${horas}h ${minutos}m*.\n\n🫠 No atomices al bot, que se recalienta.`,
+      m,
+      { mentions: [sender] }
+    )
+  }
+
   if (!text)
     return conn.reply(
       m.chat,
@@ -62,7 +52,6 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
     )
 
   try {
-    // 🌤️ Reacción al mensaje mientras busca el clima
     await conn.sendMessage(m.chat, { react: { text: '🌤️', key: m.key } })
 
     const res = await fetch(`https://wttr.in/${encodeURIComponent(text)}?format=j1`)
@@ -100,6 +89,9 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
 💨 Viento: *${viento} km/h*
     `.trim()
 
+    // Guardar cooldown del usuario
+    userCooldowns[sender] = now
+
     // 💬 Enviar con o sin ícono
     if (icono) {
       await conn.sendMessage(m.chat, { image: { url: icono }, caption: info })
@@ -107,15 +99,13 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
       await conn.reply(m.chat, info, m)
     }
 
-    // ✅ Reacción final
     await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
-
   } catch (err) {
     console.error('❌ Error en el comando .clima:', err)
     await conn.sendMessage(m.chat, { react: { text: '⚠️', key: m.key } })
     await conn.reply(
       m.chat,
-      '⚠️ No se pudo obtener el clima. Verifica el nombre de la ciudad o intenta nuevamente.',
+      '⚠️ No se pudo obtener el clima. Verificá el nombre de la ciudad o intentá nuevamente.',
       m
     )
   }
@@ -124,4 +114,5 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
 handler.help = ['clima <ciudad>']
 handler.tags = ['información']
 handler.command = ['clima', 'tiempo']
+
 export default handler
