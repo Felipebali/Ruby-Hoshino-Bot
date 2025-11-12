@@ -13,24 +13,28 @@ let handler = async (m, { conn, mentionedJid }) => {
       return m.reply('🚫 Solo los dueños del bot pueden usar este comando.');
     }
 
-    // Determinar target: citado -> mencionado -> sender
-    let target;
-    if (m.quoted) {
-      target = m.quoted.sender || (m.quoted.key && m.quoted.key.participant);
+    // Determinar el target real:
+    let target = null;
+
+    // 1️⃣ Si mencionó a alguien explícitamente
+    if (mentionedJid && mentionedJid.length > 0) {
+      target = mentionedJid[0];
     }
-    if (!target && mentionedJid && mentionedJid.length) target = mentionedJid[0];
+    // 2️⃣ Si citó un mensaje
+    else if (m.quoted && m.quoted.sender) {
+      target = m.quoted.sender;
+    }
+
+    // 3️⃣ Si no hay mención ni quote -> error
     if (!target) return m.reply('❌ Debes mencionar a alguien o citar su mensaje.');
 
     // Normalizar JID
-    if (!/[@]s\.whatsapp\.net$/.test(target)) {
-      if (/^\d+$/.test(target)) target = `${target}@s.whatsapp.net`;
-      else if (target.includes('@') && !target.endsWith('@s.whatsapp.net')) target = target.split('@')[0] + '@s.whatsapp.net';
-    }
+    if (!target.endsWith('@s.whatsapp.net')) target = target.split('@')[0] + '@s.whatsapp.net';
 
     const simpleTarget = target.split('@')[0];
     const simpleSender = sender.split('@')[0];
 
-    // Intentar obtener URL de la foto
+    // Obtener URL de la foto
     let ppUrl = null;
     try {
       ppUrl = await conn.profilePictureUrl(target, 'image').catch(() => null);
@@ -46,7 +50,7 @@ let handler = async (m, { conn, mentionedJid }) => {
       );
     }
 
-    // Enviar la foto mencionando al target y al owner que ejecuta
+    // Enviar la foto mencionando al target y al owner
     await conn.sendMessage(
       m.chat,
       {
