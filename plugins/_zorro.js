@@ -1,5 +1,5 @@
-// 📂 plugins/juego-zorra.js
-let handler = async (m, { conn, command }) => {
+// 📂 plugins/gay.js
+let handler = async (m, { conn, command, mentionedJid, quoted }) => {
   try {
     const chatData = global.db.data.chats[m.chat] || {};
 
@@ -13,40 +13,39 @@ let handler = async (m, { conn, command }) => {
     }
 
     // Determinar objetivo
-    let who = m.quoted ? m.quoted.sender : (m.mentionedJid && m.mentionedJid[0]) || m.sender;
+    let who = quoted ? (quoted.sender || (quoted.key && quoted.key.participant)) 
+                      : (mentionedJid && mentionedJid[0]) 
+                      || m.sender;
     let simpleId = who.split("@")[0];
 
     // Calcular porcentaje aleatorio
     let porcentaje = Math.floor(Math.random() * 101);
 
-    // Crear barra visual
+    // Crear barra visual usando 🏳️‍🌈
     const totalBars = 10;
     const filledBars = Math.round(porcentaje / 10);
-    const bar = '🔥'.repeat(filledBars) + '⬜'.repeat(totalBars - filledBars);
+    const bar = '🏳️‍🌈'.repeat(filledBars) + '⬜'.repeat(totalBars - filledBars);
 
     // Frases según porcentaje
     let frase;
-    if (porcentaje >= 95) frase = '💃🔥 Nivel dios/a: te tienen que bendecir antes de verte.';
-    else if (porcentaje >= 80) frase = '😈 Sos el/la líder del club de los zorros/as.';
-    else if (porcentaje >= 65) frase = '😉 Sos coquete, peligroso/a, pero con estilo.';
-    else if (porcentaje >= 50) frase = '🤭 Tenés tu fama, pero sabés jugar bien.';
-    else if (porcentaje >= 35) frase = '😅 Algo se sospecha, pero aún disimulás.';
-    else if (porcentaje >= 20) frase = '😇 Bastante tranqui, pero con pasado oscuro.';
-    else if (porcentaje >= 5) frase = '😎 Casi inocente, solo un poco travieso/a.';
-    else frase = '🗿 Santo/a puro/a, ni un pensamiento indecente.';
+    if (porcentaje >= 95) frase = '🏳️‍🌈 Nivel divino: eres el arcoíris viviente.';
+    else if (porcentaje >= 80) frase = '💅 Fabulos@ total: nadie te alcanza.';
+    else if (porcentaje >= 65) frase = '🦄 Brillas con estilo y orgullo.';
+    else if (porcentaje >= 50) frase = '😉 Seguro/a y confiado/a en tu arcoíris.';
+    else if (porcentaje >= 35) frase = '🤭 Algo de color se nota, pero sutil.';
+    else if (porcentaje >= 20) frase = '😇 Bastante tranquilo/a, pero con chispa.';
+    else if (porcentaje >= 5) frase = '😎 Casi neutral, solo un toque de brillo.';
+    else frase = '🗿 Puro/a e inocente, sin arcoíris aún.';
 
-    // Elegir título según comando
-    const titulo =
-      command.toLowerCase() === 'zorra'
-        ? '💃 *TEST DE ZORRA 2.1* 💄'
-        : '🦊 *TEST DE ZORRO 2.1* 😏';
+    // Título del test
+    const titulo = '🏳️‍🌈 *TEST GAY FELIXCAT 2.0* 🐾';
 
     // Armar mensaje final
     let msg = `
 ${titulo}
 
 👤 *Usuario:* @${simpleId}
-📊 *Nivel de zorreada:* ${porcentaje}%
+📊 *Nivel de gay:* ${porcentaje}%
 
 ${bar}
 
@@ -58,13 +57,13 @@ ${bar}
 
   } catch (err) {
     console.error(err);
-    return conn.reply(m.chat, '❌ Error ejecutando el comando .zorra/.zorro', m);
+    return conn.reply(m.chat, '❌ Error ejecutando el comando .gay', m);
   }
 };
 
-handler.help = ['zorra', 'zorro'];
+handler.help = ['gay'];
 handler.tags = ['fun', 'juego'];
-handler.command = /^(zorra|zorro)$/i;
+handler.command = /^(gay)$/i;
 handler.group = true;
 
 export default handler;
