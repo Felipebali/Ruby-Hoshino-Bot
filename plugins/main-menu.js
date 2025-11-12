@@ -23,6 +23,7 @@ let handler = async (m, { conn }) => {
 🌦️ *Consultas rápidas:*
 ┃ 🌍 *.clima <ciudad>* – Ver clima actual
 ┃ 🕐 *.hora* – Ver hora actual en el mundo
+┃ 🌐 *.traducir <idioma> <texto>* – Traduce mensajes o textos
 ┃ ✉️ *.sug* – Envía una sugerencia (1 cada 24h)
 ┗━━━━━━━━━━━━━━━━━━━━━┛
 
