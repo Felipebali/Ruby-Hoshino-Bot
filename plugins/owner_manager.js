@@ -1,111 +1,60 @@
+// 🐾 FelixCat_Bot — Comandos para agregar y quitar owners dinámicamente
 import fs from 'fs'
-import path from 'path'
 
-// 📂 Ruta donde se guardarán los owners
-const dataDir = '/data/data/com.termux/files/home/.rubydata'
-const ownerFile = path.join(dataDir, 'owners.json')
+const ownersFile = './data/owners.json'
 
-// 🧩 Crear carpeta y archivo si no existen
-if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true })
-if (!fs.existsSync(ownerFile)) fs.writeFileSync(ownerFile, '[]')
-
-// 🔄 Cargar owners almacenados
-let storedOwners = JSON.parse(fs.readFileSync(ownerFile))
-
-// 🔁 Sincronizar con los globales del bot
-if (!global.owner) global.owner = []
-global.owner = [...new Set([...global.owner, ...storedOwners])]
-
-// 💾 Función para guardar la lista
-function saveOwners() {
-  fs.writeFileSync(ownerFile, JSON.stringify(storedOwners, null, 2))
-  global.owner = [...new Set([...storedOwners])]
+// 🧠 Cargar o crear archivo de owners
+function loadOwners() {
+  if (!fs.existsSync(ownersFile)) fs.writeFileSync(ownersFile, JSON.stringify([]))
+  return JSON.parse(fs.readFileSync(ownersFile))
 }
 
-// 🟢 AGREGAR OWNER
-let addowner = async (m, { conn, text, participants }) => {
-  const sender = m.sender
-  if (!global.owner.includes(sender))
-    return m.reply('⚠️ Solo un *OWNER principal* puede agregar nuevos dueños.')
-
-  const mentioned = m.mentionedJid && m.mentionedJid[0]
-  const number = mentioned
-    ? mentioned
-    : text
-    ? text.replace(/[^0-9]/g, '') + '@s.whatsapp.net'
-    : null
-
-  if (!number)
-    return m.reply(
-      '💬 Etiqueta o escribe el número del nuevo owner.\n\nEjemplo:\n.addowner @usuario\n.addowner 59891234567'
-    )
-
-  if (storedOwners.includes(number)) return m.reply('✅ Ese número ya es owner.')
-
-  storedOwners.push(number)
-  saveOwners()
-  await m.reply(
-    `👑 Se agregó correctamente a @${number.split('@')[0]} como *OWNER permanente*.`,
-    null,
-    { mentions: [number] }
-  )
+// 💾 Guardar owners
+function saveOwners(list) {
+  fs.writeFileSync(ownersFile, JSON.stringify(list, null, 2))
 }
 
-// 🔴 ELIMINAR OWNER
-let delowner = async (m, { conn, text }) => {
-  const sender = m.sender
-  if (!global.owner.includes(sender))
-    return m.reply('⚠️ Solo un *OWNER principal* puede eliminar dueños.')
+// 🟩 Agregar owner
+let addOwner = async (m, { conn, text, isOwner }) => {
+  if (!isOwner) return conn.reply(m.chat, '🚫 Solo el dueño puede usar este comando.', m)
+  if (!text) return conn.reply(m.chat, '💬 Uso correcto: *.addowner <número>*', m)
 
-  const mentioned = m.mentionedJid && m.mentionedJid[0]
-  const number = mentioned
-    ? mentioned
-    : text
-    ? text.replace(/[^0-9]/g, '') + '@s.whatsapp.net'
-    : null
+  let num = text.replace(/[^0-9]/g, '') + '@s.whatsapp.net'
+  let owners = loadOwners()
 
-  if (!number)
-    return m.reply(
-      '💬 Etiqueta o escribe el número del owner a eliminar.\n\nEjemplo:\n.delowner @usuario\n.delowner 59891234567'
-    )
+  if (owners.includes(num)) return conn.reply(m.chat, '⚠️ Ese usuario ya es owner.', m)
 
-  if (!storedOwners.includes(number))
-    return m.reply('❌ Ese número no figura como owner registrado.')
+  owners.push(num)
+  saveOwners(owners)
 
-  storedOwners = storedOwners.filter(o => o !== number)
-  saveOwners()
-  await m.reply(
-    `🗑️ Se eliminó correctamente a @${number.split('@')[0]} de la lista de *OWNERS*.`,
-    null,
-    { mentions: [number] }
-  )
+  await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
+  await conn.reply(m.chat, `👑 *Nuevo owner agregado:* @${num.split('@')[0]}`, m, { mentions: [num] })
 }
 
-// 📜 LISTAR OWNERS
-let listowners = async (m) => {
-  if (storedOwners.length === 0)
-    return m.reply('📭 No hay owners registrados todavía.')
+// 🟥 Quitar owner
+let delOwner = async (m, { conn, text, isOwner }) => {
+  if (!isOwner) return conn.reply(m.chat, '🚫 Solo el dueño puede usar este comando.', m)
+  if (!text) return conn.reply(m.chat, '💬 Uso correcto: *.delowner <número>*', m)
 
-  let lista = storedOwners
-    .map((o, i) => `${i + 1}. @${o.split('@')[0]}`)
-    .join('\n')
+  let num = text.replace(/[^0-9]/g, '') + '@s.whatsapp.net'
+  let owners = loadOwners()
 
-  await m.reply(`👑 *LISTA DE OWNERS REGISTRADOS:*\n\n${lista}`, null, {
-    mentions: storedOwners
-  })
+  if (!owners.includes(num)) return conn.reply(m.chat, '⚠️ Ese usuario no está en la lista de owners.', m)
+
+  owners = owners.filter(o => o !== num)
+  saveOwners(owners)
+
+  await conn.sendMessage(m.chat, { react: { text: '🗑️', key: m.key } })
+  await conn.reply(m.chat, `❌ *Owner eliminado:* @${num.split('@')[0]}`, m, { mentions: [num] })
 }
 
-// 🧩 Exportar handlers individuales
-addowner.help = ['addowner']
-addowner.tags = ['owner']
-addowner.command = /^addowner$/i
+// 📌 Handlers para ambos comandos
+addOwner.help = ['addowner <número>']
+addOwner.tags = ['owner']
+addOwner.command = /^addowner$/i
 
-delowner.help = ['delowner']
-delowner.tags = ['owner']
-delowner.command = /^delowner$/i
+delOwner.help = ['delowner <número>']
+delOwner.tags = ['owner']
+delOwner.command = /^delowner$/i
 
-listowners.help = ['listowners']
-listowners.tags = ['owner']
-listowners.command = /^listowners$/i
-
-export default [addowner, delowner, listowners]
+export { addOwner as addowner, delOwner as delowner }
