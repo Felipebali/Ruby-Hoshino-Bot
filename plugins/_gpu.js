@@ -1,54 +1,35 @@
 // 📂 plugins/gpu.js
-import pkg from '@whiskeysockets/baileys';
-const { default: baileysPkg } = pkg;
+const ownerNumbers = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net']; // Dueños
 
-const ownerNumbers = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net']; // Dueños del bot
-
-let handler = async (m, { conn, mentionedJid }) => {
+let handler = async (m, { conn }) => {
   try {
     const sender = m.sender;
 
-    // Solo owners pueden usarlo
-    if (!ownerNumbers.includes(sender)) {
-      return m.reply('🚫 Solo los dueños del bot pueden usar este comando.');
-    }
+    if (!ownerNumbers.includes(sender)) return m.reply('🚫 Solo los dueños del bot pueden usar este comando.');
 
-    // Determinar el target real:
+    // Determinar target:
     let target = null;
 
-    // 1️⃣ Si mencionó a alguien explícitamente
-    if (mentionedJid && mentionedJid.length > 0) {
-      target = mentionedJid[0];
+    // 1️⃣ Mención: revisar m.mentionedJid
+    if (m.mentionedJid && m.mentionedJid.length > 0) {
+      target = m.mentionedJid[0];
     }
     // 2️⃣ Si citó un mensaje
     else if (m.quoted && m.quoted.sender) {
       target = m.quoted.sender;
     }
 
-    // 3️⃣ Si no hay mención ni quote -> error
     if (!target) return m.reply('❌ Debes mencionar a alguien o citar su mensaje.');
-
-    // Normalizar JID
-    if (!target.endsWith('@s.whatsapp.net')) target = target.split('@')[0] + '@s.whatsapp.net';
 
     const simpleTarget = target.split('@')[0];
     const simpleSender = sender.split('@')[0];
 
-    // Obtener URL de la foto
+    // Obtener foto de perfil
     let ppUrl = null;
     try {
       ppUrl = await conn.profilePictureUrl(target, 'image').catch(() => null);
-    } catch {
-      ppUrl = null;
-    }
-
-    if (!ppUrl) {
-      return await conn.sendMessage(
-        m.chat,
-        { text: `❌ @${simpleTarget} no tiene foto de perfil pública o no se pudo descargar.`, mentions: [target] },
-        { quoted: m }
-      );
-    }
+    } catch {}
+    if (!ppUrl) return m.reply(`❌ @${simpleTarget} no tiene foto de perfil pública.`, { mentions: [target] });
 
     // Enviar la foto mencionando al target y al owner
     await conn.sendMessage(
@@ -62,15 +43,13 @@ let handler = async (m, { conn, mentionedJid }) => {
     );
 
   } catch (err) {
-    console.error('Error en .gpu:', err);
-    try {
-      await conn.sendMessage(m.chat, { text: '⚠️ Ocurrió un error al intentar descargar la foto de perfil.' }, { quoted: m });
-    } catch {}
+    console.error(err);
+    m.reply('⚠️ Ocurrió un error al intentar descargar la foto.');
   }
 };
 
-handler.help = ['gpu'];
-handler.tags = ['owner', 'tools'];
 handler.command = /^(gpu)$/i;
+handler.tags = ['owner', 'tools'];
+handler.help = ['gpu'];
 handler.group = false;
 export default handler;
