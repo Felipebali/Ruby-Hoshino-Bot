@@ -1,31 +1,68 @@
-// plugins/cambios.js
-let handler = async (m, { conn, command }) => {
-    if (!m.isGroup) return m.reply('Este comando solo funciona en grupos.');
+// 📂 plugins/cambios-grupo.js
+let handler = async (m, { conn, command, isAdmin, isBotAdmin }) => {
+  const chat = global.db.data.chats[m.chat] || {};
+  chat.cambios = chat.cambios === true ? false : true; // alternar
+  global.db.data.chats[m.chat] = chat;
 
-    // Confirmar activación
-    global.db.data.chats[m.chat].notifyChanges = true;
-    m.reply('✅ Ahora se notificará cada cambio de nombre, descripción o foto del grupo.');
+  await conn.sendMessage(
+    m.chat,
+    { text: `✅ Monitor de cambios de grupo ${chat.cambios ? 'activado' : 'desactivado'}\nUsa *.cambios* para alternar.` },
+    { quoted: m }
+  );
 };
 
+handler.help = ['cambios'];
+handler.tags = ['group'];
+handler.command = /^cambios$/i;
+handler.group = true;
+handler.admin = true; // Solo admins pueden activar/desactivar
 export default handler;
 
-// En tu archivo principal (index.js o donde manejes eventos)
-conn.ev.on('groups.update', async (updates) => {
-    for (let update of updates) {
-        const chatId = update.id;
-        const chatData = global.db.data.chats[chatId] || {};
+// -------------------------
+// Evento que escucha cambios en el grupo
+import { proto } from '@whiskeysockets/baileys';
 
-        // Solo si el comando .cambios está activo
-        if (!chatData.notifyChanges) continue;
+let grupoHandler = async (update) => {
+  try {
+    if (!update || !update.chat) return;
 
-        if (update.subject) {
-            await conn.sendMessage(chatId, { text: `📛 El nombre del grupo cambió a: *${update.subject}*` });
-        }
-        if (update.desc) {
-            await conn.sendMessage(chatId, { text: `📝 La descripción del grupo cambió a: *${update.desc}*` });
-        }
-        if (update.icon) {
-            await conn.sendMessage(chatId, { text: `🖼️ La foto del grupo ha sido cambiada.` });
-        }
+    const chatId = update.chat;
+    const chat = global.db.data.chats[chatId] || {};
+    if (!chat.cambios) return; // si no está activado, salir
+
+    const groupMetadata = await update.conn.groupMetadata(chatId);
+    const changes = [];
+
+    // 📌 Foto del grupo
+    if (update.update && update.update.includes('setGroupProfilePicture')) {
+      changes.push(`🖼️ Foto del grupo cambiada`);
     }
-});
+
+    // 📌 Nombre del grupo
+    if (update.update && update.update.includes('subject')) {
+      changes.push(`✏️ Nombre del grupo cambiado a: ${groupMetadata.subject}`);
+    }
+
+    // 📌 Descripción del grupo
+    if (update.update && update.update.includes('description')) {
+      changes.push(`💬 Descripción cambiada a: ${groupMetadata.desc || 'vacía'}`);
+    }
+
+    // Determinar quién lo hizo
+    const actor = update.participant || 'desconocido';
+
+    if (changes.length) {
+      await update.conn.sendMessage(
+        chatId,
+        { text: `📢 Cambios en el grupo:\n${changes.join('\n')}\n\n👤 Por: @${actor.split('@')[0]}`, mentions: [actor] }
+      );
+    }
+
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+// Aquí debes vincular `grupoHandler` al evento 'group-participants-update' y 'group-update' según la librería
+// Ejemplo con Baileys:
+// conn.ev.on('group-update', grupoHandler);
