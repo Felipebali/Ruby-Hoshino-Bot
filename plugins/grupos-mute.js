@@ -1,116 +1,98 @@
-import fetch from 'node-fetch';
+// 📂 plugins/mute.js — FelixCat_Bot 🐾
 
-const handler = async (m, { conn, command, text, isAdmin }) => {
-  try {
-    if (!isAdmin) throw '🌳 *Solo un administrador puede ejecutar este comando*';
+let mutedUsers = new Set()
 
-    const ownerId = (global.owner && global.owner[0] && global.owner[0][0])
-      ? `${global.owner[0][0]}@s.whatsapp.net`
-      : null;
+let handler = async (m, { conn, args, command, participants }) => {
+  const botNumber = conn.user.id.split(":")[0]
+  const botJid = botNumber + "@s.whatsapp.net"
+  const protectedOwners = ["59896026646@s.whatsapp.net", "59898719147@s.whatsapp.net"] // 🔒 Owners protegidos
 
-    let target = m.mentionedJid?.[0] || m.quoted?.sender || text || '';
-    target = typeof target === 'object' ? (target[0] || '') : target;
+  // 🧠 Comprobar si es un grupo
+  if (!m.isGroup) return m.reply("👥 Este comando solo puede usarse en grupos.")
 
-    if (target && !target.includes('@')) target = target.replace(/\D/g, '') + '@s.whatsapp.net';
-    if (!target) throw '❄️ Especifica a quién mutear/desmutear (mención, reply o número).';
+  // 🔑 Verificar si el usuario que ejecuta es admin
+  const groupAdmins = participants
+    .filter(p => p.admin)
+    .map(p => p.id)
+  const isAdmin = groupAdmins.includes(m.sender)
 
-    if (ownerId && target === ownerId) throw '🍬 *El creador del bot no puede ser mutado*';
-    if (target === conn.user?.jid) throw '🍭 *No puedes mutar el bot*';
+  if (!isAdmin)
+    return m.reply("❌ Solo los administradores pueden usar este comando.")
 
-    if (!global.db) global.db = { data: { users: {} } };
-    if (!global.db.data) global.db.data = { users: {} };
-    if (!global.db.data.users) global.db.data.users = {};
-    if (!global.db.data.users[target]) global.db.data.users[target] = { mute: false };
+  // 🎯 Obtener usuario objetivo (mención, número o mensaje citado)
+  let who =
+    m.mentionedJid && m.mentionedJid[0]
+      ? m.mentionedJid[0]
+      : args[0]
+      ? args[0].replace(/[^0-9]/g, "") + "@s.whatsapp.net"
+      : m.quoted
+      ? m.quoted.sender
+      : ""
 
-    const userData = global.db.data.users[target];
+  if (!who)
+    return m.reply("🔇 *Debes etiquetar, responder o escribir el número del usuario que querés silenciar o desilenciar.*")
 
-    if (command === 'mute') {
-      if (userData.mute === true) throw '🍭 *Este usuario ya ha sido mutado*';
+  // 🛡️ Protección: no se puede mutear al bot ni a los dueños
+  if (who === botJid || protectedOwners.includes(who))
+    return m.reply("🤨 No podés silenciar al bot ni a un owner protegido.")
 
-      const thumbnail = await (await fetch('https://telegra.ph/file/f8324d9798fa2ed2317bc.png')).buffer();
-      const quotedMsg = {
-        key: { participants: '0@s.whatsapp.net', fromMe: false, id: 'mute-id' },
-        message: {
-          locationMessage: {
-            name: '𝗨𝘀𝘂𝗮𝗿𝗶𝗼 mutado',
-            jpegThumbnail: thumbnail,
-            vcard: [
-              'BEGIN:VCARD',
-              'VERSION:3.0',
-              'N:;Unlimited;;;',
-              'FN:Unlimited',
-              'ORG:Unlimited',
-              'item1.TEL;waid=19709001746:+1 (970) 900-1746',
-              'item1.X-ABLabel:Unlimited',
-              'X-WA-BIZ-DESCRIPTION:ofc',
-              'X-WA-BIZ-NAME:Unlimited',
-              'END:VCARD'
-            ].join('\n')
-          }
-        },
-        participant: '0@s.whatsapp.net'
-      };
+  // 🔇 Comando mute/silenciar
+  if (/^(mute|silenciar)$/i.test(command)) {
+    if (mutedUsers.has(who))
+      return m.reply(`⚠️ @${who.split("@")[0]} ya está silenciado.`, null, {
+        mentions: [who],
+      })
 
-      userData.mute = true;
-      await conn.reply(m.chat, '*🔇 Usuario muteado*\nSus mensajes serán eliminados.', quotedMsg, null, { mentions: [target] });
-      return;
-    }
-
-    if (command === 'unmute') {
-      if (userData.mute === false) throw '🍭 *Este usuario no ha sido mutado*';
-
-      const thumbnail = await (await fetch('https://telegra.ph/file/aea704d0b242b8c41bf15.png')).buffer();
-      const quotedMsg = {
-        key: { participants: '0@s.whatsapp.net', fromMe: false, id: 'unmute-id' },
-        message: {
-          locationMessage: {
-            name: '𝗨𝘀𝘂𝗮𝗿𝗶𝗼 demutado',
-            jpegThumbnail: thumbnail,
-            vcard: [
-              'BEGIN:VCARD',
-              'VERSION:3.0',
-              'N:;Unlimited;;;',
-              'FN:Unlimited',
-              'ORG:Unlimited',
-              'item1.TEL;waid=19709001746:+1 (970) 900-1746',
-              'item1.X-ABLabel:Unlimited',
-              'X-WA-BIZ-DESCRIPTION:ofc',
-              'X-WA-BIZ-NAME:Unlimited',
-              'END:VCARD'
-            ].join('\n')
-          }
-        },
-        participant: '0@s.whatsapp.net'
-      };
-
-      userData.mute = false;
-      await conn.reply(m.chat, '*🔊 Usuario desmuteado*\nAhora sus mensajes no serán eliminados.', quotedMsg, null, { mentions: [target] });
-      return;
-    }
-
-    throw 'Comando no reconocido.';
-
-  } catch (err) {
-    const e = typeof err === 'string' ? err : (err?.message || String(err));
-    try { await conn.reply(m.chat, `🌿 Error: ${e}`, m); } catch (__) { }
+    mutedUsers.add(who)
+    return m.reply(`🔇 @${who.split("@")[0]} fue silenciado.`, null, {
+      mentions: [who],
+    })
   }
-};
 
-handler.command = ['mute', 'unmute'];
-handler.admin = true;
-handler.botAdmin = true;
+  // 🔈 Comando unmute/desilenciar
+  if (/^(unmute|desilenciar)$/i.test(command)) {
+    if (!mutedUsers.has(who))
+      return m.reply(`⚠️ @${who.split("@")[0]} no está silenciado.`, null, {
+        mentions: [who],
+      })
 
+    mutedUsers.delete(who)
+    return m.reply(`🔈 @${who.split("@")[0]} fue desmuteado.`, null, {
+      mentions: [who],
+    })
+  }
+}
 
-handler.before = async (m, { conn, isAdmin, isBotAdmin }) => {
-  try {
-    if (!m.isGroup) return;
-    if (!global.db?.data?.users[m.sender]) return;
-    if (!global.db.data.users[m.sender].mute) return;
-    if (!isBotAdmin) return;
-    if (isAdmin) return;
+// 🚫 Antes de procesar mensajes: borrar si el remitente está muteado
+handler.before = async (m, { conn }) => {
+  const botNumber = conn.user.id.split(":")[0]
+  const botJid = botNumber + "@s.whatsapp.net"
+  const protectedOwners = ["59896026646@s.whatsapp.net", "59898719147@s.whatsapp.net"]
 
-    await conn.sendMessage(m.chat, { delete: m.key });
-  } catch {}
-};
+  if (m.sender === botJid || protectedOwners.includes(m.sender)) return false
 
-export default handler;
+  if (mutedUsers.has(m.sender)) {
+    try {
+      await conn.sendMessage(m.chat, {
+        delete: {
+          remoteJid: m.chat,
+          id: m.key.id,
+          participant: m.sender,
+        },
+      })
+      return true
+    } catch (e) {
+      console.error("Error al borrar mensaje:", e)
+    }
+  }
+  return false
+}
+
+handler.help = ["mute", "silenciar", "unmute", "desilenciar"]
+handler.tags = ["grupo"]
+handler.command = /^(mute|silenciar|unmute|desilenciar)$/i
+handler.group = true
+handler.admin = true
+handler.botAdmin = true
+
+export default handler
