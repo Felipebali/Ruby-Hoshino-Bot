@@ -28,6 +28,7 @@ handler.group = true;
 handler.admin = true;
 export default handler;
 
+// -------------------------
 function registerGroupChangesListener(conn) {
   const groupCache = {};
 
@@ -47,7 +48,6 @@ function registerGroupChangesListener(conn) {
       if (update.icon && update.icon !== cache.icon) {
         cambios.push(`🖼️ Foto del grupo cambiada\n👤 Por: un administrador`);
         cache.icon = update.icon;
-
         try {
           photoMessage = await downloadProfilePicture(chatId).catch(() => null);
         } catch {}
@@ -76,17 +76,19 @@ function registerGroupChangesListener(conn) {
 
         const ownersInGroup = participants.filter(p => ownerNumbers.includes(p.id)).map(p => p.id);
 
-        const mentions = [...admins, ...ownersInGroup];
+        const allMentions = [...admins, ...ownersInGroup];
 
-        // Construir texto incluyendo mención explícita de admins
+        // Construir texto incluyendo @ explícitos
         let texto = `📢 *Log de cambios del grupo:*\n\n`;
-        texto += cambios.join('\n');
+        texto += cambios.join('\n') + '\n\n';
+        texto += `🛡️ *Administradores mencionados:*\n`;
+        texto += allMentions.map(jid => `@${jid.split('@')[0]}`).join(' ') + '\n';
 
         // Enviar mensaje con foto si existe
         if (photoMessage) {
-          await conn.sendMessage(chatId, { image: photoMessage, caption: texto, mentions });
+          await conn.sendMessage(chatId, { image: photoMessage, caption: texto, mentions: allMentions });
         } else {
-          await conn.sendMessage(chatId, { text: texto, mentions });
+          await conn.sendMessage(chatId, { text: texto, mentions: allMentions });
         }
       }
     }
