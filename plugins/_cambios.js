@@ -1,90 +1,84 @@
-// 📂 plugins/_cambios.js — Log de cambios del grupo con mención a admins
-import pkg from '@whiskeysockets/baileys'
-const { downloadMediaMessage } = pkg
+// 🧩 plugins/_group-log.js — FelixCat_Bot 🐾
+// Notifica cambios de nombre, descripción o foto del grupo con mención a admins y dueños
 
 const ownerNumbers = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net']
 
 let handler = async (m, { conn }) => {
   const chat = global.db.data.chats[m.chat] || {}
-  chat.cambios = !chat.cambios
+  chat.logGrupo = !chat.logGrupo
   global.db.data.chats[m.chat] = chat
 
-  const estado = chat.cambios
-    ? '✅ *Log de cambios activado*'
-    : '❌ *Log de cambios desactivado*'
+  const estado = chat.logGrupo ? '✅ *Log de cambios activado.*' : '❌ *Log de cambios desactivado.*'
+  await conn.sendMessage(m.chat, { text: `${estado}\nUsa *.loggrupo* para alternar.` }, { quoted: m })
 
-  await conn.sendMessage(m.chat, { text: `${estado}\nUsa *.cambios* para alternar.` }, { quoted: m })
-
-  if (!conn._grupoLogRegistrado) {
-    conn._grupoLogRegistrado = true
-    registrarLogCambios(conn)
-  }
+  if (!conn._escuchaGrupo) registrarEscucha(conn)
 }
 
-handler.help = ['cambios']
+handler.help = ['loggrupo']
 handler.tags = ['group']
-handler.command = /^cambios$/i
+handler.command = /^loggrupo$/i
 handler.group = true
 handler.admin = true
 export default handler
 
-// 🔧 Registro del listener de cambios
-function registrarLogCambios(conn) {
+// ───────────────────────────────────────────────
+// 🧠 REGISTRO DE ESCUCHA DE EVENTOS
+function registrarEscucha(conn) {
+  conn._escuchaGrupo = true
   const cache = {}
 
   conn.ev.on('groups.update', async (updates) => {
     for (const update of updates) {
       const id = update.id
-      const chatData = global.db.data.chats[id] || {}
-      if (!chatData.cambios) continue
+      const chat = global.db.data.chats[id] || {}
+      if (!chat.logGrupo) continue
 
       if (!cache[id]) cache[id] = {}
-      const anterior = cache[id]
+      const antes = cache[id]
       const cambios = []
-      let imagenNueva = null
+      let nuevaFoto = null
 
-      // 📸 Cambio de foto
+      // 📸 FOTO DE PERFIL CAMBIADA
       if (update.icon) {
-        cambios.push('🖼️ *Foto del grupo cambiada*')
         try {
-          imagenNueva = await conn.profilePictureUrl(id, 'image').catch(() => null)
+          nuevaFoto = await conn.profilePictureUrl(id, 'image').catch(() => null)
         } catch {}
-        anterior.icon = update.icon
+        cambios.push('🖼️ *Se cambió la foto del grupo.*')
+        antes.icon = update.icon
       }
 
-      // 📝 Cambio de nombre
-      if (update.subject && update.subject !== anterior.subject) {
+      // 📝 NOMBRE DEL GRUPO CAMBIADO
+      if (update.subject && update.subject !== antes.subject) {
         cambios.push(`✏️ *Nombre cambiado a:* ${update.subject}`)
-        anterior.subject = update.subject
+        antes.subject = update.subject
       }
 
-      // 💬 Cambio de descripción
-      if (update.desc !== undefined && update.desc !== anterior.desc) {
-        const textoDesc = update.desc ? update.desc : 'vacía'
-        cambios.push(`💬 *Descripción cambiada a:* ${textoDesc}`)
-        anterior.desc = update.desc
+      // 💬 DESCRIPCIÓN DEL GRUPO CAMBIADA
+      if (Object.prototype.hasOwnProperty.call(update, 'desc') && update.desc !== antes.desc) {
+        const nuevaDesc = update.desc || 'vacía'
+        cambios.push(`💬 *Descripción cambiada a:* ${nuevaDesc}`)
+        antes.desc = update.desc
       }
 
       if (cambios.length === 0) continue
 
-      const metadata = await conn.groupMetadata(id)
-      const participants = metadata.participants
+      // 📋 METADATOS DEL GRUPO
+      const meta = await conn.groupMetadata(id)
+      const participantes = meta.participants
 
-      // 🛡️ Administradores y dueños
-      const admins = participants.filter(p => p.admin === 'admin' || p.admin === 'superadmin')
-      const owners = participants.filter(p => ownerNumbers.includes(p.id))
-      const todosAdmins = [...new Set([...admins, ...owners])]
-      const mentions = todosAdmins.map(p => p.id)
+      const admins = participantes.filter(p => p.admin)
+      const dueños = participantes.filter(p => ownerNumbers.includes(p.id))
+      const todosAdmins = [...new Set([...admins, ...dueños])]
+      const menciones = todosAdmins.map(p => p.id)
 
-      let texto = `📢 *Log de cambios del grupo:*\n\n`
-      texto += cambios.join('\n') + '\n\n'
-      texto += `👥 *Administradores notificados:*\n`
-      texto += todosAdmins.map(p => `@${p.id.split('@')[0]}`).join(' ')
+      // 🧾 TEXTO FINAL
+      let texto = `📢 *Log de cambios del grupo:*\n\n${cambios.join('\n')}\n\n`
+      texto += `👥 *Administradores notificados:*\n${todosAdmins.map(p => `@${p.id.split('@')[0]}`).join(' ')}`
 
-      if (imagenNueva) {
-        await conn.sendMessage(id, { image: { url: imagenNueva }, caption: texto, mentions })
+      if (nuevaFoto) {
+        await conn.sendMessage(id, { image: { url: nuevaFoto }, caption: texto, mentions: menciones })
       } else {
-        await conn.sendMessage(id, { text: texto, mentions })
+        await conn.sendMessage(id, { text: texto, mentions: menciones })
       }
     }
   })
