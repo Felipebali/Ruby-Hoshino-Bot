@@ -1,81 +1,94 @@
-// 📂 plugins/mute.js
-function normalizeJid(jid = '') {
-  jid = jid.trim()
-  const num = jid.replace(/\D/g, '')
-  if (!num) return null
-  return `${num}@s.whatsapp.net`
+// 🧩 plugins/mute.js — Solo para administradores del grupo
+
+function normalizeJid(jid) {
+  if (!jid) return null
+  jid = String(jid).trim()
+  const onlyDigits = jid.replace(/\D/g, '')
+  if (/^\d{5,}$/.test(onlyDigits) && !jid.includes('@')) {
+    return `${onlyDigits}@s.whatsapp.net`
+  }
+  return jid
+    .replace(/@c\.us$/, '@s.whatsapp.net')
+    .replace(/@s\.whatsapp\.net$/, '@s.whatsapp.net')
 }
 
 let mutedUsers = new Set()
 
 let handler = async (m, { conn, command }) => {
-  if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.')
+  if (!m.isGroup) return m.reply('❌ Este comando solo puede usarse en grupos.')
 
-  // ✅ Obtener metadata del grupo
-  let groupMetadata
-  try {
-    groupMetadata = await conn.groupMetadata(m.chat)
-  } catch {
-    return m.reply('⚠️ No se pudo obtener la información del grupo.')
-  }
-
-  // 🧠 Asegurarse de que los IDs estén en formato correcto
+  // Obtener metadata del grupo
+  const groupMetadata = await conn.groupMetadata(m.chat)
   const admins = groupMetadata.participants
     .filter(p => p.admin)
     .map(p => normalizeJid(p.id))
 
-  const senderJid = normalizeJid(m.sender)
-
-  // 🔍 Depuración opcional (puedes quitar esto)
-  console.log('Admins del grupo:', admins)
-  console.log('Tú eres:', senderJid)
-
-  // 🚫 Verificación segura
-  if (!admins.includes(senderJid)) {
-    return m.reply('🚫 Solo los administradores del grupo pueden usar este comando.')
+  // Solo los administradores pueden usar el comando
+  if (!admins.includes(normalizeJid(m.sender))) {
+    return conn.reply(m.chat, '❌ Solo los *administradores* pueden usar este comando.', m)
   }
 
-  // 🎯 Obtener usuario objetivo
+  // Validar usuario objetivo
+  if (!m.quoted && !m.mentionedJid?.length && !/\d{5,}/.test(m.text || '')) {
+    return conn.reply(m.chat, '⚠️ Debes *citar, mencionar o escribir el número* del usuario a mutear/desmutear.', m)
+  }
+
   let userJid = null
   if (m.quoted?.sender) userJid = normalizeJid(m.quoted.sender)
-  else if (m.mentionedJid?.length) userJid = normalizeJid(m.mentionedJid[0])
+  else if (m.mentionedJid?.length > 0) userJid = normalizeJid(m.mentionedJid[0])
   else if (m.text) {
     const num = m.text.match(/\d{5,}/)?.[0]
     if (num) userJid = normalizeJid(num)
   }
 
-  if (!userJid) return m.reply('⚠️ Debes citar, mencionar o escribir el número del usuario.')
+  if (!userJid) return
 
-  // 🚷 No se puede mutear a otro admin
-  if (admins.includes(userJid)) {
-    return m.reply(`⚠️ No puedes mutear a otro administrador.`)
-  }
-
-  // 🔇 Mutear
   if (['mute', 'silenciar'].includes(command)) {
-    if (mutedUsers.has(userJid)) return m.reply(`⚠️ @${userJid.split('@')[0]} ya está muteado.`, null, { mentions: [userJid] })
+    if (mutedUsers.has(userJid)) {
+      return conn.sendMessage(m.chat, {
+        text: `⚠️ @${userJid.split('@')[0]} ya está muteado.`,
+        mentions: [userJid],
+        quoted: m
+      })
+    }
     mutedUsers.add(userJid)
-    return m.reply(`🔇 Usuario muteado: @${userJid.split('@')[0]}`, null, { mentions: [userJid] })
-  }
-
-  // 🔊 Desmutear
-  if (['unmute', 'desilenciar'].includes(command)) {
-    if (!mutedUsers.has(userJid)) return m.reply(`⚠️ @${userJid.split('@')[0]} no está muteado.`, null, { mentions: [userJid] })
+    await conn.sendMessage(m.chat, {
+      text: `✅ Usuario muteado: @${userJid.split('@')[0]}`,
+      mentions: [userJid],
+      quoted: m
+    })
+  } else if (['unmute', 'desilenciar'].includes(command)) {
+    if (!mutedUsers.has(userJid)) {
+      return conn.sendMessage(m.chat, {
+        text: `⚠️ @${userJid.split('@')[0]} no está muteado.`,
+        mentions: [userJid],
+        quoted: m
+      })
+    }
     mutedUsers.delete(userJid)
-    return m.reply(`🔊 Usuario desmuteado: @${userJid.split('@')[0]}`, null, { mentions: [userJid] })
+    await conn.sendMessage(m.chat, {
+      text: `✅ Usuario desmuteado: @${userJid.split('@')[0]}`,
+      mentions: [userJid],
+      quoted: m
+    })
   }
 }
 
-// 🔕 Antes de procesar mensajes: borrar los del usuario muteado
+// 🐾 Bloquea mensajes de usuarios muteados
 handler.before = async (m, { conn }) => {
-  const sender = normalizeJid(m.sender)
-  if (mutedUsers.has(sender)) {
-    try {
-      await conn.sendMessage(m.chat, { delete: m.key })
-    } catch (e) {
-      console.error('❌ Error al eliminar mensaje muteado:', e.message)
+  try {
+    const sender = normalizeJid(m.sender)
+    if (!sender) return
+    if (mutedUsers.has(sender)) {
+      try {
+        await conn.sendMessage(m.chat, { delete: m.key })
+      } catch (e) {
+        console.error('❌ No se pudo eliminar mensaje muteado:', e?.message || e)
+      }
+      return true
     }
-    return true
+  } catch (e) {
+    console.error(e)
   }
 }
 
@@ -83,6 +96,6 @@ handler.help = ['mute', 'unmute', 'silenciar', 'desilenciar']
 handler.tags = ['grupo']
 handler.command = ['mute', 'unmute', 'silenciar', 'desilenciar']
 handler.group = true
-handler.botAdmin = true
+handler.botAdmin = true // El bot debe ser admin para poder borrar mensajes
 
 export default handler
