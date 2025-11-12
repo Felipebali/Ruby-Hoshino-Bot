@@ -1,6 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 
+// 📂 Ruta donde se guardarán los owners
 const dataDir = '/data/data/com.termux/files/home/.rubydata'
 const ownerFile = path.join(dataDir, 'owners.json')
 
@@ -11,12 +12,18 @@ if (!fs.existsSync(ownerFile)) fs.writeFileSync(ownerFile, '[]')
 // 🔄 Cargar owners almacenados
 let storedOwners = JSON.parse(fs.readFileSync(ownerFile))
 
-// 📡 Sincronizar con los globales del bot
+// 🔁 Sincronizar con los globales del bot
 if (!global.owner) global.owner = []
 global.owner = [...new Set([...global.owner, ...storedOwners])]
 
-// 🟢 COMANDO: .addowner
-let addOwner = async (m, { conn, text }) => {
+// 💾 Función para guardar la lista
+function saveOwners() {
+  fs.writeFileSync(ownerFile, JSON.stringify(storedOwners, null, 2))
+  global.owner = [...new Set([...storedOwners])]
+}
+
+// 🟢 AGREGAR OWNER
+let addowner = async (m, { conn, text, participants }) => {
   const sender = m.sender
   if (!global.owner.includes(sender))
     return m.reply('⚠️ Solo un *OWNER principal* puede agregar nuevos dueños.')
@@ -36,18 +43,16 @@ let addOwner = async (m, { conn, text }) => {
   if (storedOwners.includes(number)) return m.reply('✅ Ese número ya es owner.')
 
   storedOwners.push(number)
-  fs.writeFileSync(ownerFile, JSON.stringify(storedOwners, null, 2))
-  global.owner = [...new Set([...global.owner, ...storedOwners])]
-
+  saveOwners()
   await m.reply(
-    `👑 Se agregó correctamente a @${number.split('@')[0]} como nuevo *OWNER* permanente.`,
+    `👑 Se agregó correctamente a @${number.split('@')[0]} como *OWNER permanente*.`,
     null,
     { mentions: [number] }
   )
 }
 
-// 🔴 COMANDO: .delowner
-let delOwner = async (m, { conn, text }) => {
+// 🔴 ELIMINAR OWNER
+let delowner = async (m, { conn, text }) => {
   const sender = m.sender
   if (!global.owner.includes(sender))
     return m.reply('⚠️ Solo un *OWNER principal* puede eliminar dueños.')
@@ -68,9 +73,7 @@ let delOwner = async (m, { conn, text }) => {
     return m.reply('❌ Ese número no figura como owner registrado.')
 
   storedOwners = storedOwners.filter(o => o !== number)
-  fs.writeFileSync(ownerFile, JSON.stringify(storedOwners, null, 2))
-  global.owner = [...new Set([...storedOwners])]
-
+  saveOwners()
   await m.reply(
     `🗑️ Se eliminó correctamente a @${number.split('@')[0]} de la lista de *OWNERS*.`,
     null,
@@ -78,24 +81,31 @@ let delOwner = async (m, { conn, text }) => {
   )
 }
 
-// 🔧 Exportar ambos comandos
-export const handler = {}
-handler.addOwner = addOwner
-handler.delOwner = delOwner
+// 📜 LISTAR OWNERS
+let listowners = async (m) => {
+  if (storedOwners.length === 0)
+    return m.reply('📭 No hay owners registrados todavía.')
 
-export default [
-  {
-    help: ['addowner'],
-    tags: ['owner'],
-    command: /^addowner$/i,
-    owner: true,
-    handler: addOwner
-  },
-  {
-    help: ['delowner'],
-    tags: ['owner'],
-    command: /^delowner$/i,
-    owner: true,
-    handler: delOwner
-  }
-]
+  let lista = storedOwners
+    .map((o, i) => `${i + 1}. @${o.split('@')[0]}`)
+    .join('\n')
+
+  await m.reply(`👑 *LISTA DE OWNERS REGISTRADOS:*\n\n${lista}`, null, {
+    mentions: storedOwners
+  })
+}
+
+// 🧩 Exportar handlers individuales
+addowner.help = ['addowner']
+addowner.tags = ['owner']
+addowner.command = /^addowner$/i
+
+delowner.help = ['delowner']
+delowner.tags = ['owner']
+delowner.command = /^delowner$/i
+
+listowners.help = ['listowners']
+listowners.tags = ['owner']
+listowners.command = /^listowners$/i
+
+export default [addowner, delowner, listowners]
