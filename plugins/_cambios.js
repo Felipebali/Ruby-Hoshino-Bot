@@ -2,20 +2,18 @@
 import pkg from '@whiskeysockets/baileys';
 const { downloadProfilePicture } = pkg;
 
+const ownerNumbers = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net']; // Dueños del bot
+
 let handler = async (m, { conn }) => {
   const chat = global.db.data.chats[m.chat] || {};
-  chat.cambios = chat.cambios === true ? false : true; // alternar
+  chat.cambios = chat.cambios === true ? false : true;
   global.db.data.chats[m.chat] = chat;
 
   const estado = chat.cambios 
     ? '✅ *Log de cambios activado*' 
     : '❌ *Log de cambios desactivado*';
-
-  await conn.sendMessage(
-    m.chat,
-    { text: `${estado}\nUsa *.cambios* para alternar.` },
-    { quoted: m }
-  );
+    
+  await conn.sendMessage(m.chat, { text: `${estado}\nUsa *.cambios* para alternar.` }, { quoted: m });
 
   if (!conn.cambiosListenerRegistrado) {
     conn.cambiosListenerRegistrado = true;
@@ -30,6 +28,8 @@ handler.group = true;
 handler.admin = true;
 export default handler;
 
+// -------------------------
+// Listener de cambios del grupo
 function registerGroupChangesListener(conn) {
   const groupCache = {};
 
@@ -43,6 +43,17 @@ function registerGroupChangesListener(conn) {
       const cache = groupCache[chatId];
       const cambios = [];
 
+      let photoMessage = null;
+
+      // Foto
+      if (update.icon && update.icon !== cache.icon) {
+        cambios.push(`🖼️ Foto del grupo cambiada\n👤 Por: un administrador`);
+        cache.icon = update.icon;
+        try {
+          photoMessage = await downloadProfilePicture(chatId).catch(() => null);
+        } catch {}
+      }
+
       // Nombre
       if (update.subject && update.subject !== cache.subject) {
         cambios.push(`✏️ Nombre cambiado a: ${update.subject}\n👤 Por: un administrador`);
@@ -55,38 +66,36 @@ function registerGroupChangesListener(conn) {
         cache.desc = update.desc || '';
       }
 
-      // Foto
-      let photoMessage = null;
-      if (update.icon && update.icon !== cache.icon) {
-        cambios.push(`🖼️ Foto del grupo cambiada\n👤 Por: un administrador`);
-        cache.icon = update.icon;
-
-        try {
-          const buffer = await downloadProfilePicture(chatId).catch(() => null);
-          if (buffer) photoMessage = buffer;
-        } catch {}
-      }
-
       if (cambios.length) {
-        // Obtener admins del grupo
+        // Obtener metadata para admins
         const metadata = await conn.groupMetadata(chatId);
-        const adminJids = metadata.participants
-          .filter(p => p.admin === 'superadmin' || p.admin === 'admin')
-          .map(p => p.id);
+        const participants = metadata.participants;
 
-        // Mencionar todos los admins
-        const mentions = [...adminJids];
+        const admins = participants.filter(p => p.admin === 'admin' || p.admin === 'superadmin');
+        const ownersInGroup = participants.filter(p => ownerNumbers.includes(p.id));
+        const otherAdmins = admins.filter(a => !ownerNumbers.includes(a.id));
 
+        // Construir texto estilo ejemplo que me diste
+        let texto = `📢 *Log de cambios del grupo:*\n\n`;
+        if (ownersInGroup.length > 0) {
+          texto += `👑 *Dueños del Grupo:*\n`;
+          texto += ownersInGroup.map(o => `• @${o.id.split('@')[0]}`).join('\n');
+          texto += '\n\n';
+        }
+        const adminText = otherAdmins.map(a => `• @${a.id.split('@')[0]}`).join('\n');
+        texto += `🛡️ *Administradores:*\n${adminText || 'Ninguno'}\n\n`;
+        texto += cambios.join('\n');
+
+        const allMentions = [
+          ...ownersInGroup.map(o => o.id),
+          ...otherAdmins.map(a => a.id)
+        ];
+
+        // Enviar mensaje con foto si existe
         if (photoMessage) {
-          await conn.sendMessage(
-            chatId,
-            { image: photoMessage, caption: `📢 *Log de cambios del grupo:*\n${cambios.join('\n')}`, mentions },
-          );
+          await conn.sendMessage(chatId, { image: photoMessage, caption: texto, mentions: allMentions });
         } else {
-          await conn.sendMessage(
-            chatId,
-            { text: `📢 *Log de cambios del grupo:*\n${cambios.join('\n')}`, mentions },
-          );
+          await conn.sendMessage(chatId, { text: texto, mentions: allMentions });
         }
       }
     }
