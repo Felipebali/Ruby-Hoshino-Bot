@@ -1,5 +1,4 @@
-// 📂 plugins/juego-addowner.js
-const ownersList = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net']; // números reales de dueños
+// 📂 plugins/juego-humilla.js
 
 let handler = async (m, { conn }) => {
   try {
@@ -8,40 +7,47 @@ let handler = async (m, { conn }) => {
     // Determinar objetivo: citado o mencionado
     let target = m.quoted ? m.quoted.sender : (m.mentionedJid && m.mentionedJid[0]) || m.sender;
 
-    // Generar un “nivel de owner” aleatorio para hacerlo más divertido
-    const nivelOwner = Math.floor(Math.random() * 101); // 0 a 100%
+    // Nivel de ilusión aleatorio
+    const porcentaje = Math.floor(Math.random() * 101);
 
-    // Mensajes distintos según nivel
-    let mensaje;
-    if (ownersList.includes(target)) {
-      // Si es dueño real
-      mensaje = `👑 @${target.split('@')[0]} ya es OWNER REAL del bot.\n✅ Tiene acceso a todos los comandos exclusivos.`;
-    } else {
-      // Si no es dueño, pero en el juego parece owner
-      if (nivelOwner > 80) {
-        mensaje = `🎮 @${target.split('@')[0]} parece ser un OWNER de prueba 🕹️\nNivel de acceso simulado: ${nivelOwner}%\n⚠️ Solo es un juego, no puede usar comandos reales.`;
-      } else if (nivelOwner > 50) {
-        mensaje = `🎮 @${target.split('@')[0]} tiene acceso parcial al panel de OWNER\nNivel de ilusión: ${nivelOwner}%\n⚠️ No puede ejecutar comandos reales.`;
-      } else {
-        mensaje = `🎮 @${target.split('@')[0]} está en modo aprendiz OWNER\nNivel de ilusión: ${nivelOwner}%\n⚠️ No tiene permisos reales.`;
-      }
-    }
+    // Barra visual
+    const totalBars = 10;
+    const filledBars = Math.round(porcentaje / 10);
+    const bar = '💖'.repeat(filledBars) + '⬜'.repeat(totalBars - filledBars);
+
+    // Frases sarcásticas según porcentaje
+    let frase;
+    if (porcentaje > 90) frase = '😍 ¡Te tiene ilusionado/a al máximo! Pero shhh… solo es diversión.';
+    else if (porcentaje > 70) frase = '🥰 Muy ilusionado/a, te va a romper el corazón si te das cuenta.';
+    else if (porcentaje > 50) frase = '😏 Algo ilusionado/a… pero no te emociones demasiado.';
+    else if (porcentaje > 30) frase = '😅 Apenas te ilusiona, pero vos ya te estás haciendo drama.';
+    else frase = '🗿 No te ilusiona nada… y aún así te preocupás.';
+
+    const texto = `
+🎮 *Juego de Ilusión Humillante* 💀
+
+👤 @${target.split('@')[0]} te ilusiona: ${porcentaje}%
+
+${bar}
+
+💬 ${frase}
+`;
 
     await conn.sendMessage(
       m.chat,
-      { text: mensaje, mentions: [target] },
+      { text: texto, mentions: [target] },
       { quoted: m }
     );
 
   } catch (e) {
     console.error(e);
-    await m.reply('⚠️ Ocurrió un error ejecutando el juego addowner.');
+    await m.reply('⚠️ Ocurrió un error ejecutando el juego ilusiona-humilla.');
   }
 };
 
-handler.help = ['addowner'];
+handler.help = ['ilusionado', 'ilusionada'];
 handler.tags = ['fun', 'juego'];
-handler.command = /^(addowner)$/i;
+handler.command = /^(ilusionado|ilusionada)$/i;
 handler.group = true;
 
 export default handler;
