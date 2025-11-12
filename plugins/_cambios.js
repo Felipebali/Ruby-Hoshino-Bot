@@ -1,4 +1,4 @@
-// 📂 plugins/cambios-grupo.js
+// 📂 plugins/_cambios.js
 import { proto } from '@whiskeysockets/baileys';
 
 let handler = async (m, { conn, command, isAdmin }) => {
@@ -15,9 +15,14 @@ let handler = async (m, { conn, command, isAdmin }) => {
     { text: `${estado}\nUsa *.cambios* para alternar.` },
     { quoted: m }
   );
+
+  // Registrar listener solo una vez
+  if (!conn.cambiosListenerRegistrado) {
+    conn.cambiosListenerRegistrado = true;
+    registerGroupChangesListener(conn);
+  }
 };
 
-// Plugin principal
 handler.help = ['cambios'];
 handler.tags = ['group', 'log'];
 handler.command = /^cambios$/i;
@@ -26,9 +31,8 @@ handler.admin = true;
 export default handler;
 
 // -------------------------
-// Registro de cambios del grupo (tipo log)
-export async function logGrupoPlugin(conn) {
-  // Cache para comparar cambios
+// Listener de cambios del grupo
+function registerGroupChangesListener(conn) {
   const groupCache = {};
 
   conn.ev.on('groups.update', async (updates) => {
@@ -36,11 +40,9 @@ export async function logGrupoPlugin(conn) {
       for (const update of updates) {
         const chatId = update.id;
         const chatData = global.db.data.chats[chatId] || {};
-        if (!chatData.cambios) continue; // solo si el log está activado
+        if (!chatData.cambios) continue; // solo si está activado
 
-        // Inicializar cache si no existe
         if (!groupCache[chatId]) groupCache[chatId] = {};
-
         const cache = groupCache[chatId];
         const cambios = [];
 
@@ -62,7 +64,7 @@ export async function logGrupoPlugin(conn) {
           cache.icon = update.icon;
         }
 
-        // Si hay cambios, enviar log
+        // Enviar log si hay cambios
         if (cambios.length) {
           const mentions = [];
           if (update.subjectOwner) mentions.push(update.subjectOwner);
@@ -79,9 +81,3 @@ export async function logGrupoPlugin(conn) {
     }
   });
 }
-
-// Ejecutar automáticamente el log sin tocar index.js
-import { createRequire } from "module";
-const require = createRequire(import.meta.url);
-import { conn } from '../index.js'; // asegúrate que esta ruta apunta a tu instancia de conn
-if (conn) logGrupoPlugin(conn);
