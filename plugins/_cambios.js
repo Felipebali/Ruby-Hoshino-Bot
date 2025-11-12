@@ -6,7 +6,7 @@ const ownerNumbers = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net'
 
 let handler = async (m, { conn }) => {
   const chat = global.db.data.chats[m.chat] || {};
-  chat.cambios = chat.cambios === true ? false : true;
+  chat.cambios = !chat.cambios;
   global.db.data.chats[m.chat] = chat;
 
   const estado = chat.cambios
@@ -46,7 +46,7 @@ function registerGroupChangesListener(conn) {
 
       // Foto
       if (update.icon && update.icon !== cache.icon) {
-        cambios.push(`🖼️ Foto del grupo cambiada\n👤 Por: un administrador`);
+        cambios.push(`🖼️ *Foto del grupo cambiada*`);
         cache.icon = update.icon;
         try {
           photoMessage = await downloadProfilePicture(chatId).catch(() => null);
@@ -55,13 +55,13 @@ function registerGroupChangesListener(conn) {
 
       // Nombre
       if (update.subject && update.subject !== cache.subject) {
-        cambios.push(`✏️ Nombre cambiado a: ${update.subject}\n👤 Por: un administrador`);
+        cambios.push(`✏️ *Nombre cambiado a:* ${update.subject}`);
         cache.subject = update.subject;
       }
 
       // Descripción
       if ((update.desc || '') !== (cache.desc || '')) {
-        cambios.push(`💬 Descripción cambiada a: ${update.desc || 'vacía'}\n👤 Por: un administrador`);
+        cambios.push(`💬 *Descripción cambiada a:* ${update.desc || 'vacía'}`);
         cache.desc = update.desc || '';
       }
 
@@ -70,19 +70,16 @@ function registerGroupChangesListener(conn) {
         const metadata = await conn.groupMetadata(chatId);
         const participants = metadata.participants;
 
-        const admins = participants
-          .filter(p => p.admin === 'admin' || p.admin === 'superadmin')
-          .map(p => p.id);
-
+        // Filtrar admins y dueños
+        const admins = participants.filter(p => p.admin === 'admin' || p.admin === 'superadmin').map(p => p.id);
         const ownersInGroup = participants.filter(p => ownerNumbers.includes(p.id)).map(p => p.id);
-
         const allMentions = [...admins, ...ownersInGroup];
 
-        // Construir texto incluyendo @ explícitos
+        // Construir texto final con @ explícitos para notificación
         let texto = `📢 *Log de cambios del grupo:*\n\n`;
-        texto += cambios.join('\n') + '\n\n';
+        texto += cambios.map(c => `${c}\n👤 Por: un administrador`).join('\n\n') + '\n\n';
         texto += `🛡️ *Administradores mencionados:*\n`;
-        texto += allMentions.map(jid => `@${jid.split('@')[0]}`).join(' ') + '\n';
+        texto += allMentions.map(jid => `@${jid.split('@')[0]}`).join(' ');
 
         // Enviar mensaje con foto si existe
         if (photoMessage) {
