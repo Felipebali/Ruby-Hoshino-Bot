@@ -1,71 +1,78 @@
 // 📂 plugins/gay.js
-let handler = async (m, { conn, mentionedJid, quoted }) => {
+let handler = async (m, { conn, command }) => {
   try {
-    const chat = global.db.data.chats[m.chat] || {};
-    const gamesEnabled = chat.games !== false;
+    const chatData = global.db.data.chats[m.chat] || {};
 
-    if (!gamesEnabled) {
-      return conn.sendMessage(m.chat, {
-        text: '🎮 *Los mini-juegos están desactivados.*\nActívalos con *.juegos* 🔓'
-      });
+    // ⚠️ Verificar si los juegos están activados
+    if (!chatData.games) {
+      return await conn.sendMessage(
+        m.chat,
+        { text: '❌ Los mini-juegos están desactivados en este chat. Usa *.juegos* para activarlos.' },
+        { quoted: m }
+      );
     }
 
-    if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.');
-
-    // 🎯 Detectar a quién se le aplicará el test
-    let target;
-
-    if (quoted) {
-      // Primero usamos quoted.sender si existe, si no usamos quoted.key.participant
-      target = quoted.sender || (quoted.key && quoted.key.participant);
-    } 
-
-    if (!target && mentionedJid && mentionedJid.length) {
-      target = mentionedJid[0]; // segundo: menciones
+    // Determinar objetivo
+    let who;
+    if (m.quoted && m.quoted.key) {
+      // PRIORIDAD: mensaje citado
+      who = m.quoted.key.participant || m.sender;
+    } else if (m.mentionedJid && m.mentionedJid.length) {
+      // SEGUNDO: menciones
+      who = m.mentionedJid[0];
+    } else {
+      // POR ÚLTIMO: quien envía el comando
+      who = m.sender;
     }
 
-    if (!target) {
-      target = m.sender; // último: quien envía el comando
-    }
+    let simpleId = who.split("@")[0];
 
-    // 🎲 Generar porcentaje aleatorio
-    const porcentaje = Math.floor(Math.random() * 101);
+    // Calcular porcentaje aleatorio
+    let porcentaje = Math.floor(Math.random() * 101);
 
-    // 💬 Frases aleatorias divertidas
-    const frases = [
-      "🌈 Vive la vida con brillo y sin miedo 😘",
-      "💅 Más fabulos@ que nunca ✨",
-      "😏 La bandera te representa con orgullo",
-      "🦄 Nació para iluminar el arcoíris",
-      "👠 Diva certificada del mes 💖",
-      "💋 Confirmado por la NASA, gay de otro planeta 🪐",
-    ];
-    const frase = frases[Math.floor(Math.random() * frases.length)];
+    // Crear barra visual usando 🏳️‍🌈
+    const totalBars = 10;
+    const filledBars = Math.round(porcentaje / 10);
+    const bar = '🏳️‍🌈'.repeat(filledBars) + '⬜'.repeat(totalBars - filledBars);
 
-    // 📄 Mensaje con mención clickeable
-    const texto = `
-🏳️‍🌈 *TEST GAY FELIXCAT* 🐾
+    // Frases según porcentaje
+    let frase;
+    if (porcentaje >= 95) frase = '🏳️‍🌈 Nivel divino: eres el arcoíris viviente.';
+    else if (porcentaje >= 80) frase = '💅 Fabulos@ total: nadie te alcanza.';
+    else if (porcentaje >= 65) frase = '🦄 Brillas con estilo y orgullo.';
+    else if (porcentaje >= 50) frase = '😉 Seguro/a y confiado/a en tu arcoíris.';
+    else if (porcentaje >= 35) frase = '🤭 Algo de color se nota, pero sutil.';
+    else if (porcentaje >= 20) frase = '😇 Bastante tranquilo/a, pero con chispa.';
+    else if (porcentaje >= 5) frase = '😎 Casi neutral, solo un toque de brillo.';
+    else frase = '🗿 Puro/a e inocente, sin arcoíris aún.';
 
-@${target.split('@')[0]} es *${porcentaje}% gay* 😹
+    // Título del test
+    const titulo = '🏳️‍🌈 *TEST GAY FELIXCAT 2.0* 🐾';
 
-${frase}
-`;
+    // Armar mensaje final
+    let msg = `
+${titulo}
 
-    await conn.sendMessage(
-      m.chat,
-      { text: texto, mentions: [target] },
-      { quoted: m }
-    );
+👤 *Usuario:* @${simpleId}
+📊 *Nivel de gay:* ${porcentaje}%
 
-  } catch (e) {
-    console.error(e);
-    await conn.reply(m.chat, '✖️ Error al ejecutar el test gay.', m);
+${bar}
+
+💬 ${frase}
+`.trim();
+
+    // Enviar mensaje con mención
+    await conn.sendMessage(m.chat, { text: msg, mentions: [who] }, { quoted: m });
+
+  } catch (err) {
+    console.error(err);
+    return conn.reply(m.chat, '❌ Error ejecutando el comando .gay', m);
   }
 };
 
-handler.command = ['gay'];
-handler.tags = ['fun'];
-handler.help = ['gay <@user>'];
+handler.help = ['gay'];
+handler.tags = ['fun', 'juego'];
+handler.command = /^(gay)$/i;
 handler.group = true;
 
 export default handler;
