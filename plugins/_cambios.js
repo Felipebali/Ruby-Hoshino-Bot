@@ -6,9 +6,11 @@ let handler = async (m, { conn, command, isAdmin }) => {
   chat.cambios = chat.cambios === true ? false : true; // alternar
   global.db.data.chats[m.chat] = chat;
 
+  // Aviso automático de activación/desactivación
+  const estado = chat.cambios ? '✅ *Monitor de cambios activado*' : '❌ *Monitor de cambios desactivado*';
   await conn.sendMessage(
     m.chat,
-    { text: `✅ Monitor de cambios de grupo ${chat.cambios ? 'activado' : 'desactivado'}\nUsa *.cambios* para alternar.` },
+    { text: `${estado}\nUsa *.cambios* para alternar.` },
     { quoted: m }
   );
 };
