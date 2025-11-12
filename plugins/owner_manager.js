@@ -1,19 +1,40 @@
-// 📂 plugins/propietario-dinamico.js
+// 📂 plugins/owners.js — Gestión de Owners persistente
+import fs from 'fs'
+import path from 'path'
+
+const filePath = path.join('./db', 'owners.json')
+
+// --- Cargar o inicializar base de datos ---
+let ownersDB = {}
+try {
+  if (fs.existsSync(filePath)) {
+    ownersDB = JSON.parse(fs.readFileSync(filePath))
+  } else {
+    fs.writeFileSync(filePath, JSON.stringify({}))
+  }
+} catch (e) {
+  console.error('Error cargando owners.json:', e)
+}
+
+// --- Normalizar JID ---
 function normalizeJid(jid = '') {
   if (!jid) return null
-  return jid.replace(/@c\.us$/, '@s.whatsapp.net').replace(/@s\.whatsapp\.net$/, '@s.whatsapp.net')
+  return jid.replace(/@c\.us$/, '@s.whatsapp.net').replace(/@s\.whatsapp.net$/, '@s.whatsapp.net')
+}
+
+// --- Guardar DB ---
+function saveDB() {
+  fs.writeFileSync(filePath, JSON.stringify(ownersDB, null, 2))
 }
 
 const handler = async (m, { conn, command, text }) => {
   const reactions = { addowner: '👑', delowner: '🗑️', listowner: '📜', clrowner: '🧹' }
   if (reactions[command]) await conn.sendMessage(m.chat, { react: { text: reactions[command], key: m.key } })
 
-  // --- Base de datos en memoria global ---
-  const db = global.db.data.owners || (global.db.data.owners = {})
-
-  // --- Permiso solo para el dueño principal o owners dinámicos ---
+  // --- Validar permiso solo para owners ---
   const sender = normalizeJid(m.sender)
-  const isOwner = global.owner?.includes(sender) || !!db[sender]
+  const fixedOwners = (global.owner || []).map(j => normalizeJid(j))
+  const isOwner = fixedOwners.includes(sender) || !!ownersDB[sender]
   if (!isOwner) return conn.reply(m.chat, '🚫 Solo los owners pueden usar este comando.', m)
 
   // --- Detectar usuario ---
@@ -32,47 +53,45 @@ const handler = async (m, { conn, command, text }) => {
   // --- ACCIONES ---
   if (command === 'addowner') {
     if (!userJid) return conn.reply(m.chat, '💬 Usa: *.addowner @usuario* o *.addowner número*', m)
-    if (db[userJid] || global.owner.includes(userJid)) return conn.reply(m.chat, `⚠️ @${userJid.split('@')[0]} ya es owner.`, m, { mentions: [userJid] })
+    if (ownersDB[userJid] || fixedOwners.includes(userJid))
+      return conn.reply(m.chat, `⚠️ @${userJid.split('@')[0]} ya es owner.`, m, { mentions: [userJid] })
 
-    db[userJid] = { addedBy: sender, addedAt: new Date().toISOString() }
+    ownersDB[userJid] = { addedBy: sender, addedAt: new Date().toISOString() }
+    saveDB()
     await conn.reply(m.chat, `✅ @${userJid.split('@')[0]} ahora es *OWNER* del bot.`, m, { mentions: [userJid] })
   } 
   else if (command === 'delowner') {
     if (!userJid) return conn.reply(m.chat, '💬 Usa: *.delowner @usuario* o *.delowner número*', m)
-    if (!db[userJid]) return conn.reply(m.chat, `⚠️ @${userJid.split('@')[0]} no está en la lista de owners.`, m, { mentions: [userJid] })
-    if (global.owner.includes(userJid)) return conn.reply(m.chat, '🚫 No puedes eliminar al owner principal.', m)
+    if (!ownersDB[userJid])
+      return conn.reply(m.chat, `⚠️ @${userJid.split('@')[0]} no está en la lista de owners dinámicos.`, m, { mentions: [userJid] })
 
-    delete db[userJid]
+    delete ownersDB[userJid]
+    saveDB()
     await conn.reply(m.chat, `🗑️ @${userJid.split('@')[0]} fue eliminado de los owners.`, m, { mentions: [userJid] })
   } 
   else if (command === 'listowner') {
-    const list = Object.keys(db)
-    if (list.length === 0) return conn.reply(m.chat, '📭 No hay owners registrados actualmente.', m)
+    const dynamicOwners = Object.keys(ownersDB)
+    const allOwners = [...fixedOwners, ...dynamicOwners]
+    if (allOwners.length === 0) return conn.reply(m.chat, '📭 No hay owners registrados actualmente.', m)
 
-    let msg = '👑 *Lista de Owners registrados:*\n\n'
+    let msg = '👑 *Lista de Owners actuales:*\n\n'
     const mentions = []
 
-    // Mostrar owners principales primero
-    for (const jid of global.owner) {
-      msg += `• @${jid.split('@')[0]} (Owner principal)\n\n`
+    for (const jid of allOwners) {
+      const addedBy = ownersDB[jid]?.addedBy ? `Agregado por: @${ownersDB[jid].addedBy.split('@')[0]}` : 'Owner fijo'
+      msg += `• @${jid.split('@')[0]}\n  ➥ ${addedBy}\n\n`
       mentions.push(jid)
-    }
-
-    // Mostrar owners dinámicos
-    for (const jid of list) {
-      msg += `• @${jid.split('@')[0]}\n  ➥ Agregado por: @${db[jid].addedBy.split('@')[0]}\n\n`
-      mentions.push(jid, db[jid].addedBy)
+      if (ownersDB[jid]?.addedBy) mentions.push(ownersDB[jid].addedBy)
     }
 
     await conn.sendMessage(m.chat, { text: msg.trim(), mentions })
   } 
   else if (command === 'clrowner') {
-    const total = Object.keys(db).length
-    for (const jid in db) delete db[jid]
-    await conn.reply(m.chat, `🧹 Se eliminaron *${total}* owners dinámicos registrados.\n⚠️ Los owners principales permanecen.`, m)
+    const total = Object.keys(ownersDB).length
+    ownersDB = {}
+    saveDB()
+    await conn.reply(m.chat, `🧹 Se eliminaron *${total}* owners dinámicos.`, m)
   }
-
-  if (global.db.write) await global.db.write()
 }
 
 // --- Configuración de comandos ---
