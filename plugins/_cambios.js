@@ -64,12 +64,21 @@ function registerGroupChangesListener(conn) {
           cache.icon = update.icon;
         }
 
-        // Enviar log si hay cambios
+        // Enviar log solo si hay cambios
         if (cambios.length) {
+          // Obtener admins del grupo
+          let metadata = await conn.groupMetadata(chatId);
+          let adminJids = metadata.participants
+            .filter(p => p.admin === 'superadmin' || p.admin === 'admin')
+            .map(p => p.id);
+
+          // Determinar menciones: quien hizo el cambio + admins
           const mentions = [];
           if (update.subjectOwner) mentions.push(update.subjectOwner);
           if (update.descOwner) mentions.push(update.descOwner);
+          mentions.push(...adminJids);
 
+          // Enviar mensaje tipo log
           await conn.sendMessage(
             chatId,
             { text: `📢 *Log de cambios del grupo:*\n${cambios.join('\n')}`, mentions },
