@@ -1,5 +1,5 @@
 // 📂 plugins/_cambios.js
-import { proto } from '@whiskeysockets/baileys';
+import { proto, downloadContentFromMessage, generateWAMessageFromContent, prepareMessageFromContent } from '@whiskeysockets/baileys';
 
 let handler = async (m, { conn, command, isAdmin }) => {
   const chat = global.db.data.chats[m.chat] || {};
@@ -48,20 +48,26 @@ function registerGroupChangesListener(conn) {
 
         // Nombre
         if (update.subject && update.subject !== cache.subject) {
-          cambios.push(`✏️ Nombre cambiado a: ${update.subject}\n👤 Por: @${(update.subjectOwner || 'desconocido').split('@')[0]}`);
+          cambios.push(`✏️ Nombre cambiado a: ${update.subject}\n👤 Por: un administrador`);
           cache.subject = update.subject;
         }
 
         // Descripción
         if ((update.desc || '') !== (cache.desc || '')) {
-          cambios.push(`💬 Descripción cambiada a: ${update.desc || 'vacía'}\n👤 Por: @${(update.descOwner || 'desconocido').split('@')[0]}`);
+          cambios.push(`💬 Descripción cambiada a: ${update.desc || 'vacía'}\n👤 Por: un administrador`);
           cache.desc = update.desc || '';
         }
 
         // Foto
+        let photoMessage = null;
         if (update.icon && update.icon !== cache.icon) {
-          cambios.push(`🖼️ Foto del grupo cambiada\n👤 Por: @${(update.iconOwner || update.descOwner || update.subjectOwner || 'desconocido').split('@')[0]}`);
+          cambios.push(`🖼️ Foto del grupo cambiada\n👤 Por: un administrador`);
           cache.icon = update.icon;
+
+          try {
+            const buffer = await conn.downloadProfilePicture(chatId).catch(() => null);
+            if (buffer) photoMessage = buffer;
+          } catch {}
         }
 
         if (cambios.length) {
@@ -71,17 +77,20 @@ function registerGroupChangesListener(conn) {
             .filter(p => p.admin === 'superadmin' || p.admin === 'admin')
             .map(p => p.id);
 
-          // Crear lista de menciones: admins + quien hizo el cambio
-          const mentions = [];
-          if (update.subjectOwner) mentions.push(update.subjectOwner);
-          if (update.descOwner) mentions.push(update.descOwner);
-          mentions.push(...adminJids);
+          const mentions = [...adminJids]; // mencionar todos los admins
 
-          // Enviar mensaje tipo log
-          await conn.sendMessage(
-            chatId,
-            { text: `📢 *Log de cambios del grupo:*\n${cambios.join('\n')}`, mentions },
-          );
+          // Enviar mensaje tipo log con foto si existe
+          if (photoMessage) {
+            await conn.sendMessage(
+              chatId,
+              { image: photoMessage, caption: `📢 *Log de cambios del grupo:*\n${cambios.join('\n')}`, mentions },
+            );
+          } else {
+            await conn.sendMessage(
+              chatId,
+              { text: `📢 *Log de cambios del grupo:*\n${cambios.join('\n')}`, mentions },
+            );
+          }
         }
       }
     } catch (err) {
