@@ -1,37 +1,42 @@
-// 📂 plugins/_bot.js — IA de conversación simple
 import fetch from 'node-fetch'
 
-let handler = async (m, { text, usedPrefix, command }) => {
-  if (!text) return m.reply(`💬 *Uso correcto:*\n\n> ${usedPrefix + command} <pregunta>\n\n🧠 Ejemplo:\n> ${usedPrefix + command} ¿Qué opinas del clima hoy?`)
-
-  await m.react('🤖')
-
+let handler = async (m, { text, conn }) => {
   try {
-    // 🌐 Usamos modelo gratuito de HuggingFace (sin key)
-    const response = await fetch(`https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ inputs: text })
+    if (!text) return conn.reply(m.chat, '💭 *Ejemplo:* .bot ¿Cómo estás?', m)
+
+    await conn.sendMessage(m.chat, { react: { text: '🤔', key: m.key } })
+
+    // 🔗 Nueva URL funcional de HuggingFace
+    const response = await fetch("https://router.huggingface.co/hf-inference/models/mistralai/Mixtral-8x7B-Instruct-v0.1", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        inputs: text,
+        parameters: { max_new_tokens: 100, temperature: 0.7 }
+      })
     })
 
-    // 🔍 Validamos respuesta
+    // Si la respuesta no es válida
     if (!response.ok) {
-      console.error(await response.text())
-      throw new Error('Error al conectar con la IA.')
+      throw new Error(`❌ Falló la conexión (${response.status})`)
     }
 
-    const data = await response.json()
-    const reply = data?.[0]?.generated_text || "⚠️ No pude pensar en una buena respuesta ahora mismo..."
+    const result = await response.json()
+    let output = result?.[0]?.generated_text || "⚠️ No pude pensar en una buena respuesta ahora mismo..."
 
-    await m.reply(reply)
-    await m.react('✅')
-  } catch (err) {
-    console.error('❌ Error en .bot:', err)
-    await m.reply('⚠️ Ocurrió un error al procesar tu mensaje.')
+    // ✨ Respuesta limpia
+    const mensaje = `💬 *Respuesta IA:*\n${output.trim()}`
+    await conn.reply(m.chat, mensaje, m)
+    await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
+
+  } catch (e) {
+    console.error('❌ Error en .bot:', e)
+    await conn.sendMessage(m.chat, { react: { text: '⚠️', key: m.key } })
+    await conn.reply(m.chat, '⚠️ Ocurrió un error al procesar tu mensaje.', m)
   }
 }
 
-handler.help = ['bot']
+handler.help = ['bot <texto>']
 handler.tags = ['ia']
-handler.command = /^bot$/i
+handler.command = ['bot', 'ia', 'ask']
 export default handler
