@@ -1,8 +1,8 @@
 import fetch from 'node-fetch'
 
 const idiomas = {
-  en: 'Inglés',
   es: 'Español',
+  en: 'Inglés',
   pt: 'Portugués',
   fr: 'Francés',
   it: 'Italiano',
@@ -16,36 +16,39 @@ const idiomas = {
 let handler = async (m, { text, args, usedPrefix, command, conn }) => {
   await conn.sendMessage(m.chat, { react: { text: '🌐', key: m.key } })
 
-  if (!args[0])
+  // Si el usuario respondió a un mensaje, usar ese texto
+  if (!text && m.quoted?.text) text = m.quoted.text
+
+  if (!text)
     return m.reply(
       `🌍 *Uso correcto:*\n\n` +
       `✦ \`${usedPrefix + command}\` <idioma> <texto>\n` +
-      `✦ o simplemente \`${usedPrefix + command}\` <texto>\n\n` +
-      `📘 *Ejemplo:*\n> ${usedPrefix + command} en Hola, ¿cómo estás?\n> ${usedPrefix + command} Hello world\n\n` +
+      `✦ o simplemente responde a un mensaje con \`${usedPrefix + command} <idioma>\`\n\n` +
+      `📘 *Ejemplo:*\n> ${usedPrefix + command} en Hola, ¿cómo estás?\n> ${usedPrefix + command} it Buenos días\n\n` +
       `🌐 *Idiomas disponibles:*\n${Object.entries(idiomas).map(([k, v]) => `• ${k} = ${v}`).join('\n')}`
     )
 
-  let lang = args[0].toLowerCase()
+  const partes = text.split(' ')
+  let lang = partes[0].toLowerCase()
   let texto
 
-  // Si el primer argumento es un idioma válido
-  if (idiomas[lang]) {
-    texto = args.slice(1).join(' ')
-    if (!texto) return m.reply('✏️ Escribí el texto que querés traducir.')
-  } else {
-    // Si no se especifica idioma, traduce automáticamente al español
-    texto = args.join(' ')
-    lang = 'es'
+  // Si el primer argumento es idioma válido
+  if (idiomas[lang]) texto = partes.slice(1).join(' ')
+  else {
+    texto = text
+    lang = 'es' // por defecto traduce al español
   }
 
-  try {
-    // Detectar idioma automáticamente
-    const detectar = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(texto)}&langpair=auto|${lang}`)
-    const data = await detectar.json()
-    const traduccion = data?.responseData?.translatedText
-    const idiomaDetectado = data?.responseData?.match?.['language'] || 'desconocido'
+  if (!texto) return m.reply('✏️ Escribí el texto que querés traducir.')
 
-    if (!traduccion) throw new Error()
+  try {
+    // Detección automática del idioma y traducción
+    const apiUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${lang}&dt=t&q=${encodeURIComponent(texto)}`
+    const res = await fetch(apiUrl)
+    const data = await res.json()
+
+    const traduccion = data[0].map(t => t[0]).join('')
+    const idiomaDetectado = data[2]
 
     await m.reply(
       `🌐 *Traducción al ${idiomas[lang] || lang.toUpperCase()}*\n\n` +
@@ -59,7 +62,7 @@ let handler = async (m, { text, args, usedPrefix, command, conn }) => {
 }
 
 handler.help = ['traducir <idioma> <texto>']
-handler.tags = ['utilidades', 'traducción']
+handler.tags = ['utilidades']
 handler.command = /^traducir$/i
 
 export default handler
