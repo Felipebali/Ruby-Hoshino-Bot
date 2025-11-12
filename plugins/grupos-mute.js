@@ -6,11 +6,13 @@ function normalizeJid(jid) {
   if (/^\d{5,}$/.test(onlyDigits) && !jid.includes('@')) {
     return `${onlyDigits}@s.whatsapp.net`
   }
-  return jid.replace(/@c\.us$/, '@s.whatsapp.net').replace(/@s\.whatsapp.net$/, '@s.whatsapp.net')
+  return jid
+    .replace(/@c\.us$/, '@s.whatsapp.net')
+    .replace(/@s\.whatsapp.net$/, '@s.whatsapp.net')
 }
 
-// Números de owners protegidos
-const BOT_OWNERS = ['59896026646','59898719147']
+// ✅ Números de owners protegidos
+const BOT_OWNERS = ['59896026646', '59898719147']
 const ownersJids = BOT_OWNERS.map(n => normalizeJid(n))
 
 let mutedUsers = new Set()
@@ -18,14 +20,16 @@ let mutedUsers = new Set()
 let handler = async (m, { conn, command }) => {
   if (!m.isGroup) return
 
-  // Obtener metadata del grupo
   const groupMetadata = await conn.groupMetadata(m.chat)
-  const admins = groupMetadata.participants
-    .filter(p => p.admin === 'admin' || p.admin === 'superadmin')
-    .map(p => p.id)
+  const participants = groupMetadata.participants || []
 
-  // Solo admins o owners pueden usarlo
-  if (!admins.includes(m.sender) && !ownersJids.includes(m.sender)) {
+  // 🛡️ Detectar todos los administradores correctamente
+  const admins = participants
+    .filter(p => p.admin || p.isAdmin || p.role === 'admin' || p.role === 'superadmin')
+    .map(p => normalizeJid(p.id))
+
+  // ⚙️ Permitir admins o owners
+  if (!admins.includes(normalizeJid(m.sender)) && !ownersJids.includes(normalizeJid(m.sender))) {
     return conn.sendMessage(m.chat, { text: '❌ Solo administradores o owners pueden usar este comando.', quoted: m })
   }
 
@@ -43,18 +47,18 @@ let handler = async (m, { conn, command }) => {
 
   if (!userJid) return
 
-  // Proteger owners
+  // 🚫 No se puede mutear a los owners
   if (ownersJids.includes(userJid)) {
     return conn.sendMessage(m.chat, { text: `❌ No puedes mutear a un owner protegido.`, quoted: m })
   }
 
-  if (['mute','silenciar'].includes(command)) {
+  if (['mute', 'silenciar'].includes(command)) {
     if (mutedUsers.has(userJid)) {
       return conn.sendMessage(m.chat, { text: `⚠️ @${userJid.split('@')[0]} ya está muteado.`, mentions: [userJid], quoted: m })
     }
     mutedUsers.add(userJid)
     await conn.sendMessage(m.chat, { text: `✅ Usuario muteado: @${userJid.split('@')[0]}`, mentions: [userJid], quoted: m })
-  } else if (['unmute','desilenciar'].includes(command)) {
+  } else if (['unmute', 'desilenciar'].includes(command)) {
     if (!mutedUsers.has(userJid)) {
       return conn.sendMessage(m.chat, { text: `⚠️ @${userJid.split('@')[0]} no está muteado.`, mentions: [userJid], quoted: m })
     }
@@ -63,7 +67,7 @@ let handler = async (m, { conn, command }) => {
   }
 }
 
-// Antes de procesar mensajes: eliminar si el remitente está muteado
+// 🔇 Eliminar mensajes automáticamente de usuarios muteados
 handler.before = async (m, { conn }) => {
   try {
     const sender = normalizeJid(m.sender)
