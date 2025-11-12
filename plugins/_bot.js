@@ -2,26 +2,31 @@ import fetch from 'node-fetch'
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
   if (!text)
-    return m.reply(`💬 *Uso correcto:*\n\n${usedPrefix + command} <pregunta>\n\n📘 Ejemplo:\n${usedPrefix + command} ¿Quién fue Nikola Tesla?`)
+    return m.reply(`💬 *Uso correcto:*\n\n${usedPrefix + command} <pregunta>\n\n📘 Ejemplo:\n${usedPrefix + command} ¿Qué opinas del clima?`)
 
   try {
     await conn.sendMessage(m.chat, { react: { text: '🤔', key: m.key } })
 
-    // 🌐 API pública gratuita de IA ligera (sin clave)
-    const res = await fetch(`https://api.simsimi.net/v2/?text=${encodeURIComponent(text)}&lc=es`)
+    // 🔹 Nueva API pública de IA en español
+    const res = await fetch("https://api.safone.dev/chatgpt", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: text, user: m.sender })
+    })
+
     const data = await res.json()
+    if (!data || !data.result) throw new Error("Sin respuesta válida")
 
-    if (!data.success) throw new Error('Sin respuesta')
-
-    const respuesta = data.success
     const usuario = m.pushName || 'Usuario'
+    const respuesta = data.result.trim()
 
-    const mensaje = `🐾 *FelixCat_Bot responde:*\n\n${respuesta}\n\n— ${usuario}, ¿algo más que quieras saber? 😺`
-
-    await conn.reply(m.chat, mensaje, m)
+    const msg = `🐾 *FelixCat_Bot responde a @${m.sender.split('@')[0]}:*\n\n${respuesta}`
+    await conn.reply(m.chat, msg, m, { mentions: [m.sender] })
     await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
-  } catch (e) {
-    console.error(e)
+
+  } catch (err) {
+    console.error('❌ Error en .bot:', err)
+    await conn.sendMessage(m.chat, { react: { text: '⚠️', key: m.key } })
     await conn.reply(m.chat, '⚠️ No pude pensar en una buena respuesta ahora mismo...', m)
   }
 }
@@ -30,4 +35,4 @@ handler.help = ['bot <texto>']
 handler.tags = ['ia', 'fun']
 handler.command = /^bot$/i
 
-export default handler 
+export default handler
