@@ -28,7 +28,6 @@ handler.group = true;
 handler.admin = true;
 export default handler;
 
-// -------------------------
 function registerGroupChangesListener(conn) {
   const groupCache = {};
 
@@ -66,18 +65,20 @@ function registerGroupChangesListener(conn) {
         const metadata = await conn.groupMetadata(chatId);
         const participants = metadata.participants;
 
-        // Administradores y dueños
-        const admins = participants.filter(p => p.admin === 'admin' || p.admin === 'superadmin');
+        // Filtrar todos los admins y dueños
+        const admins = participants.filter(
+          p => p.admin === 'admin' || p.admin === 'superadmin'
+        );
         const ownersInGroup = participants.filter(p => ownerNumbers.includes(p.id));
         const allAdmins = [...admins, ...ownersInGroup];
 
-        // Texto final, menciona a todos los admins
+        const mentions = allAdmins.map(p => p.id);
+
+        // Texto final con menciones
         let texto = `📢 *Log de cambios del grupo:*\n\n`;
         texto += cambios.map(c => `${c}\n👤 Por: un administrador`).join('\n\n') + '\n\n';
         texto += `🛡️ *Administradores mencionados:*\n`;
         texto += allAdmins.map(p => `@${p.id.split('@')[0]}`).join(' ');
-
-        const mentions = allAdmins.map(p => p.id);
 
         if (photoMessage) {
           await conn.sendMessage(chatId, { image: photoMessage, caption: texto, mentions });
