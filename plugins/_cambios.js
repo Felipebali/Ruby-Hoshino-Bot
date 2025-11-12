@@ -60,19 +60,18 @@ function registerGroupChangesListener(conn) {
 
         // Foto
         if (update.icon && update.icon !== cache.icon) {
-          cambios.push(`🖼️ Foto del grupo cambiada`);
+          cambios.push(`🖼️ Foto del grupo cambiada\n👤 Por: @${(update.iconOwner || update.descOwner || update.subjectOwner || 'desconocido').split('@')[0]}`);
           cache.icon = update.icon;
         }
 
-        // Enviar log solo si hay cambios
         if (cambios.length) {
           // Obtener admins del grupo
-          let metadata = await conn.groupMetadata(chatId);
-          let adminJids = metadata.participants
+          const metadata = await conn.groupMetadata(chatId);
+          const adminJids = metadata.participants
             .filter(p => p.admin === 'superadmin' || p.admin === 'admin')
             .map(p => p.id);
 
-          // Determinar menciones: quien hizo el cambio + admins
+          // Crear lista de menciones: admins + quien hizo el cambio
           const mentions = [];
           if (update.subjectOwner) mentions.push(update.subjectOwner);
           if (update.descOwner) mentions.push(update.descOwner);
