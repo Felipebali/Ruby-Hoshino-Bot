@@ -1,82 +1,118 @@
 import fetch from 'node-fetch'
 
+// 🌦️ Diccionario de traducciones al español
+const traducciones = {
+  "Sunny": "Soleado",
+  "Clear": "Despejado",
+  "Partly cloudy": "Parcialmente nublado",
+  "Cloudy": "Nublado",
+  "Overcast": "Cubierto",
+  "Mist": "Neblina",
+  "Patchy rain possible": "Posibles lluvias aisladas",
+  "Patchy snow possible": "Posibles nevadas aisladas",
+  "Patchy sleet possible": "Posible aguanieve",
+  "Patchy freezing drizzle possible": "Posible llovizna helada",
+  "Thundery outbreaks possible": "Posibles tormentas eléctricas",
+  "Blowing snow": "Nieve soplada",
+  "Blizzard": "Ventisca",
+  "Fog": "Niebla",
+  "Freezing fog": "Niebla helada",
+  "Patchy light drizzle": "Llovizna ligera irregular",
+  "Light drizzle": "Llovizna ligera",
+  "Freezing drizzle": "Llovizna helada",
+  "Heavy freezing drizzle": "Llovizna helada fuerte",
+  "Patchy light rain": "Lluvia ligera irregular",
+  "Light rain": "Lluvia ligera",
+  "Moderate rain at times": "Lluvia moderada intermitente",
+  "Moderate rain": "Lluvia moderada",
+  "Heavy rain at times": "Lluvia fuerte intermitente",
+  "Heavy rain": "Lluvia fuerte",
+  "Light freezing rain": "Lluvia helada ligera",
+  "Moderate or heavy freezing rain": "Lluvia helada moderada o fuerte",
+  "Light sleet": "Aguanieve ligera",
+  "Moderate or heavy sleet": "Aguanieve moderada o fuerte",
+  "Patchy light snow": "Nieve ligera irregular",
+  "Light snow": "Nieve ligera",
+  "Patchy moderate snow": "Nieve moderada irregular",
+  "Moderate snow": "Nieve moderada",
+  "Patchy heavy snow": "Nieve fuerte irregular",
+  "Heavy snow": "Nieve fuerte",
+  "Ice pellets": "Granizo pequeño",
+  "Light rain shower": "Lluvia ligera",
+  "Moderate or heavy rain shower": "Lluvia moderada o fuerte",
+  "Torrential rain shower": "Lluvia torrencial",
+  "Light sleet showers": "Chubascos de aguanieve ligera",
+  "Moderate or heavy sleet showers": "Chubascos de aguanieve moderada o fuerte",
+  "Light snow showers": "Chubascos de nieve ligera",
+  "Moderate or heavy snow showers": "Chubascos de nieve moderada o fuerte",
+  "Light showers of ice pellets": "Chubascos ligeros de granizo",
+  "Moderate or heavy showers of ice pellets": "Chubascos de granizo moderados o fuertes",
+  "Patchy light rain in area with thunder": "Lluvias ligeras dispersas con truenos",
+  "Moderate or heavy rain in area with thunder": "Lluvias moderadas o fuertes con truenos",
+  "Patchy light snow in area with thunder": "Nevadas ligeras dispersas con truenos",
+  "Moderate or heavy snow in area with thunder": "Nevadas moderadas o fuertes con truenos"
+}
+
 let handler = async (m, { conn, text, usedPrefix, command }) => {
-  if (!text) {
+  if (!text)
     return conn.reply(
       m.chat,
-      `🌦️ *Uso correcto:*\n\n${usedPrefix + command} <ciudad>\n\nEjemplo:\n${usedPrefix + command} Montevideo`,
+      `🌦️ *Uso correcto:*\n\n${usedPrefix + command} <ciudad>\n\n🧭 Ejemplo:\n${usedPrefix + command} Mercedes`,
       m
     )
-  }
 
   try {
-    // Paso 1: obtener latitud/longitud de la ciudad (usar geocodificación simple)
-    const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(text)}&count=1&language=es`)
-    const geoData = await geoRes.json()
-    if (!geoData.results || geoData.results.length === 0) {
-      throw new Error('No se encontró la ciudad.')
-    }
-    const { latitude, longitude, name, country, timezone } = geoData.results[0]
+    // 🌤️ Reacción al mensaje mientras busca el clima
+    await conn.sendMessage(m.chat, { react: { text: '🌤️', key: m.key } })
 
-    // Paso 2: pedir clima actual
-    const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true&timezone=${encodeURIComponent(timezone)}`)
-    const weatherData = await weatherRes.json()
-    if (!weatherData.current_weather) {
-      throw new Error('No se pudo obtener el clima actual.')
-    }
-    const cw = weatherData.current_weather
-    const temperatura = cw.temperature
-    const viento = cw.windspeed
-    const horaLocal = cw.time // ya en timezone de la ciudad
+    const res = await fetch(`https://wttr.in/${encodeURIComponent(text)}?format=j1`)
+    const data = await res.json()
 
-    // Nota: Open-Meteo devuelve un “weathercode” en vez de texto de estado.
-    // Hay que traducirlo manualmente:
-    const codigo = cw.weathercode
-    const estados = {
-      0: 'Cielo despejado',
-      1: 'Principalmente despejado',
-      2: 'Parcialmente nublado',
-      3: 'Nublado',
-      45: 'Niebla',
-      48: 'Niebla helada',
-      51: 'Llovizna ligera',
-      53: 'Llovizna moderada',
-      55: 'Llovizna densa',
-      56: 'Llovizna helada ligera',
-      57: 'Llovizna helada densa',
-      61: 'Lluvia ligera',
-      63: 'Lluvia moderada',
-      65: 'Lluvia intensa',
-      66: 'Lluvia helada ligera',
-      67: 'Lluvia helada intensa',
-      71: 'Nieve ligera',
-      73: 'Nieve moderada',
-      75: 'Nieve intensa',
-      77: 'Granizo',
-      80: 'Chubascos de lluvia ligera',
-      81: 'Chubascos de lluvia moderada',
-      82: 'Chubascos de lluvia intensos',
-      85: 'Chubascos de nieve ligera',
-      86: 'Chubascos de nieve intensos',
-      95: 'Tormenta',
-      96: 'Tormenta con granizo ligero',
-      99: 'Tormenta con granizo fuerte'
-    }
-    const estado = estados[codigo] || 'Estado del cielo desconocido'
+    if (!data || !data.current_condition)
+      throw new Error('No se pudieron obtener los datos del clima.')
+
+    const lugar = data.nearest_area?.[0]?.areaName?.[0]?.value || text
+    const region = data.nearest_area?.[0]?.region?.[0]?.value || ''
+    const pais = data.nearest_area?.[0]?.country?.[0]?.value || ''
+    const clima = data.current_condition?.[0]
+    const temperatura = clima?.temp_C
+    const sensacion = clima?.FeelsLikeC
+    let estado = clima?.weatherDesc?.[0]?.value
+    const humedad = clima?.humidity
+    const viento = clima?.windspeedKmph
+    const icono = clima?.weatherIconUrl?.[0]?.value || null
+
+    // 🌈 Traducción al español
+    if (estado && traducciones[estado]) estado = traducciones[estado]
+
+    const horaLocal = new Date().toLocaleString('es-UY', {
+      timeZone: 'America/Montevideo'
+    })
 
     const info = `
-🌍 *Clima actual en ${name}, ${country}:*
+🌍 *Clima actual en ${lugar}, ${region}, ${pais}:*
 
 🕒 Hora local: *${horaLocal}*
 🌡️ Temperatura: *${temperatura}°C*
+🥵 Sensación térmica: *${sensacion}°C*
 🌤️ Estado del cielo: *${estado}*
+💧 Humedad: *${humedad}%*
 💨 Viento: *${viento} km/h*
     `.trim()
 
-    await conn.reply(m.chat, info, m)
+    // 💬 Enviar con o sin ícono
+    if (icono) {
+      await conn.sendMessage(m.chat, { image: { url: icono }, caption: info })
+    } else {
+      await conn.reply(m.chat, info, m)
+    }
+
+    // ✅ Reacción final
+    await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
 
   } catch (err) {
-    console.error('❌ Error en comando .clima:', err)
+    console.error('❌ Error en el comando .clima:', err)
+    await conn.sendMessage(m.chat, { react: { text: '⚠️', key: m.key } })
     await conn.reply(
       m.chat,
       '⚠️ No se pudo obtener el clima. Verifica el nombre de la ciudad o intenta nuevamente.',
