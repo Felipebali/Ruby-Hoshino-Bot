@@ -11,7 +11,6 @@ let mutedUsers = new Set()
 let handler = async (m, { conn, command }) => {
   if (!m.isGroup) return
 
-  // Obtener metadata del grupo
   let groupMetadata
   try {
     groupMetadata = await conn.groupMetadata(m.chat)
@@ -19,19 +18,19 @@ let handler = async (m, { conn, command }) => {
     return m.reply('⚠️ No se pudo obtener la información del grupo.')
   }
 
-  // Lista de administradores normalizada
+  // 📋 Detectar correctamente a los administradores
   const admins = groupMetadata.participants
-    .filter(p => p.admin)
+    .filter(p => p.admin !== null && p.admin !== undefined)
     .map(p => normalizeJid(p.id))
 
   const senderJid = normalizeJid(m.sender)
 
-  // Solo administradores del grupo pueden usar
+  // 🚫 Solo admins del grupo pueden usar el comando
   if (!admins.includes(senderJid)) {
-    return conn.sendMessage(m.chat, { text: '❌ Solo administradores del grupo pueden usar este comando.', quoted: m })
+    return conn.sendMessage(m.chat, { text: '❌ Solo los administradores del grupo pueden usar este comando.', quoted: m })
   }
 
-  // Determinar usuario objetivo
+  // 🎯 Determinar usuario objetivo
   let userJid = null
   if (m.quoted?.sender) userJid = normalizeJid(m.quoted.sender)
   else if (m.mentionedJid?.length) userJid = normalizeJid(m.mentionedJid[0])
@@ -44,12 +43,12 @@ let handler = async (m, { conn, command }) => {
     return conn.sendMessage(m.chat, { text: '⚠️ Debes citar, mencionar o escribir el número del usuario a mutear/desmutear.', quoted: m })
   }
 
-  // Evitar que muteen a otro admin
+  // 🚷 No se puede mutear a otro admin
   if (admins.includes(userJid)) {
     return conn.sendMessage(m.chat, { text: `⚠️ No puedes mutear a otro administrador.`, quoted: m })
   }
 
-  // Aplicar acción
+  // 🔇 Mutear
   if (['mute', 'silenciar'].includes(command)) {
     if (mutedUsers.has(userJid)) {
       return conn.sendMessage(m.chat, { text: `⚠️ @${userJid.split('@')[0]} ya está muteado.`, mentions: [userJid], quoted: m })
@@ -58,6 +57,7 @@ let handler = async (m, { conn, command }) => {
     await conn.sendMessage(m.chat, { text: `🔇 Usuario muteado: @${userJid.split('@')[0]}`, mentions: [userJid], quoted: m })
   }
 
+  // 🔊 Desmutear
   if (['unmute', 'desilenciar'].includes(command)) {
     if (!mutedUsers.has(userJid)) {
       return conn.sendMessage(m.chat, { text: `⚠️ @${userJid.split('@')[0]} no está muteado.`, mentions: [userJid], quoted: m })
@@ -67,7 +67,7 @@ let handler = async (m, { conn, command }) => {
   }
 }
 
-// Evita que los muteados manden mensajes
+// 🚫 Elimina los mensajes de los usuarios muteados
 handler.before = async (m, { conn }) => {
   const sender = normalizeJid(m.sender)
   if (mutedUsers.has(sender)) {
