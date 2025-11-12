@@ -44,7 +44,6 @@ function registerGroupChangesListener(conn) {
 
       let photoMessage = null;
 
-      // Foto
       if (update.icon && update.icon !== cache.icon) {
         cambios.push(`🖼️ *Foto del grupo cambiada*`);
         cache.icon = update.icon;
@@ -53,39 +52,37 @@ function registerGroupChangesListener(conn) {
         } catch {}
       }
 
-      // Nombre
       if (update.subject && update.subject !== cache.subject) {
         cambios.push(`✏️ *Nombre cambiado a:* ${update.subject}`);
         cache.subject = update.subject;
       }
 
-      // Descripción
       if ((update.desc || '') !== (cache.desc || '')) {
         cambios.push(`💬 *Descripción cambiada a:* ${update.desc || 'vacía'}`);
         cache.desc = update.desc || '';
       }
 
       if (cambios.length) {
-        // Obtener metadata y admins
         const metadata = await conn.groupMetadata(chatId);
         const participants = metadata.participants;
 
-        // Filtrar admins y dueños
-        const admins = participants.filter(p => p.admin === 'admin' || p.admin === 'superadmin').map(p => p.id);
-        const ownersInGroup = participants.filter(p => ownerNumbers.includes(p.id)).map(p => p.id);
-        const allMentions = [...admins, ...ownersInGroup];
+        // Administradores y dueños
+        const admins = participants.filter(p => p.admin === 'admin' || p.admin === 'superadmin');
+        const ownersInGroup = participants.filter(p => ownerNumbers.includes(p.id));
+        const allAdmins = [...admins, ...ownersInGroup];
 
-        // Construir texto final con @ explícitos para notificación
+        // Texto final, menciona a todos los admins
         let texto = `📢 *Log de cambios del grupo:*\n\n`;
         texto += cambios.map(c => `${c}\n👤 Por: un administrador`).join('\n\n') + '\n\n';
         texto += `🛡️ *Administradores mencionados:*\n`;
-        texto += allMentions.map(jid => `@${jid.split('@')[0]}`).join(' ');
+        texto += allAdmins.map(p => `@${p.id.split('@')[0]}`).join(' ');
 
-        // Enviar mensaje con foto si existe
+        const mentions = allAdmins.map(p => p.id);
+
         if (photoMessage) {
-          await conn.sendMessage(chatId, { image: photoMessage, caption: texto, mentions: allMentions });
+          await conn.sendMessage(chatId, { image: photoMessage, caption: texto, mentions });
         } else {
-          await conn.sendMessage(chatId, { text: texto, mentions: allMentions });
+          await conn.sendMessage(chatId, { text: texto, mentions });
         }
       }
     }
