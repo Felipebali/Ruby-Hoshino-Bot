@@ -1,5 +1,5 @@
 // 📂 plugins/gay.js
-let handler = async (m, { conn, args, participants }) => {
+let handler = async (m, { conn, args, participants, quoted }) => {
   try {
     // ✅ Verificar si los juegos están activados
     const chat = global.db.data.chats[m.chat] || {};
@@ -14,9 +14,15 @@ let handler = async (m, { conn, args, participants }) => {
     if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.');
 
     // 🎯 Detectar a quién se le aplicará el test
-    let target = m.mentionedJid && m.mentionedJid[0]
-      ? m.mentionedJid[0]
-      : m.sender;
+    let target;
+
+    if (m.mentionedJid && m.mentionedJid[0]) {
+      target = m.mentionedJid[0]; // Si menciona a alguien
+    } else if (quoted && quoted.sender) {
+      target = quoted.sender; // Si responde a un mensaje
+    } else {
+      target = m.sender; // Si no hay mención ni respuesta, se aplica al que envía el comando
+    }
 
     // 🎲 Generar porcentaje aleatorio
     const porcentaje = Math.floor(Math.random() * 101);
