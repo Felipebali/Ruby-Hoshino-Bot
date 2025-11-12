@@ -6,7 +6,6 @@ let handler = async (m, { conn, command, isAdmin }) => {
   chat.cambios = chat.cambios === true ? false : true; // alternar
   global.db.data.chats[m.chat] = chat;
 
-  // Aviso automático de activación/desactivación
   const estado = chat.cambios ? '✅ *Monitor de cambios activado*' : '❌ *Monitor de cambios desactivado*';
   await conn.sendMessage(
     m.chat,
@@ -25,6 +24,9 @@ export default handler;
 // -------------------------
 // Evento que escucha cambios en el grupo
 export async function groupUpdateListener(conn) {
+  // Guardamos estado anterior de los grupos para detectar cambios
+  const groupCache = {};
+
   conn.ev.on('groups.update', async (updates) => {
     try {
       for (const update of updates) {
@@ -32,21 +34,28 @@ export async function groupUpdateListener(conn) {
         const chatData = global.db.data.chats[chatId] || {};
         if (!chatData.cambios) continue; // solo si está activado
 
-        const changes = [];
+        // Inicializar cache si no existe
+        if (!groupCache[chatId]) groupCache[chatId] = {};
 
-        // Foto del grupo
-        if (update.announce !== undefined) {
-          changes.push(`🖼️ Foto o permisos del grupo cambiados`);
-        }
+        const changes = [];
+        const cache = groupCache[chatId];
 
         // Nombre del grupo
-        if (update.subject) {
+        if (update.subject && update.subject !== cache.subject) {
           changes.push(`✏️ Nombre del grupo cambiado a: ${update.subject}`);
+          cache.subject = update.subject;
         }
 
-        // Descripción
-        if (update.desc) {
-          changes.push(`💬 Descripción cambiada a: ${update.desc}`);
+        // Descripción del grupo
+        if ((update.desc || '') !== (cache.desc || '')) {
+          changes.push(`💬 Descripción cambiada a: ${update.desc || 'vacía'}`);
+          cache.desc = update.desc || '';
+        }
+
+        // Foto del grupo
+        if (update.restrict !== undefined && update.restrict !== cache.restrict) {
+          changes.push(`🖼️ Foto o permisos del grupo cambiados`);
+          cache.restrict = update.restrict;
         }
 
         // Quién hizo el cambio
