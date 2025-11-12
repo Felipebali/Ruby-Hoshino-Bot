@@ -1,7 +1,6 @@
 // 📂 plugins/gay.js
-let handler = async (m, { conn, args, participants, quoted }) => {
+let handler = async (m, { conn, mentionedJid, quoted }) => {
   try {
-    // ✅ Verificar si los juegos están activados
     const chat = global.db.data.chats[m.chat] || {};
     const gamesEnabled = chat.games !== false;
 
@@ -16,12 +15,12 @@ let handler = async (m, { conn, args, participants, quoted }) => {
     // 🎯 Detectar a quién se le aplicará el test
     let target;
 
-    if (m.mentionedJid && m.mentionedJid[0]) {
-      target = m.mentionedJid[0]; // Si menciona a alguien
-    } else if (quoted && quoted.sender) {
-      target = quoted.sender; // Si responde a un mensaje
+    if (quoted && quoted.sender) {
+      target = quoted.sender; // prioridad: mensaje citado
+    } else if (mentionedJid && mentionedJid[0]) {
+      target = mentionedJid[0]; // segundo: menciones
     } else {
-      target = m.sender; // Si no hay mención ni respuesta, se aplica al que envía el comando
+      target = m.sender; // si no hay cita ni mención
     }
 
     // 🎲 Generar porcentaje aleatorio
