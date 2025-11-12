@@ -15,12 +15,17 @@ let handler = async (m, { conn, mentionedJid, quoted }) => {
     // 🎯 Detectar a quién se le aplicará el test
     let target;
 
-    if (quoted && quoted.sender) {
-      target = quoted.sender; // prioridad: mensaje citado
-    } else if (mentionedJid && mentionedJid[0]) {
+    if (quoted) {
+      // Primero usamos quoted.sender si existe, si no usamos quoted.key.participant
+      target = quoted.sender || (quoted.key && quoted.key.participant);
+    } 
+
+    if (!target && mentionedJid && mentionedJid.length) {
       target = mentionedJid[0]; // segundo: menciones
-    } else {
-      target = m.sender; // si no hay cita ni mención
+    }
+
+    if (!target) {
+      target = m.sender; // último: quien envía el comando
     }
 
     // 🎲 Generar porcentaje aleatorio
