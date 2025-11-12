@@ -8,17 +8,18 @@ let handler = async (m, { conn, mentionedJid }) => {
   try {
     const sender = m.sender;
 
+    // Solo owners pueden usarlo
     if (!ownerNumbers.includes(sender)) {
       return m.reply('🚫 Solo los dueños del bot pueden usar este comando.');
     }
 
-    // Determinar target: citado -> mencionado -> args -> sender
+    // Determinar target: citado -> mencionado -> sender
     let target;
     if (m.quoted) {
       target = m.quoted.sender || (m.quoted.key && m.quoted.key.participant);
     }
     if (!target && mentionedJid && mentionedJid.length) target = mentionedJid[0];
-    if (!target) target = m.sender;
+    if (!target) return m.reply('❌ Debes mencionar a alguien o citar su mensaje.');
 
     // Normalizar JID
     if (!/[@]s\.whatsapp\.net$/.test(target)) {
@@ -26,9 +27,10 @@ let handler = async (m, { conn, mentionedJid }) => {
       else if (target.includes('@') && !target.endsWith('@s.whatsapp.net')) target = target.split('@')[0] + '@s.whatsapp.net';
     }
 
-    const simple = target.split('@')[0];
+    const simpleTarget = target.split('@')[0];
+    const simpleSender = sender.split('@')[0];
 
-    // Intentar obtener URL de foto
+    // Intentar obtener URL de la foto
     let ppUrl = null;
     try {
       ppUrl = await conn.profilePictureUrl(target, 'image').catch(() => null);
@@ -39,18 +41,18 @@ let handler = async (m, { conn, mentionedJid }) => {
     if (!ppUrl) {
       return await conn.sendMessage(
         m.chat,
-        { text: `❌ @${simple} no tiene foto de perfil pública o no se pudo descargar.`, mentions: [target] },
+        { text: `❌ @${simpleTarget} no tiene foto de perfil pública o no se pudo descargar.`, mentions: [target] },
         { quoted: m }
       );
     }
 
-    // Enviar la foto
+    // Enviar la foto mencionando al target y al owner que ejecuta
     await conn.sendMessage(
       m.chat,
       {
         image: { url: ppUrl },
-        caption: `📥 Foto de perfil de @${simple}\n(Usá los tres puntos > Descargar para guardarla)`,
-        mentions: [target]
+        caption: `📥 Foto de perfil de @${simpleTarget}\n👑 Solicitada por @${simpleSender}`,
+        mentions: [target, sender]
       },
       { quoted: m }
     );
@@ -67,4 +69,4 @@ handler.help = ['gpu'];
 handler.tags = ['owner', 'tools'];
 handler.command = /^(gpu)$/i;
 handler.group = false;
-export default handler; 
+export default handler;
