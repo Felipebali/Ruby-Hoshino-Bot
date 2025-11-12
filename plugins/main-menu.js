@@ -12,15 +12,17 @@ let handler = async (m, { conn }) => {
     });
 
     let menu = `
-╭━━━━━━━🐾━━━━━━━╮
+╭━━━ ✨ *CENTRO FELINO* ✨ ━━━╮
 │ 😺 *${botname}* 😺
 │ 👑 *Creador:* ${creador}
 │ ⚙️ *Versión:* ${versionBot}
-│ ⏰ *Hora:* ${fecha}
 │ 💬 *${saludo}*
-╰━━━━━━━🐾━━━━━━━╯
+│ ⏰ *Hora actual:* ${fecha}
+╰━━━━━━━━━━━━━━━━━━━━━━━╯
 
-💡 *Sugerencias:*
+🌦️ *Consultas rápidas:*
+┃ 🌍 *.clima <ciudad>* – Ver clima actual
+┃ 🕐 *.hora* – Ver hora actual en el mundo
 ┃ ✉️ *.sug* – Envía una sugerencia (1 cada 24h)
 ┗━━━━━━━━━━━━━━━━━━━━━┛
 
