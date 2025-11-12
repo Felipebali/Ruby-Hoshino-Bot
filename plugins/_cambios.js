@@ -6,7 +6,10 @@ let handler = async (m, { conn, command, isAdmin }) => {
   chat.cambios = chat.cambios === true ? false : true; // alternar
   global.db.data.chats[m.chat] = chat;
 
-  const estado = chat.cambios ? '✅ *Monitor de cambios activado*' : '❌ *Monitor de cambios desactivado*';
+  const estado = chat.cambios 
+    ? '✅ *Log de cambios activado*' 
+    : '❌ *Log de cambios desactivado*';
+
   await conn.sendMessage(
     m.chat,
     { text: `${estado}\nUsa *.cambios* para alternar.` },
@@ -14,17 +17,18 @@ let handler = async (m, { conn, command, isAdmin }) => {
   );
 };
 
+// Plugin principal
 handler.help = ['cambios'];
-handler.tags = ['group'];
+handler.tags = ['group', 'log'];
 handler.command = /^cambios$/i;
 handler.group = true;
 handler.admin = true;
 export default handler;
 
 // -------------------------
-// Evento que escucha cambios en el grupo
-export async function groupUpdateListener(conn) {
-  // Guardamos estado anterior de los grupos para detectar cambios
+// Registro de cambios del grupo (tipo log)
+export async function logGrupoPlugin(conn) {
+  // Cache para comparar cambios
   const groupCache = {};
 
   conn.ev.on('groups.update', async (updates) => {
@@ -32,44 +36,52 @@ export async function groupUpdateListener(conn) {
       for (const update of updates) {
         const chatId = update.id;
         const chatData = global.db.data.chats[chatId] || {};
-        if (!chatData.cambios) continue; // solo si está activado
+        if (!chatData.cambios) continue; // solo si el log está activado
 
         // Inicializar cache si no existe
         if (!groupCache[chatId]) groupCache[chatId] = {};
 
-        const changes = [];
         const cache = groupCache[chatId];
+        const cambios = [];
 
-        // Nombre del grupo
+        // Nombre
         if (update.subject && update.subject !== cache.subject) {
-          changes.push(`✏️ Nombre del grupo cambiado a: ${update.subject}`);
+          cambios.push(`✏️ Nombre cambiado a: ${update.subject}\n👤 Por: @${(update.subjectOwner || 'desconocido').split('@')[0]}`);
           cache.subject = update.subject;
         }
 
-        // Descripción del grupo
+        // Descripción
         if ((update.desc || '') !== (cache.desc || '')) {
-          changes.push(`💬 Descripción cambiada a: ${update.desc || 'vacía'}`);
+          cambios.push(`💬 Descripción cambiada a: ${update.desc || 'vacía'}\n👤 Por: @${(update.descOwner || 'desconocido').split('@')[0]}`);
           cache.desc = update.desc || '';
         }
 
-        // Foto del grupo
-        if (update.restrict !== undefined && update.restrict !== cache.restrict) {
-          changes.push(`🖼️ Foto o permisos del grupo cambiados`);
-          cache.restrict = update.restrict;
+        // Foto
+        if (update.icon && update.icon !== cache.icon) {
+          cambios.push(`🖼️ Foto del grupo cambiada`);
+          cache.icon = update.icon;
         }
 
-        // Quién hizo el cambio
-        const actor = update.participant || 'desconocido';
+        // Si hay cambios, enviar log
+        if (cambios.length) {
+          const mentions = [];
+          if (update.subjectOwner) mentions.push(update.subjectOwner);
+          if (update.descOwner) mentions.push(update.descOwner);
 
-        if (changes.length) {
           await conn.sendMessage(
             chatId,
-            { text: `📢 Cambios en el grupo:\n${changes.join('\n')}\n\n👤 Por: @${actor.split('@')[0]}`, mentions: [actor] }
+            { text: `📢 *Log de cambios del grupo:*\n${cambios.join('\n')}`, mentions },
           );
         }
       }
     } catch (err) {
-      console.error(err);
+      console.error('Error en log de grupo:', err);
     }
   });
 }
+
+// Ejecutar automáticamente el log sin tocar index.js
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+import { conn } from '../index.js'; // asegúrate que esta ruta apunta a tu instancia de conn
+if (conn) logGrupoPlugin(conn);
