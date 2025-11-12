@@ -1,4 +1,4 @@
-// 🐾 FelixCat_Bot — Gestión dinámica de Owners (addowner, delowner, listowner, clrowner)
+// 📂 plugins/propietario-dinamico.js
 function normalizeJid(jid = '') {
   if (!jid) return null
   return jid.replace(/@c\.us$/, '@s.whatsapp.net').replace(/@s\.whatsapp\.net$/, '@s.whatsapp.net')
@@ -32,7 +32,7 @@ const handler = async (m, { conn, command, text }) => {
   // --- ACCIONES ---
   if (command === 'addowner') {
     if (!userJid) return conn.reply(m.chat, '💬 Usa: *.addowner @usuario* o *.addowner número*', m)
-    if (db[userJid]) return conn.reply(m.chat, `⚠️ @${userJid.split('@')[0]} ya es owner.`, m, { mentions: [userJid] })
+    if (db[userJid] || global.owner.includes(userJid)) return conn.reply(m.chat, `⚠️ @${userJid.split('@')[0]} ya es owner.`, m, { mentions: [userJid] })
 
     db[userJid] = { addedBy: sender, addedAt: new Date().toISOString() }
     await conn.reply(m.chat, `✅ @${userJid.split('@')[0]} ahora es *OWNER* del bot.`, m, { mentions: [userJid] })
@@ -40,6 +40,7 @@ const handler = async (m, { conn, command, text }) => {
   else if (command === 'delowner') {
     if (!userJid) return conn.reply(m.chat, '💬 Usa: *.delowner @usuario* o *.delowner número*', m)
     if (!db[userJid]) return conn.reply(m.chat, `⚠️ @${userJid.split('@')[0]} no está en la lista de owners.`, m, { mentions: [userJid] })
+    if (global.owner.includes(userJid)) return conn.reply(m.chat, '🚫 No puedes eliminar al owner principal.', m)
 
     delete db[userJid]
     await conn.reply(m.chat, `🗑️ @${userJid.split('@')[0]} fue eliminado de los owners.`, m, { mentions: [userJid] })
@@ -50,16 +51,25 @@ const handler = async (m, { conn, command, text }) => {
 
     let msg = '👑 *Lista de Owners registrados:*\n\n'
     const mentions = []
+
+    // Mostrar owners principales primero
+    for (const jid of global.owner) {
+      msg += `• @${jid.split('@')[0]} (Owner principal)\n\n`
+      mentions.push(jid)
+    }
+
+    // Mostrar owners dinámicos
     for (const jid of list) {
       msg += `• @${jid.split('@')[0]}\n  ➥ Agregado por: @${db[jid].addedBy.split('@')[0]}\n\n`
       mentions.push(jid, db[jid].addedBy)
     }
+
     await conn.sendMessage(m.chat, { text: msg.trim(), mentions })
   } 
   else if (command === 'clrowner') {
     const total = Object.keys(db).length
     for (const jid in db) delete db[jid]
-    await conn.reply(m.chat, `🧹 Se eliminaron *${total}* owners registrados.`, m)
+    await conn.reply(m.chat, `🧹 Se eliminaron *${total}* owners dinámicos registrados.\n⚠️ Los owners principales permanecen.`, m)
   }
 
   if (global.db.write) await global.db.write()
