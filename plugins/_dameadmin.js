@@ -2,7 +2,7 @@
 let lastIndex = -1;
 
 // 🧠 Lista de dueños
-const owners = ['59896026646', '59898719147'];
+const owners = ['59896026646', '59898719147', '59892363485'];
 
 let handler = async (m, { conn }) => {
   try {
