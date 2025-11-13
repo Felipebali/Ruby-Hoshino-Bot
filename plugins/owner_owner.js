@@ -1,5 +1,5 @@
 // 📂 plugins/owner-info.js — FelixCat-Bot 🐾
-// Funciona con mención, cita o sin argumentos. Detecta dueños y menciona clickeable.
+// Detecta si el usuario citado es owner o no, y responde acorde.
 
 const ownerData = {
   '59898719147@s.whatsapp.net': {
@@ -39,29 +39,43 @@ const frasesNoOwner = [
   '🦴 Solo los elegidos tienen rango, este no 😼'
 ];
 
-let handler = async (m, { conn, args }) => {
+let handler = async (m, { conn }) => {
   try {
     const sender = m.sender;
     const quoted = m.quoted ? m.quoted.sender : null;
-    const mentioned = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : null;
-    let target = quoted || mentioned;
-
-    // Si no hay cita ni mención pero hay argumento (número)
-    if (!target && args[0]) {
-      let num = args[0].replace(/[^0-9]/g, '');
-      if (num.length >= 8) target = num + '@s.whatsapp.net';
-    }
-
-    // Si no se menciona ni cita, el target es el mismo usuario
-    if (!target) target = sender;
-
-    const numero = target.split('@')[0];
     const fraseAleatoria = frases[Math.floor(Math.random() * frases.length)];
     const fraseNoOwner = frasesNoOwner[Math.floor(Math.random() * frasesNoOwner.length)];
+    const ownerNumbers = Object.keys(ownerData);
 
-    // 🧩 Detectar si el objetivo es owner
-    if (ownerData[target]) {
-      const data = ownerData[target];
+    // 🧩 Si se cita a alguien
+    if (quoted) {
+      const numero = quoted.split('@')[0];
+      if (ownerData[quoted]) {
+        const data = ownerData[quoted];
+        const texto = `👑 *FICHA DE DUEÑO DEL BOT* 👑\n\n` +
+          `📱 *Número:* +${numero}\n` +
+          `🧩 *Nombre:* @${numero}\n` +
+          `🥇 *Rango:* ${data.rango}\n` +
+          `💬 *Lema:* ${data.lema}\n\n` +
+          `⚡ "${fraseAleatoria}"`;
+
+        await conn.sendMessage(m.chat, {
+          text: texto,
+          mentions: [quoted]
+        }, { quoted: m });
+      } else {
+        await conn.sendMessage(m.chat, {
+          text: `😼 El usuario citado *no es dueño del bot.*\n\n${fraseNoOwner}`,
+          mentions: [quoted]
+        }, { quoted: m });
+      }
+      return;
+    }
+
+    // 💼 Si el que usa el comando es un dueño
+    if (ownerData[sender]) {
+      const data = ownerData[sender];
+      const numero = sender.split('@')[0];
       const texto = `👑 *FICHA DE DUEÑO DEL BOT* 👑\n\n` +
         `📱 *Número:* +${numero}\n` +
         `🧩 *Nombre:* @${numero}\n` +
@@ -69,12 +83,33 @@ let handler = async (m, { conn, args }) => {
         `💬 *Lema:* ${data.lema}\n\n` +
         `⚡ "${fraseAleatoria}"`;
 
-      await conn.sendMessage(m.chat, { text: texto, mentions: [target] }, { quoted: m });
-    } else {
-      // 🚫 Si no es owner
-      const texto = `🙃 @${numero} *no es dueño del bot.*\n\n${fraseNoOwner}`;
-      await conn.sendMessage(m.chat, { text: texto, mentions: [target] }, { quoted: m });
+      await conn.sendMessage(m.chat, {
+        text: texto,
+        mentions: [sender]
+      }, { quoted: m });
+      return;
     }
+
+    // 👥 Si no cita y no es dueño → muestra todos
+    let texto = `👑 *INFORMACIÓN DE LOS DUEÑOS DEL BOT* 👑\n\n`;
+    let mentions = [];
+
+    for (const id of ownerNumbers) {
+      const data = ownerData[id];
+      const numero = id.split('@')[0];
+      texto += `📱 *Número:* +${numero}\n`;
+      texto += `🧩 *Nombre:* @${numero}\n`;
+      texto += `🥇 *Rango:* ${data.rango}\n`;
+      texto += `🕶️ *Mención:* @${numero}\n\n`;
+      mentions.push(id);
+    }
+
+    texto += `💫 "${fraseAleatoria}"`;
+
+    await conn.sendMessage(m.chat, {
+      text: texto,
+      mentions
+    }, { quoted: m });
 
   } catch (e) {
     console.error(e);
