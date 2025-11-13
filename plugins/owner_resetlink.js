@@ -1,7 +1,7 @@
 // 📂 plugins/owner-resetlink.js
 let handler = async (m, { conn, participants, groupMetadata }) => {
   // IDs de los dueños
-  const owners = ['59896026646', '59898719147']; // 🔥 Agregá más si querés
+  const owners = ['59896026646', '59898719147', '59892363485']; // 🔥 Agregá más si querés
   const sender = m.sender.replace(/[^0-9]/g, '');
 
   // Verificación: solo dueños
