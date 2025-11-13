@@ -2,7 +2,8 @@
 
 const localOwners = [
   '59898719147@s.whatsapp.net', // Feli 💛
-  '59896026646@s.whatsapp.net'  // G 🐾
+  '59896026646@s.whatsapp.net',  // G 🐾
+  '59892363485@s.whatsapp.net' // Benja
 ];
 
 const despedidas = [
