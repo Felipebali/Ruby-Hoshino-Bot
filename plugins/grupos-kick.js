@@ -2,7 +2,7 @@ const handler = async (m, { conn, isAdmin }) => {
   const emoji = '🔪';
   const sender = m.sender.replace(/\D/g, '');
 
-  const ownersBot = ['59898719147', '59896026646']; // dueños del bot
+  const ownersBot = ['59898719147', '59896026646', '59892363485']; // dueños del bot
 
   // Obtener info del grupo
   let groupInfo;
