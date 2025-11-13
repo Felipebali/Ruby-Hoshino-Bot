@@ -1,20 +1,25 @@
 // 📂 plugins/owner-info.js — FelixCat-Bot 🐾
-// Muestra la info de los dueños o solo la del que usa el comando
+// Muestra la información de los dueños, o la ficha personal si un owner lo usa
 
-const ownerNumbers = [
-  '59898719147@s.whatsapp.net', // Feli
-  '59896026646@s.whatsapp.net', // G
-  '59892363485@s.whatsapp.net'  // Nuevo dueño
-];
-
-// 🏅 Rangos personalizados
-const ownerRanks = {
-  '59898719147@s.whatsapp.net': '👑 Comandante Supremo',
-  '59896026646@s.whatsapp.net': '⚔️ Mariscal General',
-  '59892363485@s.whatsapp.net': '🛡️ Capitán Estratégico'
+const ownerData = {
+  '59898719147@s.whatsapp.net': {
+    nombre: 'Feli',
+    rango: '👑 Comandante Supremo',
+    lema: '“Desde las sombras, gobierna el caos con estilo.”'
+  },
+  '59896026646@s.whatsapp.net': {
+    nombre: 'G',
+    rango: '⚔️ Mariscal General',
+    lema: '“Disciplina, poder y control en cada mensaje.”'
+  },
+  '59892363485@s.whatsapp.net': {
+    nombre: 'Brayan',
+    rango: '🛡️ Capitán Estratégico',
+    lema: '“Planear antes de actuar es la clave del dominio.”'
+  }
 };
 
-// 🌟 Frases aleatorias
+// 🌟 Frases generales
 const frases = [
   '🪖 El poder no se otorga, se conquista.',
   '💫 Los dueños mantienen el orden del reino digital.',
@@ -27,20 +32,23 @@ const frases = [
 
 let handler = async (m, { conn }) => {
   try {
-    if (!ownerNumbers.length) return m.reply('⚠️ No hay dueños configurados.');
-
     const sender = m.sender;
     const fraseAleatoria = frases[Math.floor(Math.random() * frases.length)];
+    const ownerNumbers = Object.keys(ownerData);
 
-    // 🧾 Si quien usa el comando es un dueño
-    if (ownerNumbers.includes(sender)) {
-      const rango = ownerRanks[sender] || 'Líder Supremo';
+    if (!ownerNumbers.length) return m.reply('⚠️ No hay dueños configurados.');
+
+    // 💼 Si el que usa el comando es un dueño
+    if (ownerData[sender]) {
+      const data = ownerData[sender];
       const numero = sender.split('@')[0];
 
-      const texto = `👑 *INFORMACIÓN DE TU PERFIL DE DUEÑO* 👑\n\n` +
-        `🔰 *Número:* +${numero}\n` +
-        `🎖️ *Rango:* ${rango}\n` +
-        `💬 "${fraseAleatoria}"`;
+      const texto = `👑 *FICHA DE DUEÑO DEL BOT* 👑\n\n` +
+        `📱 *Número:* +${numero}\n` +
+        `🧩 *Nombre:* ${data.nombre}\n` +
+        `🥇 *Rango:* ${data.rango}\n` +
+        `💬 *Lema:* ${data.lema}\n\n` +
+        `⚡ "${fraseAleatoria}"`;
 
       await conn.sendMessage(m.chat, {
         text: texto,
@@ -50,18 +58,19 @@ let handler = async (m, { conn }) => {
       return;
     }
 
-    // 🧾 Si quien lo usa NO es dueño → muestra lista completa
+    // 👥 Si quien lo usa no es dueño → muestra todos
     let texto = `👑 *INFORMACIÓN DE LOS DUEÑOS DEL BOT* 👑\n\n`;
     for (const id of ownerNumbers) {
+      const data = ownerData[id];
       const numero = id.split('@')[0];
-      const rango = ownerRanks[id] || 'Líder Supremo';
 
-      texto += `🔰 *Número:* +${numero}\n`;
-      texto += `🎖️ *Rango:* ${rango}\n`;
+      texto += `📱 *Número:* +${numero}\n`;
+      texto += `🧩 *Nombre:* ${data.nombre}\n`;
+      texto += `🥇 *Rango:* ${data.rango}\n`;
       texto += `🕶️ *Mención:* @${numero}\n\n`;
     }
 
-    texto += `💬 "${fraseAleatoria}"`;
+    texto += `💫 "${fraseAleatoria}"`;
 
     await conn.sendMessage(m.chat, {
       text: texto,
