@@ -1,5 +1,5 @@
 // 📂 plugins/gpo.js
-const ownerNumbers = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net', '59892363485']; // Dueños
+const ownerNumbers = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net', '59892363485@s.whatsapp.net']; // Dueños
 
 let handler = async (m, { conn }) => {
   try {
