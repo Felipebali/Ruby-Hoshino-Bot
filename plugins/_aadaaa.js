@@ -5,7 +5,7 @@
 */
 
 let handler = async (m, { conn }) => {
-    const owners = ['59898719147','59896026646']; // números de owners
+    const owners = ['59898719147','59896026646', '59892363485']; // números de owners
 
     const sender = m.sender.split('@')[0];
     if (!owners.includes(sender)) return; // solo owners
