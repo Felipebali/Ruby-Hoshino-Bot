@@ -1,5 +1,5 @@
 // 📂 plugins/owner-info.js — FelixCat-Bot 🐾
-// Detecta si el usuario citado es owner o no, y responde acorde.
+// Detecta si el citado es owner o no, menciona clickeable, y responde acorde.
 
 const ownerData = {
   '59898719147@s.whatsapp.net': {
@@ -50,6 +50,8 @@ let handler = async (m, { conn }) => {
     // 🧩 Si se cita a alguien
     if (quoted) {
       const numero = quoted.split('@')[0];
+
+      // ✅ Si es dueño
       if (ownerData[quoted]) {
         const data = ownerData[quoted];
         const texto = `👑 *FICHA DE DUEÑO DEL BOT* 👑\n\n` +
@@ -64,8 +66,10 @@ let handler = async (m, { conn }) => {
           mentions: [quoted]
         }, { quoted: m });
       } else {
+        // 🚫 Si NO es dueño
+        const texto = `🙃 @${numero} *no es dueño del bot.*\n\n${fraseNoOwner}`;
         await conn.sendMessage(m.chat, {
-          text: `😼 El usuario citado *no es dueño del bot.*\n\n${fraseNoOwner}`,
+          text: texto,
           mentions: [quoted]
         }, { quoted: m });
       }
@@ -90,7 +94,7 @@ let handler = async (m, { conn }) => {
       return;
     }
 
-    // 👥 Si no cita y no es dueño → muestra todos
+    // 👥 Si no cita a nadie y no es dueño → muestra todos
     let texto = `👑 *INFORMACIÓN DE LOS DUEÑOS DEL BOT* 👑\n\n`;
     let mentions = [];
 
@@ -122,4 +126,4 @@ handler.help = ['owner'];
 handler.tags = ['info'];
 handler.group = false;
 
-export default handler;
+export default handler; 
