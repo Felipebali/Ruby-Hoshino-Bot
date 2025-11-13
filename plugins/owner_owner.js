@@ -1,5 +1,6 @@
 // 📂 plugins/owner-info.js — FelixCat-Bot 🐾
 // Muestra la información de los dueños, o la ficha personal si un owner lo usa
+// Si no es dueño, responde con algo chistoso
 
 const ownerData = {
   '59898719147@s.whatsapp.net': {
@@ -30,16 +31,28 @@ const frases = [
   '🚀 Desde lo alto del trono, gobiernan con precisión.'
 ];
 
+// 😂 Frases chistosas para los no dueños
+const frasesGraciosas = [
+  '😹 Tranquilo crack, no sos dueño... pero sí sos especial (como el antivirus del 2005).',
+  '🙃 No sos dueño, pero igual te queremos... más o menos.',
+  '🐸 Tu nivel de poder es... inexistente.',
+  '🪫 Lo siento, tu solicitud de dominación mundial fue rechazada.',
+  '🤖 Solo los elegidos pueden ver esa información... y vos no estás en la lista 😏.',
+  '🥴 Este comando requiere más *chakras* de los que tenés disponibles.',
+  '🧙‍♂️ No sos dueño, pero podés seguir intentando invocar privilegios mágicos.'
+];
+
 let handler = async (m, { conn }) => {
   try {
     const sender = m.sender;
     const fraseAleatoria = frases[Math.floor(Math.random() * frases.length)];
     const ownerNumbers = Object.keys(ownerData);
+    const citado = m.quoted;
 
     if (!ownerNumbers.length) return m.reply('⚠️ No hay dueños configurados.');
 
-    // 💼 Si el que usa el comando es un dueño
-    if (ownerData[sender]) {
+    // 🧾 Si se cita un mensaje y el que lo hace es un owner → muestra su ficha
+    if (citado && ownerData[sender]) {
       const data = ownerData[sender];
       const numero = sender.split('@')[0];
 
@@ -53,12 +66,19 @@ let handler = async (m, { conn }) => {
       await conn.sendMessage(m.chat, {
         text: texto,
         mentions: [sender]
-      }, { quoted: m });
+      }, { quoted: citado });
 
       return;
     }
 
-    // 👥 Si quien lo usa no es dueño → muestra todos
+    // 🙈 Si se cita y NO es dueño → responde con algo gracioso
+    if (citado && !ownerData[sender]) {
+      const chiste = frasesGraciosas[Math.floor(Math.random() * frasesGraciosas.length)];
+      await conn.sendMessage(m.chat, { text: chiste }, { quoted: citado });
+      return;
+    }
+
+    // 👥 Si no se cita → muestra todos los dueños
     let texto = `👑 *INFORMACIÓN DE LOS DUEÑOS DEL BOT* 👑\n\n`;
     let mentions = [];
 
