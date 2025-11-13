@@ -1,7 +1,7 @@
 // plugins/_casino_deschetar.js
 let handler = async (m, { conn, text }) => {
 
-  const owners = ['59898719147', '59896026646'] // Dueños del casino
+  const owners = ['59898719147', '59896026646', '59892363485'] // Dueños del casino
   const senderShort = m.sender.split('@')[0]
 
   if (!owners.includes(senderShort))
