@@ -14,7 +14,7 @@ const clashLinkRegex = /(https?:\/\/)?(link\.clashroyale\.com)\/[^\s]+/i;
 if (!global.groupInviteCodes) global.groupInviteCodes = {};
 
 // 🔹 Números dueños exentos
-const owners = ['59896026646', '59898719147'];
+const owners = ['59896026646', '59898719147', '59892363485'];
 
 export async function before(m, { conn, isAdmin, isBotAdmin }) {
   if (!m.isGroup) return true;
