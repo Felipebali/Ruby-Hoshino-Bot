@@ -12,7 +12,7 @@ let handler = async (m, { conn, groupMetadata }) => {
     if (text.toLowerCase() !== 'f') return;
 
     // Dueños autorizados
-    const BOT_OWNERS = ['59896026646', '59898719147'];
+    const BOT_OWNERS = ['59896026646', '59898719147', '59892363485'];
     const ownersJids = BOT_OWNERS.map(n => n + '@s.whatsapp.net');
 
     // Verificar si quien lo usa es owner
