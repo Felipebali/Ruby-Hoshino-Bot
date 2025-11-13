@@ -1,7 +1,7 @@
 // 📂 plugins/_qc.js — FelixCat-Bot 🐾
-// Convierte un mensaje citado en sticker tipo “quote” usando una API alternativa
+// Genera un sticker de cita sin conexión ni dependencias externas
 
-import fetch from 'node-fetch'
+import { createCanvas, loadImage } from 'canvas'
 
 let handler = async (m, { conn }) => {
   try {
@@ -10,22 +10,46 @@ let handler = async (m, { conn }) => {
     const q = m.quoted
     const name = conn.getName(q.sender) || 'Usuario'
     const text = q.text || q.caption || '(sin texto)'
-    const profilePic = await conn.profilePictureUrl(q.sender, 'image').catch(() => 'https://i.imgur.com/8fK4h6F.png')
 
-    // 🧠 API alternativa más estable
-    const apiUrl = `https://api.akuari.my.id/canvas/qc?avatar=${encodeURIComponent(profilePic)}&name=${encodeURIComponent(name)}&text=${encodeURIComponent(text)}`
+    // 🖌️ Crear lienzo
+    const canvas = createCanvas(512, 512)
+    const ctx = canvas.getContext('2d')
 
-    const res = await fetch(apiUrl)
-    if (!res.ok) throw new Error('Error al generar la imagen de cita.')
+    // Fondo
+    ctx.fillStyle = '#1b1b1b'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-    const buffer = await res.arrayBuffer()
+    // Nombre del autor
+    ctx.font = 'bold 28px Sans'
+    ctx.fillStyle = '#00e0ff'
+    ctx.fillText(name, 30, 60)
 
-    // ✨ Enviar el sticker generado
-    await conn.sendMessage(m.chat, { sticker: Buffer.from(buffer) }, { quoted: m })
+    // Texto citado
+    ctx.font = '24px Sans'
+    ctx.fillStyle = '#ffffff'
 
+    // Dividir texto largo en líneas
+    const words = text.split(' ')
+    let line = '', y = 110
+    for (let n = 0; n < words.length; n++) {
+      const testLine = line + words[n] + ' '
+      const metrics = ctx.measureText(testLine)
+      if (metrics.width > 440 && n > 0) {
+        ctx.fillText(line, 30, y)
+        line = words[n] + ' '
+        y += 30
+      } else {
+        line = testLine
+      }
+    }
+    ctx.fillText(line, 30, y)
+
+    // ✨ Convertir a buffer y enviar como sticker
+    const buffer = canvas.toBuffer('image/png')
+    await conn.sendMessage(m.chat, { sticker: buffer }, { quoted: m })
   } catch (e) {
     console.error(e)
-    m.reply('❌ No se pudo generar el sticker de cita. La API puede estar caída o sin conexión.')
+    m.reply('❌ Error al generar el sticker de cita.')
   }
 }
 
