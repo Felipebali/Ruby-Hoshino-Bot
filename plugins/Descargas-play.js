@@ -16,7 +16,7 @@ const handler = async (m, { conn, text, command }) => {
     if (artistCheck) {
       await m.react('🤢'); 
       await m.react('🤮'); 
-      await conn.reply(m.chat, `🤮 ¡Ew! Buscaste algo de ${artistCheck.toUpperCase()}… pero igual te lo traigo 😒`, m);
+      await conn.reply(m.chat, `🤮 ¡Ew! Buscaste algo de ${artistCheck.toUpperCase()}… Sos gil o puto? 👀`, m);
       // No retornamos, para que siga con la búsqueda normal
     }
 
