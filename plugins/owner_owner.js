@@ -1,5 +1,5 @@
 // 📂 plugins/owner-info.js — FelixCat-Bot 🐾
-// Detecta si el citado o mencionado es owner o no, menciona clickeable y responde acorde.
+// Funciona con mención, cita o sin argumentos. Detecta dueños y menciona clickeable.
 
 const ownerData = {
   '59898719147@s.whatsapp.net': {
@@ -43,8 +43,18 @@ let handler = async (m, { conn, args }) => {
   try {
     const sender = m.sender;
     const quoted = m.quoted ? m.quoted.sender : null;
-    const mentioned = m.mentionedJid?.[0] || null;
-    const target = quoted || mentioned || sender;
+    const mentioned = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : null;
+    let target = quoted || mentioned;
+
+    // Si no hay cita ni mención pero hay argumento (número)
+    if (!target && args[0]) {
+      let num = args[0].replace(/[^0-9]/g, '');
+      if (num.length >= 8) target = num + '@s.whatsapp.net';
+    }
+
+    // Si no se menciona ni cita, el target es el mismo usuario
+    if (!target) target = sender;
+
     const numero = target.split('@')[0];
     const fraseAleatoria = frases[Math.floor(Math.random() * frases.length)];
     const fraseNoOwner = frasesNoOwner[Math.floor(Math.random() * frasesNoOwner.length)];
