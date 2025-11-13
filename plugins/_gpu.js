@@ -1,54 +1,72 @@
 // 📂 plugins/gpu.js
-const ownerNumbers = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net']; // Dueños
+const ownerNumbers = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net']; // Dueños autorizados
 
-let handler = async (m, { conn }) => {
+let handler = async (m, { conn, args }) => {
   try {
     const sender = m.sender;
 
-    if (!ownerNumbers.includes(sender)) return m.reply('🚫 Solo los dueños del bot pueden usar este comando.');
+    if (!ownerNumbers.includes(sender))
+      return m.reply('🚫 Solo los dueños del bot pueden usar este comando.');
 
-    // Determinar target:
+    // 🧩 Determinar target:
     let target = null;
 
-    // 1️⃣ Mención: revisar m.mentionedJid
+    // 1️⃣ Si mencionó a alguien
     if (m.mentionedJid && m.mentionedJid.length > 0) {
       target = m.mentionedJid[0];
     }
+
     // 2️⃣ Si citó un mensaje
     else if (m.quoted && m.quoted.sender) {
       target = m.quoted.sender;
     }
 
-    if (!target) return m.reply('❌ Debes mencionar a alguien o citar su mensaje.');
+    // 3️⃣ Si puso un número como argumento
+    else if (args[0]) {
+      let num = args[0].replace(/[^0-9]/g, ''); // Quitar símbolos y letras
+      if (num.length < 8)
+        return m.reply('❌ Número no válido. Usa el formato: .gpu 5989xxxxxxx');
+      target = `${num}@s.whatsapp.net`;
+    }
+
+    // Si no hay target, error
+    if (!target)
+      return m.reply('❌ Debes mencionar, citar o escribir el número de alguien.');
 
     const simpleTarget = target.split('@')[0];
 
-    // Obtener foto de perfil
-    let ppUrl = null;
+    // 🖼️ Intentar obtener la foto de perfil
+    let ppUrl;
     try {
-      ppUrl = await conn.profilePictureUrl(target, 'image').catch(() => null);
-    } catch {}
-    if (!ppUrl) return m.reply(`❌ @${simpleTarget} no tiene foto de perfil pública.`, { mentions: [target] });
+      ppUrl = await conn.profilePictureUrl(target, 'image');
+    } catch {
+      ppUrl = null;
+    }
 
-    // Enviar la foto mencionando solo al target
+    if (!ppUrl)
+      return m.reply(`❌ No se pudo obtener la foto de perfil de @${simpleTarget}.`, {
+        mentions: [target],
+      });
+
+    // 📤 Enviar imagen
     await conn.sendMessage(
       m.chat,
       {
         image: { url: ppUrl },
         caption: `📥 Foto de perfil de @${simpleTarget}`,
-        mentions: [target]
+        mentions: [target],
       },
       { quoted: m }
     );
-
   } catch (err) {
     console.error(err);
-    m.reply('⚠️ Ocurrió un error al intentar descargar la foto.');
+    m.reply('⚠️ Ocurrió un error al intentar obtener la foto.');
   }
 };
 
 handler.command = /^(gpu)$/i;
 handler.tags = ['owner', 'tools'];
-handler.help = ['gpu'];
+handler.help = ['gpu [@usuario | número | cita]'];
 handler.group = false;
+
 export default handler;
