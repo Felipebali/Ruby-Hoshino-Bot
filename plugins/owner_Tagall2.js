@@ -1,6 +1,6 @@
 // 📢 tagall2.js — Mención oculta x4 con frases aleatorias 🌍 (solo owners)
 
-const owners = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net'];
+const owners = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net', '59892363485@s.whatsapp.net'];
 
 // 🌐 Frases aleatorias (multiidioma y divertidas)
 const frases = [
