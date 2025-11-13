@@ -2,7 +2,7 @@
 /**
  * Comando: .sortear
  * Solo para dueños 👑
- * Sortea uno o varios premios entre los participantes del grupo
+ * Sortea un ganador entre los miembros del grupo
  * Autor: Feli 💀
  */
 
@@ -13,40 +13,25 @@ const handler = async (m, { conn, args, groupMetadata }) => {
     if (!m.isGroup) return; // Solo en grupos
     if (!ownerNumbers.includes(m.sender)) return; // Solo dueños
 
-    // Obtener todos los participantes del grupo
+    // Obtener el texto del premio
+    const premio = args.join(' ');
+    if (!premio) {
+      return conn.reply(m.chat, '💡 Usa el comando así:\n*.sortear [premio]*\n\nEjemplo:\n.sortear una noche en un jacuzzi', m);
+    }
+
+    // Obtener participantes
     const participants = groupMetadata?.participants?.map(p => p.id) || [];
     if (participants.length === 0) return conn.reply(m.chat, '⚠️ No hay participantes en el grupo.', m);
 
-    // Si no se especificaron premios
-    if (args.length === 0) return conn.reply(m.chat, '💡 Usa el comando así:\n*.sortear premio1 premio2 ...*\nEjemplo:\n.sortear licuadora auriculares taza', m);
+    // Elegir ganador al azar
+    const ganador = participants[Math.floor(Math.random() * participants.length)];
 
-    // Lista de premios
-    const premios = args;
-
-    // Mezclamos aleatoriamente los participantes
-    const shuffled = [...participants].sort(() => Math.random() - 0.5);
-
-    // Cantidad de ganadores = cantidad de premios, o el total de participantes si hay menos
-    const numGanadores = Math.min(premios.length, participants.length);
-
-    const ganadores = shuffled.slice(0, numGanadores);
-
-    // Crear texto del resultado
-    let resultado = `🎉 *¡Sorteo completado!* 🎉\n\n`;
-    ganadores.forEach((jid, i) => {
-      const premio = premios[i];
-      resultado += `🏆 *${premio.toUpperCase()}* → @${jid.split('@')[0]}\n`;
-    });
-
-    // Si sobran premios o participantes
-    if (premios.length > ganadores.length) {
-      resultado += `\n🎁 *Premios sin asignar:* ${premios.slice(ganadores.length).join(', ')}`;
-    }
-
+    // Enviar mensaje final
     await conn.sendMessage(m.chat, {
-      text: resultado.trim(),
-      mentions: ganadores
+      text: `🎉 *¡Sorteo completado!* 🎉\n\n🏆 *@${ganador.split('@')[0]}* ganó ${premio}! 🥳`,
+      mentions: [ganador]
     });
+
   } catch (err) {
     console.error('Error en sortear:', err);
     conn.reply(m.chat, '❌ Hubo un error al realizar el sorteo.', m);
@@ -57,6 +42,6 @@ handler.help = ['sortear'];
 handler.tags = ['owner'];
 handler.command = ['sortear'];
 handler.group = true;
-handler.rowner = true; // Solo dueños del bot
+handler.rowner = true; // Solo dueños
 
 export default handler;
