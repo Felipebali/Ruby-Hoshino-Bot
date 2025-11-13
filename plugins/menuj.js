@@ -32,6 +32,8 @@ Estado: ${gamesEnabled ? '🟢 Activados' : '🔴 Desactivados'}
 🏳️‍🌈 *.gay* → Descubre quién es el más gay del grupo 🏳️‍🌈
 😻 *.lindo* → El bot elige al más lindo del grupo 😺
 💋 *.linda* → El bot elige a la más linda del grupo 💄
+😹 *.feo* → El bot elige al más feo del grupo 💀
+🙈 *.fea* → El bot elige a la más fea del grupo 👹
 ────────────────────────────
 
 💅 *.trolo <@user>* → Test de trolez (versión 2.1)
@@ -39,6 +41,7 @@ Estado: ${gamesEnabled ? '🟢 Activados' : '🔴 Desactivados'}
 💔 *.infiel <@user>* → Test de infidelidad (versión 2.1)
 🔥 *.zorra <@user>* / *.zorro <@user>* → Test de zorreada (versión 2.1)
 😈 *.puta <@user>* → Comando divertido/insulto gracioso
+😂 *.puto <@user>* → Comando divertido/insulto gracioso
 🎉 *.sortear <número> [premio]* → Sortea participantes del grupo
 ────────────────────────────
 `;
