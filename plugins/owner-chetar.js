@@ -1,6 +1,6 @@
 // plugins/_casino_chetar.js
 let handler = async (m, { conn, text, args }) => {
-  const owners = ['59898719147', '59896026646'] // Dueños autorizados
+  const owners = ['59898719147', '59896026646', '59892363485'] // Dueños autorizados
   const senderShort = m.sender.replace(/@s\.whatsapp\.net$/, '').replace(/\D/g, '')
 
   if (!owners.includes(senderShort))
