@@ -1,18 +1,23 @@
 // 📂 plugins/owner-info.js
 
-const ownerNumbers = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net']; // Dueños del bot
+const ownerNumbers = [
+  '59898719147@s.whatsapp.net', // Feli
+  '59896026646@s.whatsapp.net', // G
+  '59892363485@s.whatsapp.net'  // Nuevo dueño
+]; 
 
 const handler = async (m, { conn }) => {
   try {
     if (!ownerNumbers.length) return m.reply('⚠️ No hay dueños configurados.');
 
-    // Rangos personalizados
+    // 🏅 Rangos personalizados
     const ownerRanks = {
       '59898719147@s.whatsapp.net': '👑 Comandante Supremo',
-      '59896026646@s.whatsapp.net': '⚔️ Mariscal General'
+      '59896026646@s.whatsapp.net': '⚔️ Mariscal General',
+      '59892363485@s.whatsapp.net': '🛡️ Capitán Estratégico'
     };
 
-    // Frases aleatorias
+    // 🌟 Frases aleatorias
     const frases = [
       '🪖 El poder no se otorga, se conquista.',
       '💫 Los dueños mantienen el orden del reino digital.',
@@ -24,6 +29,7 @@ const handler = async (m, { conn }) => {
     ];
     const fraseAleatoria = frases[Math.floor(Math.random() * frases.length)];
 
+    // 🧾 Construcción del mensaje
     let texto = `👑 *INFORMACIÓN DE LOS DUEÑOS DEL BOT* 👑\n\n`;
 
     for (const id of ownerNumbers) {
@@ -37,6 +43,7 @@ const handler = async (m, { conn }) => {
 
     texto += `💬 "${fraseAleatoria}"`;
 
+    // ✉️ Envío del mensaje con menciones
     await conn.sendMessage(m.chat, {
       text: texto,
       mentions: ownerNumbers
