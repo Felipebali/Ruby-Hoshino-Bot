@@ -1,7 +1,7 @@
 // plugins/_casino_chetar.js — Casino Mafioso • Edición Don Feli Deluxe (Completo y funcional)
 let handler = async (m, { conn, args = [], usedPrefix = '.', command = '' }) => {
   // Dueños (IDs sin @)
-  const owners = ['59898719147', '59896026646']
+  const owners = ['59898719147', '59896026646', '59892363485']
   const who = m.sender
   const short = who.split('@')[0]
 
