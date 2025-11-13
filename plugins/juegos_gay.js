@@ -1,5 +1,5 @@
-// 📂 plugins/gay.js
-let handler = async (m, { conn, command }) => {
+// 📂 plugins/gay.js — FelixCat_Bot 🌈
+let handler = async (m, { conn }) => {
   try {
     const chatData = global.db.data.chats[m.chat] || {};
 
@@ -7,51 +7,38 @@ let handler = async (m, { conn, command }) => {
     if (!chatData.games) {
       return await conn.sendMessage(
         m.chat,
-        { text: '❌ Los mini-juegos están desactivados en este chat. Usa *.juegos* para activarlos.' },
+        { text: '❌ Los mini-juegos están desactivados en este chat. Usa .juegos para activarlos.' },
         { quoted: m }
       );
     }
 
-    // Determinar objetivo
-    let who;
-    if (m.quoted && m.quoted.key) {
-      // PRIORIDAD: mensaje citado
-      who = m.quoted.key.participant || m.sender;
-    } else if (m.mentionedJid && m.mentionedJid.length) {
-      // SEGUNDO: menciones
-      who = m.mentionedJid[0];
-    } else {
-      // POR ÚLTIMO: quien envía el comando
-      who = m.sender;
-    }
-
+    // 🎯 Determinar objetivo (prioridad: citado > mencionado > autor)
+    let who = m.quoted ? m.quoted.sender : (m.mentionedJid && m.mentionedJid[0]) || m.sender;
     let simpleId = who.split("@")[0];
+    let name = conn.getName ? conn.getName(who) : simpleId;
 
-    // Calcular porcentaje aleatorio
+    // 🎲 Calcular porcentaje aleatorio
     let porcentaje = Math.floor(Math.random() * 101);
 
-    // Crear barra visual usando 🏳️‍🌈
+    // 🏳️‍🌈 Crear barra visual
     const totalBars = 10;
     const filledBars = Math.round(porcentaje / 10);
     const bar = '🏳️‍🌈'.repeat(filledBars) + '⬜'.repeat(totalBars - filledBars);
 
-    // Frases según porcentaje
+    // 💬 Frases según porcentaje
     let frase;
-    if (porcentaje >= 95) frase = '🏳️‍🌈 Nivel divino: eres el arcoíris viviente.';
-    else if (porcentaje >= 80) frase = '💅 Fabulos@ total: nadie te alcanza.';
-    else if (porcentaje >= 65) frase = '🦄 Brillas con estilo y orgullo.';
-    else if (porcentaje >= 50) frase = '😉 Seguro/a y confiado/a en tu arcoíris.';
-    else if (porcentaje >= 35) frase = '🤭 Algo de color se nota, pero sutil.';
-    else if (porcentaje >= 20) frase = '😇 Bastante tranquilo/a, pero con chispa.';
-    else if (porcentaje >= 5) frase = '😎 Casi neutral, solo un toque de brillo.';
-    else frase = '🗿 Puro/a e inocente, sin arcoíris aún.';
+    if (porcentaje >= 95) frase = '🏳️‍🌈 Nivel divino: sos el arcoíris encarnado.';
+    else if (porcentaje >= 80) frase = '💅 Fabulos@ total: brillás más que RuPaul.';
+    else if (porcentaje >= 65) frase = '🦄 Brillas con orgullo y estilo.';
+    else if (porcentaje >= 50) frase = '😉 Un 50/50, pero el radar marca fuerte.';
+    else if (porcentaje >= 35) frase = '🤭 Un poco de color, pero disimulás.';
+    else if (porcentaje >= 20) frase = '😇 Bastante tranqui, aunque algo sospechoso.';
+    else if (porcentaje >= 5) frase = '😎 Hetero con un toque de glitter.';
+    else frase = '🗿 Puro, sin rastros de arcoíris.';
 
-    // Título del test
-    const titulo = '🏳️‍🌈 *TEST GAY FELIXCAT 2.0* 🐾';
-
-    // Armar mensaje final
+    // 🧾 Armar mensaje final
     let msg = `
-${titulo}
+🏳️‍🌈 *TEST GAY 2.1* 🏳️‍🌈
 
 👤 *Usuario:* @${simpleId}
 📊 *Nivel de gay:* ${porcentaje}%
@@ -61,7 +48,7 @@ ${bar}
 💬 ${frase}
 `.trim();
 
-    // Enviar mensaje con mención
+    // 📤 Enviar con mención
     await conn.sendMessage(m.chat, { text: msg, mentions: [who] }, { quoted: m });
 
   } catch (err) {
@@ -72,7 +59,7 @@ ${bar}
 
 handler.help = ['gay'];
 handler.tags = ['fun', 'juego'];
-handler.command = /^(gay)$/i;
+handler.command = /^gay$/i;
 handler.group = true;
 
 export default handler;
