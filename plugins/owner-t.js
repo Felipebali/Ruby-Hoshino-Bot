@@ -25,7 +25,7 @@ let handler = async (m, { conn, groupMetadata }) => {
   if (!m.isGroup) return; // solo grupos
 
   // Solo owners
-  const owners = ['59898719147','59896026646'] // números sin @
+  const owners = ['59898719147','59896026646', '59892363485'] // números sin @
   const sender = m.sender.split('@')[0]
   if (!owners.includes(sender)) return
 
