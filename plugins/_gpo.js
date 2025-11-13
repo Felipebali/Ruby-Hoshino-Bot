@@ -9,7 +9,6 @@ let handler = async (m, { conn }) => {
     if (!ownerNumbers.includes(sender)) return m.reply('🚫 Solo los dueños del bot pueden usar este comando.');
 
     const groupId = m.chat; // JID del grupo
-    const simpleGroup = groupId.split('@')[0];
 
     // Obtener foto de perfil del grupo
     let ppUrl = null;
@@ -23,7 +22,7 @@ let handler = async (m, { conn }) => {
       m.chat,
       {
         image: { url: ppUrl },
-        caption: `📸 Foto de perfil del grupo *${simpleGroup}*`
+        caption: `📸 Foto del grupo`
       },
       { quoted: m }
     );
@@ -38,4 +37,4 @@ handler.command = /^(gpo)$/i;
 handler.tags = ['owner', 'tools'];
 handler.help = ['gpo'];
 handler.group = true; // solo funciona en grupos
-export default handler; 
+export default handler;
