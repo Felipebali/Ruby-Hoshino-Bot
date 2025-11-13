@@ -13,7 +13,7 @@ const ownerData = {
     lema: '“Disciplina, poder y control en cada mensaje.”'
   },
   '59892363485@s.whatsapp.net': {
-    nombre: 'Brayan',
+    nombre: 'Benja',
     rango: '🛡️ Capitán Estratégico',
     lema: '“Planear antes de actuar es la clave del dominio.”'
   }
@@ -45,7 +45,7 @@ let handler = async (m, { conn }) => {
 
       const texto = `👑 *FICHA DE DUEÑO DEL BOT* 👑\n\n` +
         `📱 *Número:* +${numero}\n` +
-        `🧩 *Nombre:* ${data.nombre}\n` +
+        `🧩 *Nombre:* @${numero}\n` +
         `🥇 *Rango:* ${data.rango}\n` +
         `💬 *Lema:* ${data.lema}\n\n` +
         `⚡ "${fraseAleatoria}"`;
@@ -60,21 +60,24 @@ let handler = async (m, { conn }) => {
 
     // 👥 Si quien lo usa no es dueño → muestra todos
     let texto = `👑 *INFORMACIÓN DE LOS DUEÑOS DEL BOT* 👑\n\n`;
+    let mentions = [];
+
     for (const id of ownerNumbers) {
       const data = ownerData[id];
       const numero = id.split('@')[0];
 
       texto += `📱 *Número:* +${numero}\n`;
-      texto += `🧩 *Nombre:* ${data.nombre}\n`;
+      texto += `🧩 *Nombre:* @${numero}\n`;
       texto += `🥇 *Rango:* ${data.rango}\n`;
       texto += `🕶️ *Mención:* @${numero}\n\n`;
+      mentions.push(id);
     }
 
     texto += `💫 "${fraseAleatoria}"`;
 
     await conn.sendMessage(m.chat, {
       text: texto,
-      mentions: ownerNumbers
+      mentions
     }, { quoted: m });
 
   } catch (e) {
