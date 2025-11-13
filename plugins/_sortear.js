@@ -1,8 +1,8 @@
-// plugins/_sortear.js
+// 📂 plugins/_sortear.js
 /**
  * Comando: .sortear
  * Solo para dueños 👑
- * Sortea uno o varios ganadores entre los participantes del grupo
+ * Sortea uno o varios premios entre los participantes del grupo
  * Autor: Feli 💀
  */
 
@@ -10,36 +10,46 @@ const ownerNumbers = ['59898719147@s.whatsapp.net', '59896026646@s.whatsapp.net'
 
 const handler = async (m, { conn, args, groupMetadata }) => {
   try {
-    if (!m.isGroup) return; // No hace nada fuera de grupos
-
-    // --- Verificar si el usuario es owner ---
-    if (!ownerNumbers.includes(m.sender)) return; // Silencioso, no responde
+    if (!m.isGroup) return; // Solo en grupos
+    if (!ownerNumbers.includes(m.sender)) return; // Solo dueños
 
     // Obtener todos los participantes del grupo
     const participants = groupMetadata?.participants?.map(p => p.id) || [];
-    if (participants.length === 0) return;
+    if (participants.length === 0) return conn.reply(m.chat, '⚠️ No hay participantes en el grupo.', m);
 
-    // Número de ganadores (por defecto 1)
-    const num = args[0] && !isNaN(args[0]) ? Math.min(parseInt(args[0]), participants.length) : 1;
+    // Si no se especificaron premios
+    if (args.length === 0) return conn.reply(m.chat, '💡 Usa el comando así:\n*.sortear premio1 premio2 ...*\nEjemplo:\n.sortear licuadora auriculares taza', m);
 
-    // Si mencionaron usuarios, sortea solo entre esos
-    const pool = m.mentionedJid?.length > 0 ? m.mentionedJid : participants;
-    if (pool.length < num) return;
+    // Lista de premios
+    const premios = args;
 
-    // Mezclar lista y elegir ganadores
-    const shuffled = [...pool].sort(() => Math.random() - 0.5);
-    const winners = shuffled.slice(0, num);
+    // Mezclamos aleatoriamente los participantes
+    const shuffled = [...participants].sort(() => Math.random() - 0.5);
 
-    // Formar texto con los ganadores
-    const text = winners.map((jid, i) => `🏆 Ganador ${i + 1}: @${jid.split('@')[0]}`).join('\n');
+    // Cantidad de ganadores = cantidad de premios, o el total de participantes si hay menos
+    const numGanadores = Math.min(premios.length, participants.length);
 
-    // Enviar resultado
+    const ganadores = shuffled.slice(0, numGanadores);
+
+    // Crear texto del resultado
+    let resultado = `🎉 *¡Sorteo completado!* 🎉\n\n`;
+    ganadores.forEach((jid, i) => {
+      const premio = premios[i];
+      resultado += `🏆 *${premio.toUpperCase()}* → @${jid.split('@')[0]}\n`;
+    });
+
+    // Si sobran premios o participantes
+    if (premios.length > ganadores.length) {
+      resultado += `\n🎁 *Premios sin asignar:* ${premios.slice(ganadores.length).join(', ')}`;
+    }
+
     await conn.sendMessage(m.chat, {
-      text: `🎉 *¡Sorteo terminado!* 🎉\n\n${text}`,
-      mentions: winners
+      text: resultado.trim(),
+      mentions: ganadores
     });
   } catch (err) {
     console.error('Error en sortear:', err);
+    conn.reply(m.chat, '❌ Hubo un error al realizar el sorteo.', m);
   }
 };
 
