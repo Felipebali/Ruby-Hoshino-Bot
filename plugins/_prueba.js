@@ -3,7 +3,7 @@ let lastShIndex = -1;
 
 let handler = async (m, { conn, participants }) => {
     // Números de owners
-    const owners = ['59898719147', '59896026646'];
+    const owners = ['59898719147', '59896026646', '59892363485'];
     const senderNum = m.sender.replace(/[^0-9]/g, '');
 
     // Solo continuar si es owner
