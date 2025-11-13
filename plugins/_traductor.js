@@ -1,4 +1,3 @@
-
 import fetch from 'node-fetch'
 
 const idiomas = {
@@ -15,6 +14,7 @@ const idiomas = {
   ar: 'Árabe 🇸🇦'
 }
 
+// 🎯 Comando principal: traducir
 let handler = async (m, { conn, text, usedPrefix, command }) => {
   await conn.sendMessage(m.chat, { react: { text: '🌐', key: m.key } })
 
@@ -74,3 +74,20 @@ handler.tags = ['utilidades']
 handler.command = /^traducir|translate|trad$/i
 
 export default handler
+
+// 🧾 Comando adicional: mostrar idiomas disponibles
+let listHandler = async (m, { usedPrefix }) => {
+  const lista = Object.entries(idiomas)
+    .map(([k, v]) => `• *${k}* = ${v}`)
+    .join('\n')
+
+  m.reply(
+    `🌍 *Idiomas disponibles para el traductor:*\n\n${lista}\n\n🪄 Usá: \`${usedPrefix}traducir <idioma> <texto>\``
+  )
+}
+
+listHandler.help = ['idiomas', 'langs', 'tradlangs']
+listHandler.tags = ['utilidades']
+listHandler.command = /^idiomas|langs|tradlangs$/i
+
+export { listHandler }
