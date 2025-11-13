@@ -1,6 +1,6 @@
 // 📂 plugins/aprobar.js
 let handler = async (m, { conn, isAdmin }) => {
-  const owners = ['59896026646', '59898719147']
+  const owners = ['59896026646', '59898719147', '59892363485']
   const sender = m.sender.split('@')[0]
 
   if (!isAdmin && !owners.includes(sender)) {
