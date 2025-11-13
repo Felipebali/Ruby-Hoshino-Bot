@@ -1,25 +1,33 @@
-// 📂 plugins/lindo.js
-let handler = async (m, { conn, participants, command }) => {
+// 📂 plugins/lindo.js — FelixCat_Bot 💞
+let handler = async (m, { conn, command }) => {
   try {
-    // ✅ Verifica si los juegos están activados
-    const chat = global.db.data.chats[m.chat] || {};
-    const gamesEnabled = chat.games !== false;
+    const chatData = global.db.data.chats[m.chat] || {};
 
-    if (!gamesEnabled) {
-      return conn.sendMessage(m.chat, {
-        text: '🎮 *Los mini-juegos están desactivados.*\nActívalos con *.juegos* 🔓',
-      });
+    // ⚠️ Verificar si los juegos están activados
+    if (!chatData.games) {
+      return await conn.sendMessage(
+        m.chat,
+        { text: '🎮 *Los mini-juegos están desactivados.*\nActívalos con *.juegos* 🔓' },
+        { quoted: m }
+      );
     }
 
     if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.');
 
-    // 🧍‍♂️ Detectar a quién se aplicará el test
-    let target = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.sender;
+    // 🎯 Determinar objetivo (prioridad: citado > mencionado > autor)
+    let who = m.quoted ? m.quoted.sender : (m.mentionedJid && m.mentionedJid[0]) || m.sender;
+    let simpleId = who.split("@")[0];
+    let name = conn.getName ? conn.getName(who) : simpleId;
 
-    // 🎲 Porcentaje aleatorio
-    const porcentaje = Math.floor(Math.random() * 101);
+    // 🎲 Calcular porcentaje aleatorio
+    let porcentaje = Math.floor(Math.random() * 101);
 
-    // 😻 Frases aleatorias según el comando
+    // 💖 Crear barra visual
+    const totalBars = 10;
+    const filledBars = Math.round(porcentaje / 10);
+    const bar = '💖'.repeat(filledBars) + '⬜'.repeat(totalBars - filledBars);
+
+    // 😻 Frases según el comando
     const frasesLindo = [
       "😎 Fachero facherito 🔥",
       "💘 Rompe corazones oficial del grupo 😍",
@@ -41,16 +49,20 @@ let handler = async (m, { conn, participants, command }) => {
     const frases = command === 'linda' ? frasesLinda : frasesLindo;
     const frase = frases[Math.floor(Math.random() * frases.length)];
 
-    // 🧾 Mensaje final con mención clickeable
-    const texto = `
-💞 *TEST DE BELLEZA FELIXCAT* 🐾
+    // 🧾 Armar mensaje final
+    let msg = `
+💞 *TEST DE BELLEZA FELIXCAT 2.1* 🐾
 
-@${target.split('@')[0]} es *${porcentaje}% ${command === 'linda' ? 'linda' : 'lindo'}* 😻
+👤 *Usuario:* @${simpleId}
+📊 *Nivel de belleza:* ${porcentaje}%
 
-${frase}
-`;
+${bar}
 
-    await conn.sendMessage(m.chat, { text: texto, mentions: [target] }, { quoted: m });
+💬 ${frase}
+`.trim();
+
+    // 📤 Enviar mensaje con mención
+    await conn.sendMessage(m.chat, { text: msg, mentions: [who] }, { quoted: m });
 
   } catch (e) {
     console.error(e);
@@ -59,8 +71,8 @@ ${frase}
 };
 
 handler.command = ['lindo', 'linda'];
-handler.tags = ['fun'];
-handler.help = ['lindo <@user>', 'linda <@user>'];
+handler.tags = ['fun', 'juego'];
+handler.help = ['lindo <@usuario>', 'linda <@usuario>'];
 handler.group = true;
 
 export default handler;
