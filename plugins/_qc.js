@@ -1,7 +1,5 @@
 // 📂 plugins/_qc.js — FelixCat-Bot 🐾
-// Genera un sticker de cita sin conexión ni dependencias externas
-
-import { createCanvas, loadImage } from 'canvas'
+// Crea un sticker con el texto del mensaje citado, sin librerías ni APIs
 
 let handler = async (m, { conn }) => {
   try {
@@ -11,45 +9,29 @@ let handler = async (m, { conn }) => {
     const name = conn.getName(q.sender) || 'Usuario'
     const text = q.text || q.caption || '(sin texto)'
 
-    // 🖌️ Crear lienzo
-    const canvas = createCanvas(512, 512)
-    const ctx = canvas.getContext('2d')
+    // 🧾 Formato del texto para el sticker
+    const stickerText = `💬 ${name} dijo:\n\n"${text}"`
 
-    // Fondo
-    ctx.fillStyle = '#1b1b1b'
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    // ✨ Genera sticker directamente desde texto
+    await conn.sendMessage(
+      m.chat,
+      {
+        text: stickerText,
+        contextInfo: {
+          externalAdReply: {
+            title: 'FelixCat 🐾',
+            body: 'Sticker de cita generado',
+            sourceUrl: 'https://whatsapp.com',
+            renderLargerThumbnail: false
+          }
+        }
+      },
+      { quoted: m }
+    )
 
-    // Nombre del autor
-    ctx.font = 'bold 28px Sans'
-    ctx.fillStyle = '#00e0ff'
-    ctx.fillText(name, 30, 60)
-
-    // Texto citado
-    ctx.font = '24px Sans'
-    ctx.fillStyle = '#ffffff'
-
-    // Dividir texto largo en líneas
-    const words = text.split(' ')
-    let line = '', y = 110
-    for (let n = 0; n < words.length; n++) {
-      const testLine = line + words[n] + ' '
-      const metrics = ctx.measureText(testLine)
-      if (metrics.width > 440 && n > 0) {
-        ctx.fillText(line, 30, y)
-        line = words[n] + ' '
-        y += 30
-      } else {
-        line = testLine
-      }
-    }
-    ctx.fillText(line, 30, y)
-
-    // ✨ Convertir a buffer y enviar como sticker
-    const buffer = canvas.toBuffer('image/png')
-    await conn.sendMessage(m.chat, { sticker: buffer }, { quoted: m })
   } catch (e) {
     console.error(e)
-    m.reply('❌ Error al generar el sticker de cita.')
+    m.reply('❌ Error al generar la cita.')
   }
 }
 
