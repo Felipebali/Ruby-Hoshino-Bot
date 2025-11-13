@@ -1,27 +1,24 @@
-// 📂 plugins/qc.js — FelixCat-Bot 🐾
-// Convierte un mensaje citado en sticker tipo “quote”
+// 📂 plugins/_qc.js — FelixCat-Bot 🐾
+// Convierte un mensaje citado en sticker tipo “quote” (sin librerías extra)
 
-import { Sticker } from 'wa-sticker-formatter'
 import fetch from 'node-fetch'
 
 let handler = async (m, { conn }) => {
   try {
-    // Si no hay mensaje citado
-    if (!m.quoted) return m.reply('🗨️ Responde a un mensaje para convertirlo en sticker.');
+    if (!m.quoted) return m.reply('🗨️ *Responde a un mensaje* para convertirlo en sticker.');
 
     const q = m.quoted
-    const user = await conn.fetchStatus(q.sender).catch(() => ({}))
     const name = conn.getName(q.sender) || 'Usuario'
     const text = q.text || q.caption || '(sin texto)'
 
-    // 📸 Imagen de perfil del autor del mensaje citado
+    // 📸 Foto de perfil del autor del mensaje citado
     const profilePic = await conn.profilePictureUrl(q.sender, 'image').catch(() => 'https://i.imgur.com/8fK4h6F.png')
 
-    // 🧩 Datos para el diseño del sticker
+    // 🧩 Datos del mensaje para el diseño
     const payload = {
-      type: "quote",
-      format: "png",
-      backgroundColor: "#1b1b1b",
+      type: 'quote',
+      format: 'png',
+      backgroundColor: '#1b1b1b',
       width: 512,
       height: 512,
       scale: 3,
@@ -40,37 +37,26 @@ let handler = async (m, { conn }) => {
       ]
     }
 
-    // 🧠 Generamos imagen con API
+    // 🧠 Generamos la imagen con la API de quotes
     const res = await fetch('https://quote.btch.bz/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     })
 
-    if (!res.ok) throw new Error('No se pudo generar la cita.')
-    const imgBuffer = await res.arrayBuffer()
+    if (!res.ok) throw new Error('Error al generar la cita')
+    const buffer = await res.arrayBuffer()
 
-    // ✨ Convertir la imagen en sticker
-    const sticker = new Sticker(Buffer.from(imgBuffer), {
-      pack: 'FelixCat 🐾',
-      author: 'Feli & G',
-      type: 'full',
-      categories: ['🤖', '💬'],
-      id: 'qc-sticker',
-      quality: 90
-    })
-
-    const stcBuffer = await sticker.build()
-    await conn.sendMessage(m.chat, { sticker: stcBuffer }, { quoted: m })
-  } catch (err) {
-    console.error(err)
-    m.reply('❌ Error al generar el sticker de cita.')
+    // ✨ Enviar directamente como sticker
+    await conn.sendMessage(m.chat, { sticker: Buffer.from(buffer) }, { quoted: m })
+  } catch (e) {
+    console.error(e)
+    m.reply('❌ Ocurrió un error al generar el sticker de cita.')
   }
 }
 
 handler.command = ['qc']
 handler.help = ['qc']
 handler.tags = ['fun']
-handler.register = true
 
-export default handler 
+export default handler
