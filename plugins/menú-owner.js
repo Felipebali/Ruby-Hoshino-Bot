@@ -50,6 +50,8 @@ let handler = async (m, { conn }) => {
 • salir — Bot abandona el grupo 🚪
 • sh — Ejecuta comando shell 💽
 • u — Menciona a todos 📣
+• .gpu — Descargar foto de perfil de usuario 🖼️
+• .gpo — Descargar foto del grupo 🏞️
 
 ━━━━━━━━━━━━━━━━━━━
 🐾 *FelixCat – Propietario Supremo*
