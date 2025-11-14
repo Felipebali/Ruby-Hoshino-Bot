@@ -90,7 +90,7 @@ const handler = async (m, { conn, text, mentionedJid }) => {
 }
 
 handler.tags = ['owner']
-handler.command = ['r', 'deletedatauser', 'resetuser', 'borrardatos']
+handler.command = ['deletedatauser', 'resetuser', 'borrardatos']
 handler.owner = true // Solo dueño
 
 export default handler
