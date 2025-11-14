@@ -1,6 +1,6 @@
-// /plugins/nsfw-random.js
-// SISTEMA +18 TOTALMENTE ALEATORIO
-// Feli 💀 — 2025
+// /plugins/_+18.js
+// SISTEMA +18 ALEATORIO – COMPATIBLE CON NODE TERMUX
+// Feli 💀 2025
 
 import fetch from 'node-fetch'
 import fs from 'fs'
@@ -9,8 +9,8 @@ import { pipeline } from 'stream'
 import { promisify } from 'util'
 const streamPipeline = promisify(pipeline)
 
-let ytdl
-try { ytdl = await import('ytdl-core') } catch { ytdl = null }
+let ytdl = null
+try { ytdl = await import('ytdl-core') } catch {}
 
 const owners = [
   '59898719147@s.whatsapp.net',
@@ -18,7 +18,7 @@ const owners = [
   '59892363485@s.whatsapp.net'
 ]
 
-// LISTAS 100% ALEATORIAS
+// LISTAS RANDOM
 const RANDOM_IMAGES = [
   "https://i.waifu.pics/wWohc6f.jpg",
   "https://i.waifu.pics/ox~FJp8.jpg",
@@ -34,7 +34,7 @@ const RANDOM_IMAGES = [
 const RANDOM_RULE34 = [
   "https://img.rule34.xxx/images/1/1.jpg",
   "https://img.rule34.xxx/images/2/2.jpg",
-  "https://img.rule34.xxx/images/3/3.jpg",
+  "https://img.rule34.xxx/images/3/3.jpg"
 ]
 
 const RANDOM_VIDEOS = [
@@ -47,16 +47,20 @@ const RANDOM_VIDEOS = [
 
 let handler = async (m, { conn, args, command }) => {
 
-  let chat = global.db.data.chats[m.chat] ||= {}
+  // FIX COMPATIBLE: NO ||= OPERATOR
+  if (!global.db.data.chats[m.chat]) {
+    global.db.data.chats[m.chat] = {}
+  }
 
-  // -----------------------
+  let chat = global.db.data.chats[m.chat]
+  if (typeof chat.adultMode !== 'boolean') chat.adultMode = false
+
   // LISTA
-  // -----------------------
   if (command === 'list18') {
     if (!owners.includes(m.sender)) return conn.reply(m.chat, '🚫 No sos owner.', m)
 
     return conn.reply(m.chat,
-`🔞 *COMANDOS +18 (TODO RANDOM)*
+`🔞 *COMANDOS +18 (RANDOM)*
 
 📸 Imágenes:
 • .hentai
@@ -72,42 +76,38 @@ let handler = async (m, { conn, args, command }) => {
 
 ⬇️ Descargas:
 • .porno <url>
-• .ytporn <youtube_url>
+• .ytporn <url>
 
 Control:
-• .+18 → activar/desactivar
+• .+18 (activar/desactivar)
 • .list18
 
-Modo: *${chat.adultMode ? 'ON 🔥' : 'OFF ❌'}*`, m)
+Estado actual: *${chat.adultMode ? 'ON 🔥' : 'OFF ❌'}*`, m)
   }
 
-  // -----------------------
-  // TOGGLE
-  // -----------------------
+  // ACTIVAR/DESACTIVAR
   if (command === '+18') {
     if (!owners.includes(m.sender)) return conn.reply(m.chat, '🚫 No sos owner.', m)
 
     chat.adultMode = !chat.adultMode
-    return conn.reply(m.chat,
-      chat.adultMode ? '🔞 Modo +18 ACTIVADO.' : '🧼 Modo +18 DESACTIVADO.',
-      m)
+    return conn.reply(m.chat, chat.adultMode ? '🔞 Modo +18 ACTIVADO.' : '🧼 Modo +18 DESACTIVADO.', m)
   }
 
-  const nsfw = [
+  const nsfwCmds = [
     'xnxx','xvideos','ph','pornhub',
     'hentai','pack','rule34','random18',
     'porno','ytporn'
   ]
 
-  if (nsfw.includes(command) && !chat.adultMode)
-    return conn.reply(m.chat, '❌ Modo +18 desactivado.', m)
+  if (nsfwCmds.includes(command) && !chat.adultMode)
+    return conn.reply(m.chat, '❌ El modo +18 está desactivado.', m)
 
   if (!owners.includes(m.sender))
     return conn.reply(m.chat, '🚫 Solo owners.', m)
 
   try {
 
-    // 🟣 IMÁGENES RANDOM
+    // IMÁGENES RANDOM
     if (command === 'hentai' || command === 'pack') {
       let url = RANDOM_IMAGES[Math.floor(Math.random() * RANDOM_IMAGES.length)]
       return conn.sendMessage(m.chat, { image: { url }, caption: '🔞 Imagen random' }, { quoted: m })
@@ -118,15 +118,13 @@ Modo: *${chat.adultMode ? 'ON 🔥' : 'OFF ❌'}*`, m)
       return conn.sendMessage(m.chat, { image: { url }, caption: '🔞 Rule34 random' }, { quoted: m })
     }
 
-    // 🟣 VIDEOS RANDOM (todos estos comandos hacen lo mismo)
+    // VIDEOS RANDOM
     if (['random18','xnxx','xvideos','ph','pornhub'].includes(command)) {
       let url = RANDOM_VIDEOS[Math.floor(Math.random() * RANDOM_VIDEOS.length)]
       return conn.sendMessage(m.chat, { video: { url }, caption: '🔞 Video random' }, { quoted: m })
     }
 
-    // -------------------------
-    // DESCARGA DIRECTA (.porno)
-    // -------------------------
+    // DESCARGA DIRECTA
     if (command === 'porno') {
       const link = args[0]
       if (!link) return conn.reply(m.chat, '🔞 Uso: .porno <url>', m)
@@ -141,7 +139,7 @@ Modo: *${chat.adultMode ? 'ON 🔥' : 'OFF ❌'}*`, m)
         const file = fs.createWriteStream(tmp)
         await streamPipeline(res.body, file)
 
-        await conn.sendMessage(m.chat, { video: fs.readFileSync(tmp), caption: '🔞 Aquí está' }, { quoted: m })
+        await conn.sendMessage(m.chat, { video: fs.readFileSync(tmp), caption: '🔞 Aquí tenés' }, { quoted: m })
         fs.unlinkSync(tmp)
       } catch {
         return conn.reply(m.chat, '❌ Enlace inválido.', m)
@@ -149,15 +147,13 @@ Modo: *${chat.adultMode ? 'ON 🔥' : 'OFF ❌'}*`, m)
       return
     }
 
-    // -------------------------
     // YOUTUBE
-    // -------------------------
     if (command === 'ytporn') {
       const link = args[0]
       if (!link) return conn.reply(m.chat, '🔞 Uso: .ytporn <url>', m)
-      if (!ytdl) return conn.reply(m.chat, '❌ Falta instalar ytdl-core.', m)
+      if (!ytdl) return conn.reply(m.chat, '❌ Instala ytdl-core.', m)
 
-      await conn.reply(m.chat, '⬇️ Descargando YouTube...', m)
+      await conn.reply(m.chat, '⬇️ Descargando video de YouTube...', m)
 
       try {
         const info = await ytdl.default.getInfo(link)
@@ -171,14 +167,13 @@ Modo: *${chat.adultMode ? 'ON 🔥' : 'OFF ❌'}*`, m)
         await conn.sendMessage(m.chat, { video: fs.readFileSync(tmp), caption: info.videoDetails.title }, { quoted: m })
         fs.unlinkSync(tmp)
       } catch {
-        return conn.reply(m.chat, '❌ Error descargando.', m)
+        return conn.reply(m.chat, '❌ Error descargando YouTube.', m)
       }
-      return
     }
 
   } catch (e) {
     console.log(e)
-    return conn.reply(m.chat, '❌ Error ejecutando comando.', m)
+    return conn.reply(m.chat, '❌ Error ejecutando el comando.', m)
   }
 }
 
