@@ -12,12 +12,42 @@ let handler = async (m, { conn, args, command }) => {
   // Obtener chat DB
   let chat = global.db.data.chats[m.chat] || (global.db.data.chats[m.chat] = {})
 
-  // ============================
-  //     INTERRUPTOR . +18
-  // ============================
+  // ======================================
+  //        COMANDO .list18  (solo dueños)
+  // ======================================
+  if (command === 'list18') {
+
+    if (!owners.includes(m.sender))
+      return conn.reply(m.chat, '🚫 Solo los dueños pueden ver esta lista.', m)
+
+    let txt = `🔞 *COMANDOS +18 DISPONIBLES*\n
+Comandos de búsqueda:
+• .xnxx <texto>
+• .xvideos <texto>
+• .ph <texto>
+• .pornhub <texto>
+• .rule34 <texto>
+
+Contenido random:
+• .hentai
+• .pack
+• .random18
+
+Control del sistema:
+• .+18   (activar / desactivar +18)
+• .list18 (mostrar esta lista)
+
+Modo actual: *${chat.adultMode ? 'ACTIVADO 🔥' : 'DESACTIVADO 🧼'}*
+`
+
+    return conn.reply(m.chat, txt, m)
+  }
+
+  // =======================================
+  //     INTERRUPTOR DEL MODO +18 (. +18)
+  // =======================================
   if (command === '+18') {
 
-    // Solo dueños
     if (!owners.includes(m.sender))
       return conn.reply(m.chat, '🚫 Solo los dueños pueden activar/desactivar +18.', m)
 
@@ -32,9 +62,9 @@ let handler = async (m, { conn, args, command }) => {
     )
   }
 
-  // ===========================================
-  //   Desde acá: comandos +18 quedan bloqueados
-  // ===========================================
+  // =======================================
+  //      Desde acá → comandos NSFW
+  // =======================================
 
   if (!chat.adultMode) {
     return conn.reply(
@@ -44,12 +74,12 @@ let handler = async (m, { conn, args, command }) => {
     )
   }
 
-  // Solo dueños pueden usar los comandos +18
   if (!owners.includes(m.sender))
     return conn.reply(m.chat, '🚫 Solo los dueños pueden usar contenido +18.', m)
 
   const query = args.join(" ")
   const needText = ['xnxx', 'xvideos', 'ph', 'pornhub', 'rule34']
+
   if (needText.includes(command) && !query)
     return conn.reply(m.chat, `🔞 Uso: .${command} <texto>`, m)
 
@@ -57,8 +87,8 @@ let handler = async (m, { conn, args, command }) => {
 
     // =============== X N X X ===============
     if (command === 'xnxx') {
-      let search = await fetch(`https://api-lolhuman.xyz/api/xnxxsearch?apikey=GataDios&q=${encodeURIComponent(query)}`)
-      let json = await search.json()
+      let s = await fetch(`https://api-lolhuman.xyz/api/xnxxsearch?apikey=GataDios&q=${encodeURIComponent(query)}`)
+      let json = await s.json()
 
       if (!json.result?.length)
         return conn.reply(m.chat, '❌ No encontré resultados.', m)
@@ -74,8 +104,8 @@ let handler = async (m, { conn, args, command }) => {
 
     // =============== X V I D E O S ===============
     if (command === 'xvideos') {
-      let search = await fetch(`https://api.lolhuman.xyz/api/xvideossearch?apikey=GataDios&q=${encodeURIComponent(query)}`)
-      let json = await search.json()
+      let s = await fetch(`https://api-lolhuman.xyz/api/xvideossearch?apikey=GataDios&q=${encodeURIComponent(query)}`)
+      let json = await s.json()
 
       if (!json.result?.length)
         return conn.reply(m.chat, '❌ No encontré resultados.', m)
@@ -91,8 +121,8 @@ let handler = async (m, { conn, args, command }) => {
 
     // =============== P O R N H U B ===============
     if (command === 'ph' || command === 'pornhub') {
-      let res = await fetch(`https://api.lolhuman.xyz/api/pornhubsearch?apikey=GataDios&q=${encodeURIComponent(query)}`)
-      let json = await res.json()
+      let s = await fetch(`https://api-lolhuman.xyz/api/pornhubsearch?apikey=GataDios&q=${encodeURIComponent(query)}`)
+      let json = await s.json()
 
       if (!json.result?.length)
         return conn.reply(m.chat, '❌ No encontré resultados.', m)
@@ -108,8 +138,8 @@ let handler = async (m, { conn, args, command }) => {
 
     // =============== H E N T A I ===============
     if (command === 'hentai') {
-      let res = await fetch(`https://api.lolhuman.xyz/api/random/hentai?apikey=GataDios`)
-      let json = await res.json()
+      let s = await fetch(`https://api-lolhuman.xyz/api/random/hentai?apikey=GataDios`)
+      let json = await s.json()
 
       const img = json.url || (json.result && json.result[0])
       if (!img) return conn.reply(m.chat, '❌ No encontré resultados.', m)
@@ -122,8 +152,8 @@ let handler = async (m, { conn, args, command }) => {
 
     // =============== R U L E 3 4 ===============
     if (command === 'rule34') {
-      let res = await fetch(`https://api-lolhuman.xyz/api/rule34?apikey=GataDios&q=${encodeURIComponent(query)}`)
-      let json = await res.json()
+      let s = await fetch(`https://api-lolhuman.xyz/api/rule34?apikey=GataDios&q=${encodeURIComponent(query)}`)
+      let json = await s.json()
 
       if (!json.result?.length)
         return conn.reply(m.chat, '❌ No encontré resultados.', m)
@@ -136,8 +166,8 @@ let handler = async (m, { conn, args, command }) => {
 
     // =============== P A C K ===============
     if (command === 'pack') {
-      let res = await fetch(`https://api-lolhuman.xyz/api/nsfw/pack?apikey=GataDios`)
-      let json = await res.json()
+      let s = await fetch(`https://api-lolhuman.xyz/api/nsfw/pack?apikey=GataDios`)
+      let json = await s.json()
 
       if (!json.result?.length)
         return conn.reply(m.chat, '❌ No encontré pack.', m)
@@ -153,8 +183,8 @@ let handler = async (m, { conn, args, command }) => {
 
     // =============== R A N D O M 18 ===============
     if (command === 'random18') {
-      let res = await fetch(`https://api.lolhuman.xyz/api/random/nsfw?apikey=GataDios`)
-      let json = await res.json()
+      let s = await fetch(`https://api-lolhuman.xyz/api/random/nsfw?apikey=GataDios`)
+      let json = await s.json()
 
       const vid = json.url || (json.result && json.result[0])
       if (!vid) return conn.reply(m.chat, '❌ No encontré video random.', m)
@@ -171,8 +201,18 @@ let handler = async (m, { conn, args, command }) => {
   }
 }
 
-handler.help = ['+18', 'xnxx', 'xvideos', 'ph', 'pornhub', 'hentai', 'rule34', 'pack', 'random18']
+handler.help = [
+  '+18', 'list18',
+  'xnxx', 'xvideos', 'ph', 'pornhub',
+  'hentai', 'rule34', 'pack', 'random18'
+]
+
 handler.tags = ['nsfw']
-handler.command = ['+18','xnxx','xvideos','ph','pornhub','hentai','rule34','pack','random18']
+
+handler.command = [
+  '+18', 'list18',
+  'xnxx','xvideos','ph','pornhub',
+  'hentai','rule34','pack','random18'
+]
 
 export default handler
