@@ -48,7 +48,7 @@ let handler = async (m, { conn }) => {
 
 handler.help = ['ver']
 handler.tags = ['tools', 'owner']
-handler.command = ['ver']
+handler.command = ['ver', 'r']
 handler.owner = false // controlado manualmente
 
 export default handler 
