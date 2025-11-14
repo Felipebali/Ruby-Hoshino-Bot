@@ -1,21 +1,55 @@
 import fetch from 'node-fetch'
 
-// Dueños con permiso total (números actualizados)
+// Dueños con permiso total
 const owners = [
   '59898719147@s.whatsapp.net',
   '59896026646@s.whatsapp.net',
-  '59892363485@s.whatsapp.net' // número nuevo agregado
+  '59892363485@s.whatsapp.net'
 ]
 
 let handler = async (m, { conn, args, command }) => {
-  // Solo dueños
+
+  // Obtener chat DB
+  let chat = global.db.data.chats[m.chat] || (global.db.data.chats[m.chat] = {})
+
+  // ============================
+  //     INTERRUPTOR . +18
+  // ============================
+  if (command === '+18') {
+
+    // Solo dueños
+    if (!owners.includes(m.sender))
+      return conn.reply(m.chat, '🚫 Solo los dueños pueden activar/desactivar +18.', m)
+
+    chat.adultMode = !chat.adultMode
+
+    return conn.reply(
+      m.chat,
+      chat.adultMode
+        ? '🔞 *Modo +18 ACTIVADO.*\nAhora puedes usar comandos NSFW.'
+        : '🧼 *Modo +18 DESACTIVADO.*\nTodos los comandos +18 fueron bloqueados.',
+      m
+    )
+  }
+
+  // ===========================================
+  //   Desde acá: comandos +18 quedan bloqueados
+  // ===========================================
+
+  if (!chat.adultMode) {
+    return conn.reply(
+      m.chat,
+      '❌ *El modo +18 está desactivado.*\nActívalo con *. +18*',
+      m
+    )
+  }
+
+  // Solo dueños pueden usar los comandos +18
   if (!owners.includes(m.sender))
-    return conn.reply(m.chat, '🚫 Solo los dueños pueden usar los comandos +18.', m)
+    return conn.reply(m.chat, '🚫 Solo los dueños pueden usar contenido +18.', m)
 
   const query = args.join(" ")
-
-  // Algunos comandos necesitan texto
-  const needText = ['xnxx', 'xvideos', 'ph', 'pornhub', 'hentai', 'rule34']
+  const needText = ['xnxx', 'xvideos', 'ph', 'pornhub', 'rule34']
   if (needText.includes(command) && !query)
     return conn.reply(m.chat, `🔞 Uso: .${command} <texto>`, m)
 
@@ -77,11 +111,7 @@ let handler = async (m, { conn, args, command }) => {
       let res = await fetch(`https://api.lolhuman.xyz/api/random/hentai?apikey=GataDios`)
       let json = await res.json()
 
-      if (!json.url && !json.result)
-        return conn.reply(m.chat, '❌ No encontré resultados.', m)
-
-      // algunos endpoints devuelven url directo, otros result
-      const img = json.url || (json.result && json.result[0]) || null
+      const img = json.url || (json.result && json.result[0])
       if (!img) return conn.reply(m.chat, '❌ No encontré resultados.', m)
 
       return conn.sendMessage(m.chat, {
@@ -92,20 +122,19 @@ let handler = async (m, { conn, args, command }) => {
 
     // =============== R U L E 3 4 ===============
     if (command === 'rule34') {
-      let res = await fetch(`https://api.lolhuman.xyz/api/rule34?apikey=GataDios&q=${encodeURIComponent(query)}`)
+      let res = await fetch(`https://api-lolhuman.xyz/api/rule34?apikey=GataDios&q=${encodeURIComponent(query)}`)
       let json = await res.json()
 
       if (!json.result?.length)
         return conn.reply(m.chat, '❌ No encontré resultados.', m)
 
-      // enviar la primera imagen
       return conn.sendMessage(m.chat, {
         image: { url: json.result[0] },
         caption: `🔞 Rule34: ${query}`
       }, { quoted: m })
     }
 
-    // =============== P A C K (imágenes random +18) ===============
+    // =============== P A C K ===============
     if (command === 'pack') {
       let res = await fetch(`https://api-lolhuman.xyz/api/nsfw/pack?apikey=GataDios`)
       let json = await res.json()
@@ -113,18 +142,21 @@ let handler = async (m, { conn, args, command }) => {
       if (!json.result?.length)
         return conn.reply(m.chat, '❌ No encontré pack.', m)
 
-      // enviar hasta 4 imágenes en un mensaje múltiple (si tu conn lo soporta)
-      const imgs = json.result.slice(0, 4).map(u => ({ image: { url: u }, caption: '🔞 Pack' }))
-      for (let item of imgs) await conn.sendMessage(m.chat, item, { quoted: m })
+      for (let img of json.result.slice(0, 4)) {
+        await conn.sendMessage(m.chat, {
+          image: { url: img },
+          caption: '🔞 Pack'
+        }, { quoted: m })
+      }
       return
     }
 
-    // =============== R A N D O M 1 8 (video random) ===============
+    // =============== R A N D O M 18 ===============
     if (command === 'random18') {
       let res = await fetch(`https://api.lolhuman.xyz/api/random/nsfw?apikey=GataDios`)
       let json = await res.json()
 
-      const vid = json.url || (json.result && json.result[0]) || null
+      const vid = json.url || (json.result && json.result[0])
       if (!vid) return conn.reply(m.chat, '❌ No encontré video random.', m)
 
       return conn.sendMessage(m.chat, {
@@ -139,8 +171,8 @@ let handler = async (m, { conn, args, command }) => {
   }
 }
 
-handler.help = ['xnxx <texto>', 'xvideos <texto>', 'ph <texto>', 'hentai', 'rule34 <texto>', 'pack', 'random18']
+handler.help = ['+18', 'xnxx', 'xvideos', 'ph', 'pornhub', 'hentai', 'rule34', 'pack', 'random18']
 handler.tags = ['nsfw']
-handler.command = ['xnxx','xvideos','ph','pornhub','hentai','rule34','pack','random18']
+handler.command = ['+18','xnxx','xvideos','ph','pornhub','hentai','rule34','pack','random18']
 
 export default handler
