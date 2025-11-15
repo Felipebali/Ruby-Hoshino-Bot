@@ -1,5 +1,6 @@
 // 📂 plugins/falso.js — FelixCat_Bot 🐾
-// Detector de números extranjeros y también números +598 (modo prueba)
+// Detector completo — Expulsa +598 y extranjeros
+// Funciona con handler.before ✔️
 
 let handler = async (m, { conn, command }) => {
   const chat = global.db.data.chats[m.chat] || {};
@@ -10,8 +11,8 @@ let handler = async (m, { conn, command }) => {
 
     return conn.reply(
       m.chat,
-      `🕵️ *Detector de Extranjeros / Desconocidos / Uruguayos*\n` +
-      `➡️ Estado: *${chat.antiFalso ? 'ACTIVADO ✅' : 'DESACTIVADO ❌'}*`,
+      `🕵️ *Detector AntiFalso activado.*\n` +
+      `Estado: *${chat.antiFalso ? 'ON ✅' : 'OFF ❌'}*`,
       m
     );
   }
@@ -22,8 +23,8 @@ handler.group = true;
 export default handler;
 
 
-// 🔥 SISTEMA DE DETECCIÓN AUTOMÁTICO Y EXPULSIÓN
-export async function before(m, { conn, isAdmin, isOwner }) {
+// 🔥 NOW IT WORKS — handler.before activo
+handler.before = async (m, { conn, isAdmin, isOwner }) => {
   try {
     if (!m.isGroup) return;
 
@@ -32,60 +33,47 @@ export async function before(m, { conn, isAdmin, isOwner }) {
 
     const sender = m.sender;
     const numero = sender.replace('@s.whatsapp.net', '');
-    const esUruguay = numero.startsWith('598'); // +598
+    const esUruguay = numero.startsWith('598');
 
-    // 💎 DUEÑOS: NO EXPULSAR
+    // DUEÑOS — NO TOCAR
     const owners = ["59898719147", "59896026646"];
     if (owners.includes(numero)) return;
 
-    // 👑 ADMINS: NO EXPULSAR
-    if (isAdmin || isOwner) return;
+    // ADMINS — NO TOCAR
+    if (isAdmin) return;
 
-    // Obtener lista de participantes reales
+    // METADATA DEL GRUPO
     let group = await conn.groupMetadata(m.chat);
     let participantes = group.participants.map(p => p.id);
 
-    // 💀 SI NO ESTÁ EN LA LISTA DEL GRUPO → EXPULSAR
+    // 1️⃣ Si NO pertenece al grupo
     if (!participantes.includes(sender)) {
       await conn.sendMessage(m.chat, {
-        text:
-          `⚠️ *ALERTA: NÚMERO DESCONOCIDO DETECTADO*\n\n` +
-          `📱 *${numero}*\n` +
-          `Este número NO figura como integrante del grupo y está enviando mensajes.\n` +
-          `🚨 Procediendo a expulsar.`
+        text: `⚠️ *Número desconocido detectado*\n📱 ${numero}\nExpulsando...`
       });
-
       await conn.groupParticipantsUpdate(m.chat, [sender], "remove");
       return;
     }
 
-    // 💀 EXPULSAR NÚMEROS URUGUAYOS +598 (modo prueba)
+    // 2️⃣ Expulsar +598 (modo prueba)
     if (esUruguay) {
       await conn.sendMessage(m.chat, {
-        text:
-          `🟥 *URUGUAYO DETECTADO (+598)*\n` +
-          `📱 *${numero}*\n` +
-          `Modo prueba: expulsando a usuarios +598.`
+        text: `🟥 *Modo prueba: +598 detectado*\n📱 ${numero}\nExpulsando...`
       });
-
       await conn.groupParticipantsUpdate(m.chat, [sender], "remove");
       return;
     }
 
-    // 💀 EXPULSAR NÚMEROS EXTRANJEROS
+    // 3️⃣ Extranjeros
     if (!esUruguay) {
       await conn.sendMessage(m.chat, {
-        text:
-          `🌎 *EXTRANJERO DETECTADO (NO +598)*\n` +
-          `📱 *${numero}*\n` +
-          `Expulsando automáticamente del grupo.`
+        text: `🌎 *Extranjero detectado*\n📱 ${numero}\nExpulsando...`
       });
-
       await conn.groupParticipantsUpdate(m.chat, [sender], "remove");
       return;
     }
 
   } catch (e) {
-    console.error('Error en plugin falso:', e);
+    console.log("Error en falso.js:", e);
   }
-}
+};
