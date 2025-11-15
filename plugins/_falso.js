@@ -12,7 +12,7 @@ if (!text) return conn.reply(m.chat, 'Uso: .falso <texto> o responde a un mensaj
 
 // Enviar resultado como respuesta // Detectar cuáles números fueron eliminados const removedNums = [] text.replace(regex, (match, p1, p2) => { const normalized = '598' + p2.replace(/[^0-9]/g, '') if (!owners.includes(normalized)) removedNums.push(normalized) })
 
-let aviso = '' if (removedNums.length > 0) { aviso = "
+let aviso = ''; if (removedNums.length > 0) { aviso = "
 
 ⚠️ Números modificados:
 
@@ -25,4 +25,4 @@ await conn.reply(m.chat, replaced + aviso, m) }
 
 handler.command = ['falso', 'falso2'] handler.help = ['falso'] handler.tags = ['tools'] handler.premium = false handler.fail = null
 
-export default handler 
+export default handler
