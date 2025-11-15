@@ -1,28 +1,91 @@
-// plugins/falso.js // Comando: .falso // Explicación: quita el prefijo +598 de los números que aparezcan en el texto //             excepto los números que pertenezcan a los owners (lista owners). // Uso: responde a un mensaje con .falso o escribe .falso <texto>
+// 📂 plugins/falso.js — FelixCat_Bot 🐾
+// Detector de números extranjeros y también números +598 (modo prueba)
 
-let handler = async (m, { conn, args }) => { // Lista de owners (sin + ni espacios). Edita aquí si necesitas cambiarla. const owners = [ '59898719147', '59896026646', '59892363485' ]
+let handler = async (m, { conn, command }) => {
+  const chat = global.db.data.chats[m.chat] || {};
 
-// Obtener texto: preferir mensaje citado, si no usar args let text = '' if (m.quoted && m.quoted.text) text = m.quoted.text else text = args.join(' ')
+  if (command === 'falso') {
+    chat.antiFalso = !chat.antiFalso;
+    global.db.data.chats[m.chat] = chat;
 
-if (!text) return conn.reply(m.chat, 'Uso: .falso <texto> o responde a un mensaje con .falso', m)
+    return conn.reply(
+      m.chat,
+      `🕵️ *Detector de Extranjeros / Desconocidos / Uruguayos*\n` +
+      `➡️ Estado: *${chat.antiFalso ? 'ACTIVADO ✅' : 'DESACTIVADO ❌'}*`,
+      m
+    );
+  }
+};
 
-// Regex para detectar +598 o 598 seguido de 7 u 8 dígitos (uruguayos suelen tener 8) // Acepta +598 o 598 con o sin separadores. const regex = /(+?598)(\d{7,8})/g
-
-// Reemplazo: si el número completo (598 + digitos) está en owners -> no tocar // sino -> quitar el prefijo +598 dejando solo los dígitos locales. const replaced = text.replace(regex, (match, p1, p2) => { const normalized = '598' + p2.replace(/\D/g, '') if (owners.includes(normalized)) return match // mantener tal cual si es owner return p2 // quitar el +598 })
-
-// Enviar resultado como respuesta // Detectar cuáles números fueron eliminados const removedNums = [] text.replace(regex, (match, p1, p2) => { const normalized = '598' + p2.replace(/[^0-9]/g, '') if (!owners.includes(normalized)) removedNums.push(normalized) })
-
-let aviso = ''; if (removedNums.length > 0) { aviso = "
-
-⚠️ Números modificados:
-
-" + removedNums.join("
-
-") }
-
-await conn.reply(m.chat, replaced + aviso, m) }
+handler.command = ['falso'];
+handler.group = true;
+export default handler;
 
 
-handler.command = ['falso', 'falso2'] handler.help = ['falso'] handler.tags = ['tools'] handler.premium = false handler.fail = null
+// 🔥 SISTEMA DE DETECCIÓN AUTOMÁTICO Y EXPULSIÓN
+export async function before(m, { conn, isAdmin, isOwner }) {
+  try {
+    if (!m.isGroup) return;
 
-export default handler
+    const chat = global.db.data.chats[m.chat] || {};
+    if (!chat.antiFalso) return;
+
+    const sender = m.sender;
+    const numero = sender.replace('@s.whatsapp.net', '');
+    const esUruguay = numero.startsWith('598'); // +598
+
+    // 💎 DUEÑOS: NO EXPULSAR
+    const owners = ["59898719147", "59896026646"];
+    if (owners.includes(numero)) return;
+
+    // 👑 ADMINS: NO EXPULSAR
+    if (isAdmin || isOwner) return;
+
+    // Obtener lista de participantes reales
+    let group = await conn.groupMetadata(m.chat);
+    let participantes = group.participants.map(p => p.id);
+
+    // 💀 SI NO ESTÁ EN LA LISTA DEL GRUPO → EXPULSAR
+    if (!participantes.includes(sender)) {
+      await conn.sendMessage(m.chat, {
+        text:
+          `⚠️ *ALERTA: NÚMERO DESCONOCIDO DETECTADO*\n\n` +
+          `📱 *${numero}*\n` +
+          `Este número NO figura como integrante del grupo y está enviando mensajes.\n` +
+          `🚨 Procediendo a expulsar.`
+      });
+
+      await conn.groupParticipantsUpdate(m.chat, [sender], "remove");
+      return;
+    }
+
+    // 💀 EXPULSAR NÚMEROS URUGUAYOS +598 (modo prueba)
+    if (esUruguay) {
+      await conn.sendMessage(m.chat, {
+        text:
+          `🟥 *URUGUAYO DETECTADO (+598)*\n` +
+          `📱 *${numero}*\n` +
+          `Modo prueba: expulsando a usuarios +598.`
+      });
+
+      await conn.groupParticipantsUpdate(m.chat, [sender], "remove");
+      return;
+    }
+
+    // 💀 EXPULSAR NÚMEROS EXTRANJEROS
+    if (!esUruguay) {
+      await conn.sendMessage(m.chat, {
+        text:
+          `🌎 *EXTRANJERO DETECTADO (NO +598)*\n` +
+          `📱 *${numero}*\n` +
+          `Expulsando automáticamente del grupo.`
+      });
+
+      await conn.groupParticipantsUpdate(m.chat, [sender], "remove");
+      return;
+    }
+
+  } catch (e) {
+    console.error('Error en plugin falso:', e);
+  }
+}
