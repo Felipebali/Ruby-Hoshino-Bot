@@ -1,4 +1,4 @@
-// plugins/invitar.js — versión FINAL corregida
+// plugins/invitar.js — DETECCIÓN PERFECTA DEL BOT COMO ADMIN
 let handler = async (m, { conn, args }) => {
 
     if (!m.isGroup) 
@@ -6,16 +6,44 @@ let handler = async (m, { conn, args }) => {
 
     const group = await conn.groupMetadata(m.chat);
 
-    // Detectar el JID correcto del bot
-    const botNumber = conn.user?.id || conn.user?.jid || conn.user;
-    const botJid = botNumber.replace(/:.+/, ''); // limpia resource
+    // ======== DETECCIÓN REAL DEL BOT ========
 
-    const botData = group.participants.find(p => p.id === botJid);
+    // Obtener todas las posibles formas del JID del bot
+    const botIds = [
+        conn.user?.id,
+        conn.user?.jid,
+        conn.info?.wid?.id,
+        conn.info?.wid?.user + "@s.whatsapp.net"
+    ]
+    .filter(Boolean)
+    .map(v => v.replace(/:.+/, "")); // normalizar
 
-    // Verificar si el bot es admin correctamente
-    if (!botData || !(botData.admin || botData.superadmin)) {
-        return conn.sendMessage(m.chat, { text: "❌ Necesito ser *administrador* para agregar o invitar." });
+    // Extraer solo número para comparar
+    const botNumbers = botIds.map(j => j.split("@")[0]);
+
+    // Buscar al bot como participante SIN importar el formato del JID
+    const botInGroup = group.participants.find(p => {
+        const participantNumber = p.id.split("@")[0];
+        return botNumbers.includes(participantNumber);
+    });
+
+    // ========================
+
+    // Fallo: no se encontró al bot en la lista (muy raro pero puede pasar)
+    if (!botInGroup) {
+        return conn.sendMessage(m.chat, { 
+            text: "⚠️ No pude detectar al bot entre los participantes.\nReenvíame un mensaje del bot o reinicia el proceso." 
+        });
     }
+
+    // Verificar si es admin
+    if (!(botInGroup.admin || botInGroup.superadmin)) {
+        return conn.sendMessage(m.chat, { 
+            text: "❌ Necesito ser *administrador* para agregar o invitar." 
+        });
+    }
+
+    // ========================
 
     // Validar número
     if (!args[0]) {
@@ -24,7 +52,6 @@ let handler = async (m, { conn, args }) => {
         });
     }
 
-    // Normalizar número
     let number = args[0].replace(/[^0-9]/g, '');
     if (number.length < 8) {
         return conn.sendMessage(m.chat, { text: "❌ Número inválido." });
@@ -33,7 +60,7 @@ let handler = async (m, { conn, args }) => {
     const jid = number + '@s.whatsapp.net';
 
     try {
-        // Intentar agregar al grupo directamente
+        // Intentar agregar directamente
         await conn.groupParticipantsUpdate(m.chat, [jid], "add");
 
         await conn.sendMessage(m.chat, { 
@@ -44,16 +71,15 @@ let handler = async (m, { conn, args }) => {
         console.log("No se pudo agregar. Probando invitación...");
 
         try {
-            // Crear link e invitar
+            // Generar link
             const invite = await conn.groupInviteCode(m.chat);
-            const groupName = group.subject;
 
             await conn.sendMessage(jid, {
-                text: `👋 ¡Hola! Te están invitando al grupo *${groupName}*.\nÚnete desde aquí:\nhttps://chat.whatsapp.com/${invite}`
+                text: `👋 ¡Hola! Te invitan al grupo *${group.subject}*.\nÚnete desde aquí:\nhttps://chat.whatsapp.com/${invite}`
             });
 
             await conn.sendMessage(m.chat, {
-                text: `⚠️ *No pude agregar a +${number}.*\n👉 Le envié una invitación por *mensaje privado*.`
+                text: `⚠️ No pude agregar a *+${number}*.\n📩 Le envié una invitación por mensaje privado.`
             });
 
         } catch (e2) {
