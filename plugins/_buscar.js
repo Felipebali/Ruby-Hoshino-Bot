@@ -2,34 +2,37 @@ import fetch from 'node-fetch'
 
 let handler = async (m, { conn, text }) => {
   if (!text) {
-    await conn.sendMessage(m.chat, {
-      text: '🔎 Ingresa algo para buscar.\nEjemplo: *.buscar gatos*'
-    }, { quoted: m })
-    return
+    return conn.reply(m.chat, '🔎 Escribe algo para buscar.\nEjemplo: *.buscar gatos*', m)
   }
 
   try {
     await conn.sendMessage(m.chat, { react: { text: '🕒', key: m.key } })
 
-    // 🔥 BUSCADOR DUCKDUCKGO (FUNCIONAL 2025)
-    const res = await fetch(
-      `https://duckduckgo.com/i.js?o=json&q=${encodeURIComponent(text)}`
-    )
-    const data = await res.json()
+    const url = `https://duckduckgo.com/?q=${encodeURIComponent(text)}&iax=images&ia=images`
+    const res = await fetch(url)
+    const html = await res.text()
 
-    if (!data?.results?.length) throw new Error('sin resultados')
+    // 🔥 Extraemos el token que usa DuckDuckGo
+    const token = html.match(/vqd=([\d-]+)/)?.[1]
+    if (!token) throw new Error('No se pudo obtener token')
 
-    // 🔹 Tomamos SOLO una imagen
-    const image = data.results[0].image
+    // 🔥 Llamamos a la API de imágenes
+    const api = `https://duckduckgo.com/i.js?l=us-en&o=json&q=${encodeURIComponent(text)}&vqd=${token}`
+    const result = await fetch(api)
+    const json = await result.json()
 
-    await conn.sendMessage(m.chat, { react: { text: '🔍', key: m.key } })
+    if (!json.results || json.results.length === 0)
+      throw new Error('sin resultados')
 
-    // 🔥 Enviar como IMAGEN real (no archivo)
+    // 🔥 Solo UNA imagen
+    const image = json.results[0].image
+
+    // Enviar imagen normal (NO archivo)
     await conn.sendMessage(
       m.chat,
       {
         image: { url: image },
-        caption: `🔎 *Resultado de:* ${text}`
+        caption: `🔎 Resultado de: *${text}*`
       },
       { quoted: m }
     )
@@ -37,12 +40,9 @@ let handler = async (m, { conn, text }) => {
     await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
 
   } catch (e) {
-    console.log('ERROR .buscar:', e)
+    console.error(e)
     await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
-
-    await conn.sendMessage(m.chat, {
-      text: '⚠️ No pude obtener una imagen. Probá otro término.'
-    }, { quoted: m })
+    await conn.reply(m.chat, '⚠️ No pude obtener imágenes. Probá con otro término.', m)
   }
 }
 
