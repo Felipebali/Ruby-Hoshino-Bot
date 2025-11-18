@@ -1,0 +1,51 @@
+import { googleImage } from '@bochilteam/scraper'
+
+let handler = async (m, { conn, text }) => {
+  if (!text) {
+    await conn.sendMessage(
+      m.chat,
+      { text: '🔎 Ingresa algo para buscar.\nEjemplo: *.buscar gatos*' },
+      { quoted: m }
+    )
+    return
+  }
+
+  try {
+    // Reacción de inicio
+    await conn.sendMessage(m.chat, { react: { text: '🕒', key: m.key } })
+
+    const res = await googleImage(text)
+    const image = res[0] // ✅ Solo la primera imagen
+
+    // Reacción de búsqueda
+    await conn.sendMessage(m.chat, { react: { text: '🔍', key: m.key } })
+
+    // Enviar como IMAGEN (no archivo)
+    await conn.sendMessage(
+      m.chat,
+      {
+        image: { url: image },
+        caption: `🔎 *Resultado de:* ${text}`
+      },
+      { quoted: m }
+    )
+
+    // Reacción final
+    await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
+
+  } catch (e) {
+    console.error(e)
+    await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
+    await conn.sendMessage(
+      m.chat,
+      { text: '⚠️ No pude obtener una imagen. Probá con otra búsqueda.' },
+      { quoted: m }
+    )
+  }
+}
+
+handler.help = ['buscar <texto>']
+handler.tags = ['buscador']
+handler.command = ['buscar']
+
+export default handler 
