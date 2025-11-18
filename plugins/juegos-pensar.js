@@ -1,5 +1,7 @@
 // plugins/pensar.js — FelixCat_Bot 🐾
-let usados = {}; // Registro de respuestas usadas por chat
+// Versión avanzada con emociones + intenciones + respuestas dinámicas
+
+let usados = {};
 
 let handler = async (m, { conn, text }) => {
     try {
@@ -9,7 +11,6 @@ let handler = async (m, { conn, text }) => {
         const preguntaRaw = text ? text.replace(/\.pensar\s*/i, '').trim() : '';
         const pregunta = preguntaRaw.toLowerCase();
 
-        // Si no hay pregunta → Mensaje tutorial
         if (!pregunta) {
             return await conn.sendMessage(m.chat, {
                 text: `🔮 *Bola Mágica FelixCat* 🔮
@@ -17,126 +18,128 @@ let handler = async (m, { conn, text }) => {
 💭 Hazme una pregunta:
 *_.pensar <tu pregunta>_*
 
-Respondo según lo que preguntes 😼✨`
+Respondo con estilo 😼✨`
             });
         }
 
-        // ==============================
-        //     SISTEMA DE INTENCIONES
-        // ==============================
-
+        // =========================================
+        //        DETECCIÓN DE INTENCIÓN
+        // =========================================
         let categoria = "general";
 
-        // AMOR
-        if (pregunta.includes("me quiere") || pregunta.includes("amor") || pregunta.includes("gust") || pregunta.includes("novi")) {
-            categoria = "amor";
-        }
-        // DINERO
-        else if (pregunta.includes("dinero") || pregunta.includes("plata") || pregunta.includes("trabajo") || pregunta.includes("rico")) {
-            categoria = "dinero";
-        }
-        // SUERTE
-        else if (pregunta.includes("suerte") || pregunta.includes("azar") || pregunta.includes("ganar")) {
-            categoria = "suerte";
-        }
-        // AMISTAD
-        else if (pregunta.includes("amigo") || pregunta.includes("amistad")) {
-            categoria = "amistad";
-        }
-        // PROBLEMAS O DECISIONES
-        else if (pregunta.includes("debería") || pregunta.includes("hago") || pregunta.includes("decisión") || pregunta.includes("problema")) {
-            categoria = "decision";
-        }
-        // PERSONA ESPECÍFICA
-        else if (pregunta.includes("él") || pregunta.includes("ella") || pregunta.includes("ese") || pregunta.includes("@")) {
-            categoria = "persona";
-        }
-        // PICANTE 🍑🔥
-        else if (pregunta.includes("sexo") || pregunta.includes("coger") || pregunta.includes("beso") || pregunta.includes("encama")) {
-            categoria = "picante";
-        }
+        if (pregunta.match(/(me quiere|amor|gust|novi|enamora|pareja)/)) categoria = "amor";
+        else if (pregunta.match(/(dinero|plata|trabajo|rico|pagar)/)) categoria = "dinero";
+        else if (pregunta.match(/(suerte|azar|ganar|lotería)/)) categoria = "suerte";
+        else if (pregunta.match(/(amigo|amistad|compa)/)) categoria = "amistad";
+        else if (pregunta.match(/(debería|hago|decisión|problema|conviene)/)) categoria = "decision";
+        else if (pregunta.match(/(él|ella|@|esa persona|ese)/)) categoria = "persona";
+        else if (pregunta.match(/(sexo|coger|beso|encama|hacer algo)/)) categoria = "picante";
 
+        // =========================================
+        //         DETECCIÓN DE EMOCIÓN
+        // =========================================
+        let emocion = "neutral";
 
-        // ==============================
-        //        RESPUESTAS SEGÚN TEMA
-        // ==============================
+        if (pregunta.match(/(triste|mal|deprimido|solo|abandonado)/)) emocion = "triste";
+        else if (pregunta.match(/(enojado|bronca|molesto|harto)/)) emocion = "enojado";
+        else if (pregunta.match(/(miedo|temor|preocupado|ansioso)/)) emocion = "ansiedad";
+        else if (pregunta.match(/(feliz|contento|bien)/)) emocion = "feliz";
+        else if (pregunta.match(/(duda|no sé|quizás)/)) emocion = "duda";
+        else if (pregunta.match(/(caliente|ganas|encendida|picante)/)) emocion = "picante";
+
+        // =========================================
+        //          RESPUESTAS INTELIGENTES
+        // =========================================
 
         const respuestas = {
             amor: [
-                "💘 Sí, esa persona siente algo fuerte por vos.",
-                "❤️ Yo creo que sí… pero falta que des un paso.",
-                "💔 Mmm… no parece estar muy interesada.",
-                "💕 El amor está ahí, pero escondido.",
-                "🔥 Sí, y mucho más de lo que imaginas."
+                "💘 Sí, esa persona siente algo por vos… aunque no lo diga.",
+                "❤️ Yo diría que sí, pero hace falta que uno de los dos se anime.",
+                "💔 No parece muy interesado… pero todo puede cambiar.",
+                "💕 Hay algo, eso seguro.",
+                "🔥 Sí, y bastante fuerte."
             ],
             dinero: [
-                "💰 Te viene plata pronto, estate atento.",
-                "📉 Mejor no esperes mucho dinero ahora.",
-                "💸 Si te esforzás, sí. Si no… no.",
-                "🤑 Estás cerca de un golpe de suerte económica.",
-                "🔮 La plata viene, pero lentamente."
+                "💰 Viene plata pronto, pero no de donde esperás.",
+                "📉 Mmm… mejor no cuentes con eso ahora.",
+                "💸 Si te movés un poco, sí.",
+                "🤑 Te veo un golpe de suerte económica.",
+                "🔮 La plata viene, lento pero seguro."
             ],
             suerte: [
-                "🍀 Hoy la suerte te sonríe.",
-                "⚠️ La suerte está dormida, volvé después.",
-                "🎲 Tirá la apuesta, te favorece.",
-                "✨ Algo bueno está por pasar.",
-                "🤞 No arriesgues hoy."
+                "🍀 Hoy la suerte está de tu lado.",
+                "⚠️ Mmm… hoy no es tu día.",
+                "🎲 Si apostás, ganás.",
+                "✨ Algo bueno se acerca.",
+                "🤞 Yo no arriesgaría justo ahora."
             ],
             amistad: [
-                "🤝 Sí, es un amigo real.",
-                "😼 Cuidado, esa amistad es dudosa.",
-                "😊 Esa persona te aprecia mucho.",
-                "🙄 No contaría demasiado con ese amigo.",
-                "🌟 Amistad verdadera."
+                "🤝 Es un amigo genuino.",
+                "🙄 Esa amistad es medio sospechosa.",
+                "😊 Te aprecia de verdad.",
+                "😼 No confiaría tanto.",
+                "🌟 Amistad real."
             ],
             decision: [
-                "🧠 Pensalo bien, pero la respuesta es sí.",
-                "⚠️ No es el momento indicado.",
-                "✨ Hacé lo que te dice tu instinto.",
-                "🚀 Dale, no tengas miedo.",
-                "🔍 Falta información, no actúes aún."
+                "🧠 Sí, hacelo. Lo vas a agradecer.",
+                "⚠️ No es el momento.",
+                "✨ Tu intuición ya sabe la respuesta.",
+                "🚀 Dale, no te frenés.",
+                "🔍 Falta un dato clave, esperá."
             ],
             persona: [
-                "👀 Esa persona piensa más en vos de lo que crees.",
-                "😹 No te tiene muy presente.",
-                "😼 Le importás, pero no sabe mostrarlo.",
-                "💬 Si hablas con sinceridad, mejora todo.",
-                "✨ Tiene buena energía hacia vos."
+                "👀 Esa persona te piensa más de lo que creés.",
+                "😹 No estás tan en su mente ahora.",
+                "😼 Te quiere, pero es tímida/o.",
+                "💬 Una charla sincera arregla todo.",
+                "✨ Buena energía entre ustedes."
             ],
             picante: [
-                "🔥 Sí… y está esperando que lo hagas 👀",
-                "😏 Ufff… esa persona quiere más que un beso.",
-                "🍑 Hoy es NOCHE peligrosa.",
-                "💋 Yo diría que sí, pero andá suave.",
-                "😼 Eso podría terminar MUY bien."
+                "🔥 Sí… y quiere que pase.",
+                "😏 Claramente sí, no se hace el/la boludo/a.",
+                "🍑 Hoy pinta noche peligrosa.",
+                "💋 Yo diría que sí, pero tranquilx.",
+                "😼 Ese movimiento podría terminar MUY bien."
             ],
             general: [
                 "😼 Sí, definitivamente.",
-                "🐾 No, no lo creo.",
-                "🤔 Tal vez…",
+                "🐾 No lo creo.",
+                "🤔 Puede ser…",
                 "🎉 Parece que sí.",
-                "⚠️ No lo hagas ahora.",
+                "⚠️ No ahora.",
                 "✔️ Todo indica que sí.",
-                "🤷‍♂️ Es incierto."
+                "🤷‍♂️ Incierto."
             ]
         };
 
+        // =========================================
+        //   MODIFICADORES SEGÚN EMOCIÓN DETECTADA
+        // =========================================
 
-        // Evitar respuestas repetidas por chat
+        const tonos = {
+            triste: "💙 Te noto medio bajoneado… pero igual te digo:",
+            enojado: "🔥 Pará un poco, respirá. Igual:",
+            ansiedad: "😟 Tranqui, estás pensando demasiado. Mira:",
+            feliz: "😸 Me gusta esa energía. Entonces:",
+            duda: "🤨 Estás dudando mucho. Mi respuesta:",
+            picante: "😏 Ufff, estás en modo peligro. Bueno:",
+            neutral: ""
+        };
+
+        // Evitar respuestas repetidas
         if (!usados[m.chat]) usados[m.chat] = [];
-        const opciones = respuestas[categoria].filter(r => !usados[m.chat].includes(r));
+        const posibles = respuestas[categoria].filter(r => !usados[m.chat].includes(r));
 
-        let respuesta = opciones.length > 0
-            ? opciones[Math.floor(Math.random() * opciones.length)]
+        let respuesta = posibles.length > 0
+            ? posibles[Math.floor(Math.random() * posibles.length)]
             : respuestas[categoria][Math.floor(Math.random() * respuestas[categoria].length)];
 
         usados[m.chat].push(respuesta);
-        if (usados[m.chat].length >= 10) usados[m.chat] = []; // limpiar memoria
+        if (usados[m.chat].length >= 15) usados[m.chat] = []; // limpiado
 
-        // ==============================
-        //       MENSAJE FINAL
-        // ==============================
+        // =========================================
+        //             MENSAJE FINAL
+        // =========================================
 
         const mensaje = `
 ✨🔮 *BOLA MÁGICA FELIXCAT* 🔮✨
@@ -144,11 +147,13 @@ Respondo según lo que preguntes 😼✨`
 ❓ Pregunta:
 > ${preguntaRaw}
 
+${tonos[emocion]}
+
 💡 Respuesta:
 > ${respuesta}
 
-😼 Que la magia te guíe.
-        `;
+😼 Que la magia te ilumine… o te confunda un poco más.
+`;
 
         await conn.sendMessage(m.chat, { text: mensaje });
 
