@@ -2,37 +2,34 @@ import fetch from 'node-fetch'
 
 let handler = async (m, { conn, text }) => {
   if (!text) {
-    return conn.reply(m.chat, '🔎 Escribe algo para buscar.\nEjemplo: *.buscar gatos*', m)
+    return conn.sendMessage(
+      m.chat,
+      { text: '🔎 Escribe algo para buscar.\nEjemplo: *.buscar gatos*' },
+      { quoted: m }
+    )
   }
 
   try {
     await conn.sendMessage(m.chat, { react: { text: '🕒', key: m.key } })
 
-    const url = `https://duckduckgo.com/?q=${encodeURIComponent(text)}&iax=images&ia=images`
+    // API real y funcional de imágenes
+    const url = `https://duckduckgo.com/i.js?q=${encodeURIComponent(text)}`
     const res = await fetch(url)
-    const html = await res.text()
+    const json = await res.json()
 
-    // 🔥 Extraemos el token que usa DuckDuckGo
-    const token = html.match(/vqd=([\d-]+)/)?.[1]
-    if (!token) throw new Error('No se pudo obtener token')
+    if (!json.results || json.results.length === 0) {
+      throw new Error('Sin imágenes')
+    }
 
-    // 🔥 Llamamos a la API de imágenes
-    const api = `https://duckduckgo.com/i.js?l=us-en&o=json&q=${encodeURIComponent(text)}&vqd=${token}`
-    const result = await fetch(api)
-    const json = await result.json()
+    const img = json.results[0].image // primera imagen
 
-    if (!json.results || json.results.length === 0)
-      throw new Error('sin resultados')
+    await conn.sendMessage(m.chat, { react: { text: '🔍', key: m.key } })
 
-    // 🔥 Solo UNA imagen
-    const image = json.results[0].image
-
-    // Enviar imagen normal (NO archivo)
     await conn.sendMessage(
       m.chat,
       {
-        image: { url: image },
-        caption: `🔎 Resultado de: *${text}*`
+        image: { url: img },
+        caption: `🔎 *Resultado de:* ${text}`
       },
       { quoted: m }
     )
@@ -40,14 +37,18 @@ let handler = async (m, { conn, text }) => {
     await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
 
   } catch (e) {
-    console.error(e)
+    console.log("Error en .buscar:", e)
     await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
-    await conn.reply(m.chat, '⚠️ No pude obtener imágenes. Probá con otro término.', m)
+    await conn.sendMessage(
+      m.chat,
+      { text: '⚠️ No pude obtener imágenes. Probá otro término.' },
+      { quoted: m }
+    )
   }
 }
 
-handler.help = ['buscar <texto>']
-handler.tags = ['buscador']
 handler.command = ['buscar']
+handler.help = ['buscar <texto>']
+handler.tags = ['tools']
 
 export default handler
