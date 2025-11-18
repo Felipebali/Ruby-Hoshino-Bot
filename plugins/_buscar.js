@@ -2,44 +2,47 @@ import fetch from 'node-fetch'
 
 let handler = async (m, { conn, text }) => {
   if (!text) {
-    return conn.sendMessage(m.chat, { text: '🔎 Ingresa algo. Ej: *.buscar perros*' }, { quoted: m })
+    return conn.sendMessage(m.chat, { text: '⚠️ Escribe qué querés buscar.\nEjemplo: *.buscar gatos*' }, { quoted: m })
   }
 
   try {
-    await conn.sendMessage(m.chat, { react: { text: "🕒", key: m.key }})
+    // Reacción inicio
+    await conn.sendMessage(m.chat, { react: { text: '🕒', key: m.key } })
 
-    // 🔥 Buscador por Bing (sin API)
-    const url = `https://www.bing.com/images/search?q=${encodeURIComponent(text)}&form=HDRSC2`
-    const html = await fetch(url).then(res => res.text())
+    // 🔥 BÚSQUEDA EXACTA EN BING (SIN TOKEN)
+    let url = `https://www.bing.com/images/search?q=${encodeURIComponent(text)}&form=HDRSC2&first=1&tsc=ImageBasicHover`
+    let res = await fetch(url)
+    let html = await res.text()
 
-    // Extraemos las URLs de imágenes
-    const regex = /murl&quot;:&quot;(.*?)&quot;/g
-    const images = []
-    let match
+    // Extrae URLs de imágenes de Bing
+    let regex = /murl&quot;:&quot;(https:\/\/[^&]+)&quot;/g
+    let matches = [...html.matchAll(regex)]
 
-    while ((match = regex.exec(html)) !== null) {
-      images.push(match[1])
-    }
+    if (!matches.length) throw new Error("Sin resultados")
 
-    if (!images.length) throw new Error("No se encontraron imágenes")
+    // Una sola imagen
+    let image = matches[0][1]
 
-    const image = images[0] // 🔥 Solo UNA imagen
+    // Reacción búsqueda ok
+    await conn.sendMessage(m.chat, { react: { text: '🔍', key: m.key } })
 
+    // Enviar la imagen
     await conn.sendMessage(
       m.chat,
       {
         image: { url: image },
-        caption: `🔎 Resultado de: *${text}*`
+        caption: `🔎 *Resultado de:* ${text}`
       },
       { quoted: m }
     )
 
-    await conn.sendMessage(m.chat, { react: { text: "✅", key: m.key }})
+    // Reacción final
+    await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
 
   } catch (e) {
-    console.log("ERROR .buscar:", e)
-    await conn.sendMessage(m.chat, { react: { text: "❌", key: m.key }})
-    await conn.sendMessage(m.chat, { text: "⚠️ No pude obtener imágenes. Probá otro término." }, { quoted: m })
+    console.error("Error en .buscar:", e)
+    await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
+    await conn.sendMessage(m.chat, { text: '⚠️ No pude obtener imágenes. Probá otro término.' }, { quoted: m })
   }
 }
 
