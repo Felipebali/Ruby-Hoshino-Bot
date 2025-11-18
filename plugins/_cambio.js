@@ -5,19 +5,19 @@
 // =================================================
 
 let WAMessageStubType = (await import('@whiskeysockets/baileys')).default
-import chalk from 'chalk'
-import fs from 'fs'
 import axios from 'axios'
 import fetch from 'node-fetch'
 
 const lidCache = new Map()
-const handler = m => m
 
-// ================================
-// COMANDO .cambio — interruptor
-// ================================
+// =======================================
+// COMANDO .cambio — alternar detección
+// =======================================
 let cambioHandler = async (m, { conn }) => {
   let chat = global.db.data.chats[m.chat]
+
+  // Si no existe, inicializar activado
+  if (chat.detect === undefined) chat.detect = true
 
   // Alternar estado
   chat.detect = !chat.detect
@@ -33,17 +33,15 @@ cambioHandler.command = ['cambio']
 cambioHandler.group = true
 cambioHandler.admin = true
 
-export { cambioHandler as default }
-
-// ================================
-// BEFORE — Eventos del grupo
-// ================================
-handler.before = async function (m, { conn, participants }) {
+// =======================================
+// HANDLER BEFORE — escucha eventos
+// =======================================
+let handlerBefore = async function (m, { conn, participants }) {
 
   if (!m.messageStubType || !m.isGroup) return
 
   const chat = global.db.data.chats[m.chat]
-  if (!chat.detect) return  // ← Sistema desactivado
+  if (!chat.detect) return // Sistema desactivado
 
   const usuario = await resolveLidToRealJid(m?.sender, conn, m?.chat)
   const groupAdmins = participants.filter(p => p.admin)
@@ -75,21 +73,23 @@ handler.before = async function (m, { conn, participants }) {
   const rcanal = {
     contextInfo: {
       isForwarded: true,
-      forwardedNewsletterMessageInfo: { newsletterJid: channelRD.id, serverMessageId: '', newsletterName: channelRD.name },
       externalAdReply: {
         title: 'FelixCat_Bot 🐾 — Sistema de cambios',
         body: null, mediaUrl: null, description: null, previewType: "PHOTO",
-        thumbnail: await (await fetch(icono)).buffer(),
-        sourceUrl: redes, mediaType: 1
+        thumbnail: Buffer.from((await axios.get("https://files.catbox.moe/xr2m6u.jpg", { responseType: "arraybuffer" })).data),
+        sourceUrl: null, mediaType: 1
       },
       mentionedJid: []
     }
   }
 
+  // ==============================
+  // Mensajes
+  // ==============================
   const nombreMsg =
 `> 🍃 @${usuario.split('@')[0]} ha cambiado el *nombre del grupo*.
 > 🌱 Nuevo nombre:
-> *${m.messageStubParameters[0]}*`
+> *${m.messageStubParameters?.[0] || 'desconocido'}*`
 
   const pp = await conn.profilePictureUrl(m.chat, 'image').catch(_ => null) || 'https://files.catbox.moe/xr2m6u.jpg'
 
@@ -100,9 +100,11 @@ handler.before = async function (m, { conn, participants }) {
 
   const editMsg =
 `> 💐 @${usuario.split('@')[0]} ha cambiado los *permisos de edición*.
-> Ahora: *${m.messageStubParameters[0] == 'on' ? 'solo admins' : 'todos'}* pueden modificar info.`
+> Ahora: *${m.messageStubParameters?.[0] == 'on' ? 'solo admins' : 'todos'}* pueden modificar info.`
 
+  // ==============================
   // Detectar eventos
+  // ==============================
   if (m.messageStubType == 21) { // Nombre
     rcanal.contextInfo.mentionedJid = [usuario, ...groupAdmins.map(v => v.id)]
     await this.sendMessage(m.chat, { text: nombreMsg, ...rcanal }, { quoted: shadow_xyz })
@@ -119,9 +121,9 @@ handler.before = async function (m, { conn, participants }) {
   }
 }
 
-// =================================================
+// =======================================
 // LID → JID REAL
-// =================================================
+// =======================================
 async function resolveLidToRealJid(lid, conn, groupChatId, maxRetries = 3, retryDelay = 3000) {
   const inputJid = lid.toString()
 
@@ -158,4 +160,9 @@ async function resolveLidToRealJid(lid, conn, groupChatId, maxRetries = 3, retry
   }
 
   return inputJid
-} 
+}
+
+// =======================================
+// Exportar
+// =======================================
+export { cambioHandler, handlerBefore }
