@@ -1,23 +1,26 @@
-// plugins/invitar.js — inteligente (agrega o envía link según privacidad)
+// plugins/invitar.js — versión FINAL corregida
 let handler = async (m, { conn, args }) => {
 
     if (!m.isGroup) 
         return conn.sendMessage(m.chat, { text: "❌ Este comando solo funciona en grupos." });
 
-    // Obtener info del grupo
-    const metadata = await conn.groupMetadata(m.chat);
-    const bot = conn.user.jid || conn.user.id;
-    const botData = metadata.participants.find(p => p.id === bot);
+    const group = await conn.groupMetadata(m.chat);
 
-    // Verificar si el bot es admin
-    if (!botData?.admin) {
-        return conn.sendMessage(m.chat, { text: "❌ Necesito ser administrador para agregar o invitar." });
+    // Detectar el JID correcto del bot
+    const botNumber = conn.user?.id || conn.user?.jid || conn.user;
+    const botJid = botNumber.replace(/:.+/, ''); // limpia resource
+
+    const botData = group.participants.find(p => p.id === botJid);
+
+    // Verificar si el bot es admin correctamente
+    if (!botData || !(botData.admin || botData.superadmin)) {
+        return conn.sendMessage(m.chat, { text: "❌ Necesito ser *administrador* para agregar o invitar." });
     }
 
     // Validar número
     if (!args[0]) {
         return conn.sendMessage(m.chat, { 
-            text: "❌ Debes escribir un número.\n\n👉 Ejemplo:\n`.invitar 59891234567`" 
+            text: "❌ Debes escribir un número.\n\n👉 Ejemplo:\n.invitar 59891234567" 
         });
     }
 
@@ -30,7 +33,7 @@ let handler = async (m, { conn, args }) => {
     const jid = number + '@s.whatsapp.net';
 
     try {
-        // Intento 1: Agregar directamente
+        // Intentar agregar al grupo directamente
         await conn.groupParticipantsUpdate(m.chat, [jid], "add");
 
         await conn.sendMessage(m.chat, { 
@@ -38,26 +41,26 @@ let handler = async (m, { conn, args }) => {
         });
 
     } catch (error) {
-        console.log("No se pudo agregar. Intentando invitación…");
+        console.log("No se pudo agregar. Probando invitación...");
 
         try {
-            // Intento 2: Enviar invitación por link
+            // Crear link e invitar
             const invite = await conn.groupInviteCode(m.chat);
-            const groupName = metadata.subject;
+            const groupName = group.subject;
 
             await conn.sendMessage(jid, {
-                text: `👋 ¡Hola! El grupo *${groupName}* te invita a unirte.\nÚnete desde aquí:\nhttps://chat.whatsapp.com/${invite}`
+                text: `👋 ¡Hola! Te están invitando al grupo *${groupName}*.\nÚnete desde aquí:\nhttps://chat.whatsapp.com/${invite}`
             });
 
             await conn.sendMessage(m.chat, {
-                text: `⚠️ *No fue posible agregar a +${number}.*\n👉 Le envié una *invitación por mensaje privado* 🚀`
+                text: `⚠️ *No pude agregar a +${number}.*\n👉 Le envié una invitación por *mensaje privado*.`
             });
 
         } catch (e2) {
             console.error(e2);
 
             await conn.sendMessage(m.chat, {
-                text: "❌ No pude agregar ni invitar a ese número.\nPuede que no exista o no tenga WhatsApp."
+                text: "❌ No pude agregar ni invitar al número.\nPuede que no tenga WhatsApp o tenga privacidad estricta."
             });
         }
     }
