@@ -1,14 +1,13 @@
-// 📂 plugins/grupos-invitar.js — FelixCat_Bot 🐾
-// Invita a un número enviándole el link, y si el bot es admin intenta agregar automáticamente.
-// Uso: .invitar 598XXXXXXX
+// 📂 plugins/grupos-agregar.js — FelixCat_Bot 🐾
+// Comando: .agregar <número>
+// Agrega directamente a un usuario al grupo (solo si el bot es admin)
 
 let handler = async (m, { conn, args }) => {
-
     if (!m.isGroup)
         return conn.reply(m.chat, '❌ Este comando solo funciona en grupos.', m);
 
     if (!args[0])
-        return conn.reply(m.chat, '✏️ *Uso:* .invitar 59898719147', m);
+        return conn.reply(m.chat, '✏️ *Uso correcto:* .agregar 59898719147', m);
 
     // Normalizamos número
     let numero = args[0].replace(/[^0-9]/g, '');
@@ -17,42 +16,43 @@ let handler = async (m, { conn, args }) => {
 
     let jid = numero + '@s.whatsapp.net';
 
-    // Generar código de invitación siempre
-    let linkCode = await conn.groupInviteCode(m.chat);
-    let link = `https://chat.whatsapp.com/${linkCode}`;
+    // Verificar si el bot es admin
+    const group = await conn.groupMetadata(m.chat);
+    const botID = conn.user.jid || conn.user.id;
+    const botEsAdmin = group.participants.some(p => p.id === botID && p.admin);
 
-    // Enviar invitación por privado SIEMPRE
-    await conn.sendMessage(jid, {
-        text: `👋 *Has sido invitado a un grupo:*\n🔗 ${link}\n\n📌 Puedes unirte tocando el enlace.`
-    });
+    if (!botEsAdmin)
+        return conn.reply(m.chat, '❌ Necesito ser administrador para agregar al usuario.', m);
 
-    // Confirmar al grupo
-    await conn.reply(m.chat, `📨 Envié el enlace al número *${numero}*.`, m);
-
-    // Intentar agregar automáticamente SOLO si el bot es admin
+    // Intento de agregado
     try {
-        const groupData = await conn.groupMetadata(m.chat);
-        const botID = conn.user.jid || conn.user.id;
-        const botAdmin = groupData.participants.some(p => p.id === botID && p.admin);
+        let res = await conn.groupAdd(m.chat, [jid]);
 
-        if (botAdmin) {
-            // Intento de agregado automático
-            let res = await conn.groupAdd(m.chat, [jid]);
+        // Respuesta tipo Baileys
+        let r = res[0] || res;
 
-            if (res && res[0]) {
-                if (res[0].status === 200) {
-                    return conn.reply(m.chat, `✅ El usuario *${numero}* fue agregado automáticamente.`, m);
-                }
-                // Si no permite ser agregado, ya enviamos el enlace antes, así que no pasa nada
-            }
+        if (r.status === 200) {
+            return conn.reply(m.chat, `✅ Usuario *${numero}* agregado correctamente.`, m);
         }
+
+        if (r.status === 409) {
+            return conn.reply(m.chat, '⚠️ Ese usuario ya está en el grupo.', m);
+        }
+
+        if (r.status === 403) {
+            return conn.reply(m.chat, '⚠️ El usuario no permite que lo agreguen. Solo lo pueden invitar por enlace.', m);
+        }
+
+        return conn.reply(m.chat, `⚠️ No pude agregar a *${numero}*. Código: ${r.status}`, m);
+
     } catch (e) {
-        console.log('Error en agregado automático:', e);
+        console.log('Error al agregar:', e);
+        conn.reply(m.chat, '❌ Ocurrió un error al intentar agregar al usuario.', m);
     }
 };
 
-handler.help = ['invitar <número>'];
+handler.help = ['agregar <número>'];
 handler.tags = ['group'];
-handler.command = /^invitar$/i;
+handler.command = /^agregar$/i;
 
 export default handler;
