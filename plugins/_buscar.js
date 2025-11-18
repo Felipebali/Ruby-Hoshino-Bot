@@ -1,59 +1,49 @@
-import { googleImage } from '@bochilteam/scraper'
+import { googleImage } from "@bochilteam/scraper"
+import fetch from "node-fetch"
 
 let handler = async (m, { conn, text }) => {
   if (!text) {
-    await conn.sendMessage(
+    return conn.sendMessage(
       m.chat,
-      { text: '🔎 Ingresa algo para buscar.\nEjemplo: *.buscar gatos*' },
+      { text: "🔎 Ingresá algo para buscar.\nEjemplo: *.buscar gatos*" },
       { quoted: m }
     )
-    return
   }
 
   try {
-    await conn.sendMessage(m.chat, { react: { text: '🕒', key: m.key } })
+    await conn.sendMessage(m.chat, { react: { text: "🕒", key: m.key } })
 
-    let res = await googleImage(text)
+    const data = await googleImage(text)
+    if (!data || !data.length) throw new Error("sin resultados")
 
-    // 🔥 FILTRA SOLO IMÁGENES CON FORMATO REAL
-    res = res.filter(img =>
-      img &&
-      typeof img === 'string' &&
-      img.match(/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i)
-    )
+    const url = data[0] // primera imagen
+    const res = await fetch(url)
 
-    if (!res.length) throw 'Sin imágenes válidas'
+    if (!res.ok) throw new Error("imagen caída")
 
-    const image = res[0] // una sola
+    const buffer = await res.arrayBuffer()
 
-    await conn.sendMessage(m.chat, { react: { text: '🔍', key: m.key } })
-
-    // 📌 ENVÍA COMO IMAGEN
     await conn.sendMessage(
       m.chat,
       {
-        image: { url: image },
-        caption: `🔎 *Resultado de:* ${text}`
+        image: Buffer.from(buffer),
+        caption: `🔎 Resultado de: *${text}*`
       },
       { quoted: m }
     )
 
-    await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
+    await conn.sendMessage(m.chat, { react: { text: "✅", key: m.key } })
 
   } catch (e) {
-    console.error('Error en .buscar:', e)
-
-    await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
+    console.log("ERROR .buscar:", e)
+    await conn.sendMessage(m.chat, { react: { text: "❌", key: m.key } })
     await conn.sendMessage(
       m.chat,
-      { text: '⚠️ No pude obtener una imagen válida. Probá otro término.' },
+      { text: "⚠️ No pude obtener una imagen. Probá otro término." },
       { quoted: m }
     )
   }
 }
 
-handler.help = ['buscar <texto>']
-handler.tags = ['buscador']
-handler.command = ['buscar']
-
+handler.command = ["buscar"]
 export default handler
