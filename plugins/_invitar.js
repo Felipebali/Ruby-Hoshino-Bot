@@ -1,5 +1,4 @@
 // 📂 plugins/grupos-agregar.js — FelixCat_Bot 🐾
-// Comando: .agregar <número>
 
 let handler = async (m, { conn, args }) => {
 
@@ -7,7 +6,7 @@ let handler = async (m, { conn, args }) => {
         return conn.reply(m.chat, '❌ Este comando solo funciona en grupos.', m);
 
     if (!args[0])
-        return conn.reply(m.chat, '✏️ *Uso:* .agregar 59898719147', m);
+        return conn.reply(m.chat, '✏️ *Uso correcto:* .agregar 59898719147', m);
 
     // Normalizamos número
     let numero = args[0].replace(/[^0-9]/g, '');
@@ -19,22 +18,20 @@ let handler = async (m, { conn, args }) => {
     // Obtener metadata del grupo
     const group = await conn.groupMetadata(m.chat);
 
-    // Detectar el ID real del bot (compatibilidad total Baileys)
-    const botIdsPosibles = [
-        conn.user.id,
-        conn.user.jid,
-        (conn.user.id || '').split(':')[0] + '@s.whatsapp.net',
-        (conn.user.jid || '').split(':')[0] + '@s.whatsapp.net'
-    ].filter(Boolean);
+    // ID REAL DEL BOT, recortado, compatible al 100%
+    const botID = (conn.user.jid || conn.user.id || "")
+        .split(':')[0]   // elimina cualquier :1 ó :2
+        .replace(/[^0-9@s\.]/g, ''); 
 
-    // Detectar admin correctamente
-    const botEsAdmin = group.participants.some(p =>
-        p.admin &&
-        botIdsPosibles.includes(p.id.split(':')[0])
-    );
+    // Buscar al bot en la lista de admins (formato estable)
+    const botEsAdmin = group.participants.some(p => {
+        const pid = p.id.split(':')[0]; // recorta el :1 / :2
+        return pid === botID && p.admin;
+    });
 
-    if (!botEsAdmin)
-        return conn.reply(m.chat, '❌ Necesito ser administrador para agregar al usuario.', m);
+    if (!botEsAdmin) {
+        return conn.reply(m.chat, '❌ El bot NO se reconoce como admin en este grupo.\n\n📌 *Solución:* Quitá al bot como admin y volvé a ponerlo.', m);
+    }
 
     // Intentar agregar
     try {
@@ -48,13 +45,13 @@ let handler = async (m, { conn, args }) => {
             return conn.reply(m.chat, '⚠️ Ese usuario ya está en el grupo.', m);
 
         if (r.status === 403)
-            return conn.reply(m.chat, '⚠️ Ese usuario no permite que lo agreguen.', m);
+            return conn.reply(m.chat, '⚠️ Ese usuario no permite que lo agreguen al grupo.', m);
 
         conn.reply(m.chat, `⚠️ No pude agregarlo. Código: ${r.status}`, m);
 
     } catch (e) {
-        console.error(e);
-        conn.reply(m.chat, '❌ Error al agregar al usuario.', m);
+        console.log('Error al agregar:', e);
+        conn.reply(m.chat, '❌ Ocurrió un error al intentar agregar al usuario.', m);
     }
 };
 
