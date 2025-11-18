@@ -1,49 +1,53 @@
-import { googleImage } from "@bochilteam/scraper"
-import fetch from "node-fetch"
+import fetch from 'node-fetch'
 
 let handler = async (m, { conn, text }) => {
   if (!text) {
-    return conn.sendMessage(
-      m.chat,
-      { text: "🔎 Ingresá algo para buscar.\nEjemplo: *.buscar gatos*" },
-      { quoted: m }
-    )
+    await conn.sendMessage(m.chat, {
+      text: '🔎 Ingresa algo para buscar.\nEjemplo: *.buscar gatos*'
+    }, { quoted: m })
+    return
   }
 
   try {
-    await conn.sendMessage(m.chat, { react: { text: "🕒", key: m.key } })
+    await conn.sendMessage(m.chat, { react: { text: '🕒', key: m.key } })
 
-    const data = await googleImage(text)
-    if (!data || !data.length) throw new Error("sin resultados")
+    // 🔥 BUSCADOR DUCKDUCKGO (FUNCIONAL 2025)
+    const res = await fetch(
+      `https://duckduckgo.com/i.js?o=json&q=${encodeURIComponent(text)}`
+    )
+    const data = await res.json()
 
-    const url = data[0] // primera imagen
-    const res = await fetch(url)
+    if (!data?.results?.length) throw new Error('sin resultados')
 
-    if (!res.ok) throw new Error("imagen caída")
+    // 🔹 Tomamos SOLO una imagen
+    const image = data.results[0].image
 
-    const buffer = await res.arrayBuffer()
+    await conn.sendMessage(m.chat, { react: { text: '🔍', key: m.key } })
 
+    // 🔥 Enviar como IMAGEN real (no archivo)
     await conn.sendMessage(
       m.chat,
       {
-        image: Buffer.from(buffer),
-        caption: `🔎 Resultado de: *${text}*`
+        image: { url: image },
+        caption: `🔎 *Resultado de:* ${text}`
       },
       { quoted: m }
     )
 
-    await conn.sendMessage(m.chat, { react: { text: "✅", key: m.key } })
+    await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
 
   } catch (e) {
-    console.log("ERROR .buscar:", e)
-    await conn.sendMessage(m.chat, { react: { text: "❌", key: m.key } })
-    await conn.sendMessage(
-      m.chat,
-      { text: "⚠️ No pude obtener una imagen. Probá otro término." },
-      { quoted: m }
-    )
+    console.log('ERROR .buscar:', e)
+    await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
+
+    await conn.sendMessage(m.chat, {
+      text: '⚠️ No pude obtener una imagen. Probá otro término.'
+    }, { quoted: m })
   }
 }
 
-handler.command = ["buscar"]
+handler.help = ['buscar <texto>']
+handler.tags = ['buscador']
+handler.command = ['buscar']
+
 export default handler
