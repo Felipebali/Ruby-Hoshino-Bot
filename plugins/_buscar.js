@@ -1,4 +1,5 @@
 import { googleImage } from '@bochilteam/scraper'
+import fetch from 'node-fetch'
 
 let handler = async (m, { conn, text }) => {
   if (!text) {
@@ -11,30 +12,33 @@ let handler = async (m, { conn, text }) => {
   }
 
   try {
-    // Reacción de inicio
     await conn.sendMessage(m.chat, { react: { text: '🕒', key: m.key } })
 
     const res = await googleImage(text)
-    const image = res[0] // ✅ Solo la primera imagen
 
-    // Reacción de búsqueda
+    // toma la primera imagen válida
+    const url = res?.[0]
+    if (!url) throw new Error('Sin resultados')
+
+    // descarga la imagen como buffer REAL
+    const response = await fetch(url)
+    const buffer = await response.buffer()
+
     await conn.sendMessage(m.chat, { react: { text: '🔍', key: m.key } })
 
-    // Enviar como IMAGEN (no archivo)
     await conn.sendMessage(
       m.chat,
       {
-        image: { url: image },
+        image: buffer,
         caption: `🔎 *Resultado de:* ${text}`
       },
       { quoted: m }
     )
 
-    // Reacción final
     await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
 
   } catch (e) {
-    console.error(e)
+    console.log('ERROR EN BUSCAR:', e)
     await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
     await conn.sendMessage(
       m.chat,
@@ -48,4 +52,4 @@ handler.help = ['buscar <texto>']
 handler.tags = ['buscador']
 handler.command = ['buscar']
 
-export default handler 
+export default handler
