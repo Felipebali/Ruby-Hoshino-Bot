@@ -42,7 +42,7 @@ Estado: ${gamesEnabled ? '🟢 Activados' : '🔴 Desactivados'}
 🔥 *.zorra <@user>* / *.zorro <@user>* → Test de zorreada (versión 2.1)
 😈 *.puta <@user>* → Comando divertido/insulto gracioso
 😂 *.puto <@user>* → Comando divertido/insulto gracioso
-🎉 *.sortear <número> [premio]* → Sortea participantes del grupo
+🎉 *.sortear [premio]* → Sortea participantes del grupo
 ────────────────────────────
 `;
     } else {
