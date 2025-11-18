@@ -1,62 +1,53 @@
 // 📂 plugins/grupos-invitar.js — FelixCat_Bot 🐾
-// Invita a un número y si el usuario tiene habilitado unirse automáticamente, WhatsApp lo agrega.
-// Si no, le envía la invitación para que acepte manualmente.
+// Invita a un número enviándole el link, y si el bot es admin intenta agregar automáticamente.
 // Uso: .invitar 598XXXXXXX
 
 let handler = async (m, { conn, args }) => {
 
-    if (!m.isGroup) 
+    if (!m.isGroup)
         return conn.reply(m.chat, '❌ Este comando solo funciona en grupos.', m);
 
-    // Requiere que el bot sea admin para usar groupAdd
-    const grupo = await conn.groupMetadata(m.chat);
-    const botID = conn.user.jid || conn.user.id;
-    const botAdmin = grupo.participants.some(p => p.id === botID && p.admin);
-
-    if (!botAdmin)
-        return conn.reply(m.chat, '⚠️ Necesito ser *admin* para invitar automáticamente.\n\nPuedo enviar enlace, pero no agregar.', m);
-
-    if (!args[0]) 
+    if (!args[0])
         return conn.reply(m.chat, '✏️ *Uso:* .invitar 59898719147', m);
 
     // Normalizamos número
     let numero = args[0].replace(/[^0-9]/g, '');
-    if (numero.length < 7) 
+    if (numero.length < 7)
         return conn.reply(m.chat, '❌ Número inválido.', m);
 
     let jid = numero + '@s.whatsapp.net';
 
+    // Generar código de invitación siempre
+    let linkCode = await conn.groupInviteCode(m.chat);
+    let link = `https://chat.whatsapp.com/${linkCode}`;
+
+    // Enviar invitación por privado SIEMPRE
+    await conn.sendMessage(jid, {
+        text: `👋 *Has sido invitado a un grupo:*\n🔗 ${link}\n\n📌 Puedes unirte tocando el enlace.`
+    });
+
+    // Confirmar al grupo
+    await conn.reply(m.chat, `📨 Envié el enlace al número *${numero}*.`, m);
+
+    // Intentar agregar automáticamente SOLO si el bot es admin
     try {
-        // WhatsApp decide si lo agrega o si solo manda invitación
-        let res = await conn.groupAdd(m.chat, [jid]);
+        const groupData = await conn.groupMetadata(m.chat);
+        const botID = conn.user.jid || conn.user.id;
+        const botAdmin = groupData.participants.some(p => p.id === botID && p.admin);
 
-        /*
-          Respuestas posibles:
-          - "200": agregado automáticamente
-          - "403": el usuario no permite agregar -> se manda invitación
-        */
+        if (botAdmin) {
+            // Intento de agregado automático
+            let res = await conn.groupAdd(m.chat, [jid]);
 
-        if (res && res[0] && res[0].status === 200) {
-            return conn.reply(m.chat, `✅ *${numero} fue añadido automáticamente* al grupo.`, m);
+            if (res && res[0]) {
+                if (res[0].status === 200) {
+                    return conn.reply(m.chat, `✅ El usuario *${numero}* fue agregado automáticamente.`, m);
+                }
+                // Si no permite ser agregado, ya enviamos el enlace antes, así que no pasa nada
+            }
         }
-
-        if (res && res[0] && res[0].status === 403) {
-            // Enviar link manual si WhatsApp no deja agregar
-            let link = await conn.groupInviteCode(m.chat);
-            let enlace = `https://chat.whatsapp.com/${link}`;
-
-            await conn.sendMessage(jid, { 
-                text: `👋 Fuiste invitado a un grupo:\n➡️ ${enlace}\n📌 Debes aceptar la invitación.`,
-            });
-
-            return conn.reply(m.chat, `📨 El usuario *${numero}* no permite ser agregado.\n✔ Le envié el enlace por privado.`, m);
-        }
-
-        return conn.reply(m.chat, '⚠️ No se pudo agregar. Puede que el número no exista o tenga bloqueo.', m);
-
     } catch (e) {
-        console.log(e);
-        return conn.reply(m.chat, '❌ Error al invitar al usuario.', m);
+        console.log('Error en agregado automático:', e);
     }
 };
 
