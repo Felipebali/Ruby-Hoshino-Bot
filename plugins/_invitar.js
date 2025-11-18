@@ -1,60 +1,23 @@
-// 📂 plugins/grupos-agregar.js — FelixCat_Bot 🐾
+import moment from 'moment-timezone'
 
-let handler = async (m, { conn, args }) => {
+let handler = async (m, { conn, args, text, usedPrefix, command }) => {
+if (!text) return conn.reply(m.chat, `❀ Por favor, ingrese el número al que quiere enviar una invitación al grupo.`, m)
+if (text.includes('+')) return conn.reply(m.chat, `ꕥ Ingrese el número todo junto sin el *+*`, m)
+if (isNaN(text)) return conn.reply(m.chat, `ꕥ Ingrese sólo números sin su código de país y sin espacios.`, m)
+let group = m.chat
+let link = 'https://chat.whatsapp.com/' + await conn.groupInviteCode(group)
+let tag = m.sender ? '@' + m.sender.split('@')[0] : 'Usuario'
+const chatLabel = m.isGroup ? (await conn.getName(m.chat) || 'Grupal') : 'Privado'
+const horario = `${moment.tz('America/Caracas').format('DD/MM/YYYY hh:mm:ss A')}`
+const invite = `❀ 𝗜𝗡𝗩𝗜𝗧𝗔𝗖𝗜𝗢𝗡 𝗔 𝗨𝗡 𝗚𝗥𝗨𝗣𝗢\n\nꕥ *Usuario* » ${tag}\n✿ *Chat* » ${chatLabel}\n✰ *Fecha* » ${horario}\n✦ *Link* » ${link}`
+await conn.reply(`${text}@s.whatsapp.net`, invite, m, { mentions: [m.sender] })
+m.reply(`❀ El enlace de invitación fue enviado al usuario correctamente.`)
+}
 
-    if (!m.isGroup)
-        return conn.reply(m.chat, '❌ Este comando solo funciona en grupos.', m);
+handler.help = ['invite']
+handler.tags = ['group']
+handler.command = ['add', 'agregar', 'añadir']
+handler.group = true
+handler.botAdmin = true
 
-    if (!args[0])
-        return conn.reply(m.chat, '✏️ *Uso correcto:* .agregar 59898719147', m);
-
-    // Normalizamos número
-    let numero = args[0].replace(/[^0-9]/g, '');
-    if (numero.length < 7)
-        return conn.reply(m.chat, '❌ Número inválido.', m);
-
-    let jid = numero + '@s.whatsapp.net';
-
-    // Obtener metadata del grupo
-    const group = await conn.groupMetadata(m.chat);
-
-    // ID REAL DEL BOT, recortado, compatible al 100%
-    const botID = (conn.user.jid || conn.user.id || "")
-        .split(':')[0]   // elimina cualquier :1 ó :2
-        .replace(/[^0-9@s\.]/g, ''); 
-
-    // Buscar al bot en la lista de admins (formato estable)
-    const botEsAdmin = group.participants.some(p => {
-        const pid = p.id.split(':')[0]; // recorta el :1 / :2
-        return pid === botID && p.admin;
-    });
-
-    if (!botEsAdmin) {
-        return conn.reply(m.chat, '❌ El bot NO se reconoce como admin en este grupo.\n\n📌 *Solución:* Quitá al bot como admin y volvé a ponerlo.', m);
-    }
-
-    // Intentar agregar
-    try {
-        let res = await conn.groupAdd(m.chat, [jid]);
-        let r = res[0] || res;
-
-        if (r.status === 200)
-            return conn.reply(m.chat, `✅ Usuario *${numero}* agregado correctamente.`, m);
-
-        if (r.status === 409)
-            return conn.reply(m.chat, '⚠️ Ese usuario ya está en el grupo.', m);
-
-        if (r.status === 403)
-            return conn.reply(m.chat, '⚠️ Ese usuario no permite que lo agreguen al grupo.', m);
-
-        conn.reply(m.chat, `⚠️ No pude agregarlo. Código: ${r.status}`, m);
-
-    } catch (e) {
-        console.log('Error al agregar:', e);
-        conn.reply(m.chat, '❌ Ocurrió un error al intentar agregar al usuario.', m);
-    }
-};
-
-handler.command = /^agregar$/i;
-
-export default handler;
+export default handler
