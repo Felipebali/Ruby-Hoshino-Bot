@@ -1,5 +1,4 @@
 import { googleImage } from '@bochilteam/scraper'
-import fetch from 'node-fetch'
 
 let handler = async (m, { conn, text }) => {
   if (!text) {
@@ -14,22 +13,26 @@ let handler = async (m, { conn, text }) => {
   try {
     await conn.sendMessage(m.chat, { react: { text: '🕒', key: m.key } })
 
-    const res = await googleImage(text)
+    let res = await googleImage(text)
 
-    // toma la primera imagen válida
-    const url = res?.[0]
-    if (!url) throw new Error('Sin resultados')
+    // 🔥 FILTRA SOLO IMÁGENES CON FORMATO REAL
+    res = res.filter(img =>
+      img &&
+      typeof img === 'string' &&
+      img.match(/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i)
+    )
 
-    // descarga la imagen como buffer REAL
-    const response = await fetch(url)
-    const buffer = await response.buffer()
+    if (!res.length) throw 'Sin imágenes válidas'
+
+    const image = res[0] // una sola
 
     await conn.sendMessage(m.chat, { react: { text: '🔍', key: m.key } })
 
+    // 📌 ENVÍA COMO IMAGEN
     await conn.sendMessage(
       m.chat,
       {
-        image: buffer,
+        image: { url: image },
         caption: `🔎 *Resultado de:* ${text}`
       },
       { quoted: m }
@@ -38,11 +41,12 @@ let handler = async (m, { conn, text }) => {
     await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
 
   } catch (e) {
-    console.log('ERROR EN BUSCAR:', e)
+    console.error('Error en .buscar:', e)
+
     await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
     await conn.sendMessage(
       m.chat,
-      { text: '⚠️ No pude obtener una imagen. Probá con otra búsqueda.' },
+      { text: '⚠️ No pude obtener una imagen válida. Probá otro término.' },
       { quoted: m }
     )
   }
