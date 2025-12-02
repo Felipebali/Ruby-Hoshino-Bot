@@ -60,7 +60,7 @@ let handler = async function (m, { conn, groupMetadata, args, isAdmin, isOwner, 
 
 // Comandos
 handler.command = ['invocar', 'todos', 'tagall', 'antitagall'];
-handler.help = ['tagall / .antitagall (toggle)'];
+handler.help = ['tagall / .antitagall'];
 handler.tags = ['grupos'];
 handler.group = true;
 handler.admin = true;
