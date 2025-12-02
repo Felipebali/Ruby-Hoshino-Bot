@@ -1,7 +1,7 @@
 // 📂 plugins/tagall.js — FelixCat-Bot 🐾
 // TagAll con toggle .antitagall ON/OFF
 
-let handler = async function (m, { conn, groupMetadata, args, isAdmin, isOwner }) {
+let handler = async function (m, { conn, groupMetadata, args, isAdmin, isOwner, command }) {
   if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.');
 
   const chatId = m.chat;
@@ -10,8 +10,8 @@ let handler = async function (m, { conn, groupMetadata, args, isAdmin, isOwner }
   if (!global.db.data.chats[chatId]) global.db.data.chats[chatId] = {};
   const chatData = global.db.data.chats[chatId];
 
-  // Si se ejecuta .antitagall → toggle
-  if (m.text?.toLowerCase().startsWith('.antitagall')) {
+  // 🔥 Toggle .antitagall
+  if (command === 'antitagall') {
     chatData.tagallEnabled = !chatData.tagallEnabled;
     return m.reply(`⚡ TagAll ahora está ${chatData.tagallEnabled ? 'activado ✅' : 'desactivado ❌'} para este grupo.`);
   }
