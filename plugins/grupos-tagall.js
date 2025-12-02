@@ -10,13 +10,21 @@ let handler = async function (m, { conn, groupMetadata, args, isAdmin, isOwner, 
   if (!global.db.data.chats[chatId]) global.db.data.chats[chatId] = {};
   const chatData = global.db.data.chats[chatId];
 
-  // 🔥 Toggle .antitagall
+  // 🔥 Toggle .antitagall — SOLO ADMIN / OWNER
   if (command === 'antitagall') {
+    if (!(isAdmin || isOwner)) {
+      return m.reply('❌ Solo un administrador puede usar este comando.');
+    }
+
     chatData.tagallEnabled = !chatData.tagallEnabled;
     return m.reply(`⚡ TagAll ahora está ${chatData.tagallEnabled ? 'activado ✅' : 'desactivado ❌'} para este grupo.`);
   }
 
-  // Validar permisos para tagall normal
+  // ===========================
+  // TagAll normal (.tagall / .invocar / .todos)
+  // ===========================
+
+  // Validar permisos
   if (!(isAdmin || isOwner)) {
     await conn.sendMessage(m.chat, {
       text: '❌ Solo un administrador puede usar este comando.',
@@ -26,7 +34,7 @@ let handler = async function (m, { conn, groupMetadata, args, isAdmin, isOwner, 
   }
 
   // Verificar si TagAll está activado
-  if (chatData.tagallEnabled === false) {
+  if (!chatData.tagallEnabled) {
     return m.reply('⚠️ El TagAll está desactivado. Usa ".antitagall" para activarlo.');
   }
 
